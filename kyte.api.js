@@ -278,6 +278,7 @@ Kyte.prototype.sessionValidate = function(error = null) {
  * 
  */
 Kyte.prototype.sessionDestroy = function(error = null) {
+	let d = new Date();
 	$.ajax({
         method: "POST",
         crossDomain: true,
