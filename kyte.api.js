@@ -244,9 +244,6 @@ Kyte.prototype.sessionValidate = function(error = null) {
 	        },
 	        success: function(response){
 				obj.setCookie('kyte-token', response.token, 60);
-				if (location.origin != response.scope) {
-					location.replace(response.scope+'/requests');
-				}
 	        },
 	        error: function(response) {
 	        	obj.setCookie('kyte-token', '', -1);
