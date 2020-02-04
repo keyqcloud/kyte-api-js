@@ -201,7 +201,7 @@ Kyte.prototype.sessionCreate = function(email, password, error = null) {
 		      		console.log(response.responseJSON.error);
 			        alert(response.responseJSON.error);
 			    }
-			    location.replace('/');
+			    // location.replace('/');
 	        }
 	    });
 	},
@@ -213,7 +213,7 @@ Kyte.prototype.sessionCreate = function(email, password, error = null) {
       		console.log(response.responseJSON.error);
 	        alert(response.responseJSON.error);
 	    }
-	    location.replace('/');
+	    // location.replace('/');
     });
 };
 
