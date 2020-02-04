@@ -270,6 +270,57 @@ Kyte.prototype.sessionValidate = function(error = null) {
 };
 
 /* 
+ * Request backend to destroy session
+ *
+ * like all api requests, first obtain a transaction
+ * authorization from sign() then pass session token from cookie.
+ * If session token is valid then log user out.
+ * 
+ */
+Kyte.prototype.sessionDestroy = function(error = null) {
+	$.ajax({
+        method: "POST",
+        crossDomain: true,
+        dataType: "json",
+        url: api.url+'sign/',
+        data: {
+            'kyte-time': d.toUTCString(),
+            'kyte-domain': location.origin,
+        	'kyte-access-key': api.access_key
+        },
+         success: function(response){
+            $.ajax({
+             	method: "POST",
+             	crossDomain: true,
+             	dataType: "json",
+             	url: api.url+'session/',
+             	data: {
+                	'request': 'destroy',
+                	'kyte-signature': response.signature,
+                	'kyte-time': d.toUTCString(),
+                	'kyte-access-key': api.access_key,
+                	'kyte-token': api.getCookie('kyte-token')
+             	},
+             	success: function(response){
+	            	api.setCookie('kyte-token', '', -1);
+	            	location.replace('/');
+	            	$('#loadingModal').modal('hide');
+             	},
+             	error: function() {
+                	api.setCookie('kyte-token', '', -1);
+	            	location.replace('/');
+	            	$('#loadingModal').modal('hide');
+             	}
+        	});
+        },
+        error: function() {
+            api.setCookie('kyte-token', '', -1);
+            location.replace('/');
+            $('#loadingModal').modal('hide');
+        }
+    });
+}
+/* 
  * Check password minimums and update UI
  */
 Kyte.prototype.validatePassword = function(obj) {
