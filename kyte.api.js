@@ -191,7 +191,7 @@ Kyte.prototype.sessionCreate = function(email, password, error = null) {
 	        },
 	        success: function(response){
 				obj.setCookie('kyte-token', response.token, 60);
-				location.replace(response.scope+'/requests');
+				location.replace('dash/index.html');
 	        },
 	        error: function(response) {
 	        	obj.setCookie('kyte-token', '', -1);
