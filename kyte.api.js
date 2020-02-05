@@ -227,6 +227,9 @@ Kyte.prototype.sessionCreate = function(email, password, error = null) {
  * 
  */
 Kyte.prototype.sessionValidate = function(error = null) {
+	// if the site is displayed on localhost then bypass validation
+	if (location.hostname=='') return
+
 	var obj = this;
 
 	this.sign(function(retval, time) {
