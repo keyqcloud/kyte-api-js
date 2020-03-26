@@ -3,6 +3,38 @@ function Kyte(url, accessKey) {
 	this.access_key = accessKey;
 }
 
+/* API Version
+ *
+ * Use sign() to obtain authorization to transact and
+ * send serialized form data accompanied with signature data
+ *
+ */
+Kyte.prototype.version = function(callback, error = null) {
+	var obj = this;
+
+	$.ajax({
+		method: "GET",
+		crossDomain: true,
+		dataType: "json",
+		url: obj.url,
+		success: function(response){
+			if (typeof callback === "function") {
+				  callback(response.version);
+			  } else {
+				  console.log(response.version);
+			  }
+		},
+		error: function(response) {
+			if (typeof error === "function") {
+				  error(response.responseJSON.error);
+			  } else {
+				  console.log(response.responseJSON.error);
+				alert(response.responseJSON.error);
+			}
+		}
+	});
+};
+
 /* API Signature Request
  *
  * Pass identifying information and public key to backend
@@ -14,15 +46,10 @@ Kyte.prototype.sign = function(callback, error = null) {
 	var obj = this;
 
 	$.ajax({
-	    method: "POST",
+	    method: "GET",
 	    crossDomain: true,
 	    dataType: "json",
-	    url: obj.url+'sign/',
-	    data: {
-	        'kyte-time': d.toUTCString(),
-	        'kyte-domain': location.origin,
-	        'kyte-access-key': obj.access_key
-	    },
+	    url: obj.url+'/'+obj.access_key+'/'+encodeURIComponent(d.toUTCString())+'/'+location.origin,
 	    success: function(response){
 	      	if (typeof callback === "function") {
 	      		callback(response, d);
@@ -41,63 +68,40 @@ Kyte.prototype.sign = function(callback, error = null) {
     });
 };
 
-/* Send Form Data to Backend
- *
- * Use sign() to obtain authorization to transact and
- * send serialized form data accompanied with signature data
- *
- */
-Kyte.prototype.sendForm = function(object, call, form_serialized_data, callback, error = null) {
-	var obj = this;
-
-	this.sign(function(retval, time) {
-		$.ajax({
-	    	method: "POST",
-	    	crossDomain: true,
-	    	dataType: "json",
-	    	url: obj.url,
-	    	data: form_serialized_data + '&object=' + object + '&call=' + call + '&kyte-signature=' + retval.signature + '&kyte-time=' + time.toUTCString() + '&kyte-access-key=' + obj.access_key,
-	    	success: function(response){
-		        if (typeof callback === "function") {
-		      		callback(response);
-		      	} else {
-		      		console.log(response);
-		      	}
-	    	},
-	    	error: function(response) {
-		        if (typeof error === "function") {
-		      		error(response.responseJSON.error);
-		      	} else {
-		      		console.log(response.responseJSON.error);
-			        alert(response.responseJSON.error);
-			    }
-	    	}
-	    });
-	});
-};
-
-/* Send Non-Form Data to Backend
+/* Send Data to Backend by Specified Method
  *
  * Use sign() to obtain authorization to transact and
  * send data accompanied with signature data
  *
  */
-Kyte.prototype.sendData = function(object, call, data, callback, error = null) {
+Kyte.prototype.sendData = function(method, model, field = null, value = null, data = null, formdata = null, callback, error = null) {
 	var obj = this;
 
-	this.sign(function(retval, time) {
-		data['object'] = object;
-		data['call'] = call;
-		data['kyte-signature'] = retval.signature;
-		data['kyte-time'] = time.toUTCString();
-		data['kyte-access-key'] = obj.access_key;
+	this.sign(
+		function(retval, time) {
+		// /{token}/{key}/{signature}/{time}/{model}/{field}/{value}
+		var apiURL = obj.url+'/'+obj.getCookie('kyte-token')+'/'+obj.access_key+'/'+retval.signature+'/'+encodeURIComponent(d.toUTCString())+'/'+model;
+		if (method == 'PUT' || method == 'DELETE' || method == 'GET') {
+			apiURL += '/'+field+'/'+value;
+		}
+
+		var encdata = '';
+
+		if (data) {
+			encdata += $.param(data);
+		}
+
+		if (formdata) {
+			if (encdata) encdata += '&';
+			encdata += formdata;
+		}
 
 		$.ajax({
-			method: "POST",
+			method: method,
 			crossDomain: true,
 			dataType: "json",
-			url: obj.url,
-			data: data,
+			url: apiURL,
+			data: encdata,
 			success: function(response) {
 		        if (typeof callback === "function") {
 		      		callback(response);
@@ -114,7 +118,55 @@ Kyte.prototype.sendData = function(object, call, data, callback, error = null) {
 			    }
 			}
 	    });
+	},
+	function(response) {
+		if (typeof error === "function") {
+			error(response.responseJSON.error);
+		} else {
+			console.log(response.responseJSON.error);
+			alert(response.responseJSON.error);
+		}
 	});
+};
+
+/* Insert
+ *
+ * Use sign() to obtain authorization to transact and
+ * send data accompanied with signature data
+ *
+ */
+Kyte.prototype.insert = function(model, data = null, formdata = null, callback, error = null) {
+	this.sendData('POST', model, null, null, data, formdata, callback, error);
+};
+
+/* Update
+ *
+ * Use sign() to obtain authorization to transact and
+ * send data accompanied with signature data
+ *
+ */
+Kyte.prototype.update = function(model, field = null, value = null, data = null, formdata = null, callback, error = null) {
+	this.sendData('PUT', model, field, value, data, formdata, callback, error);
+};
+
+/* Get
+ *
+ * Use sign() to obtain authorization to transact and
+ * send data accompanied with signature data
+ *
+ */
+Kyte.prototype.get = function(model, field = null, value = null, callback, error = null) {
+	this.sendData('GET', model, field, value, null, null, callback, error);
+};
+
+/* Delete
+ *
+ * Use sign() to obtain authorization to transact and
+ * send data accompanied with signature data
+ *
+ */
+Kyte.prototype.delete = function(model, field = null, value = null, callback, error = null) {
+	this.sendData('DELETE', model, field, value, null, null, callback, error);
 };
 
 /* 
@@ -172,49 +224,25 @@ Kyte.prototype.getUrlParameter = function(sParam) {
  * redirect users to login page.
  * 
  */
-Kyte.prototype.sessionCreate = function(email, password, error = null) {
-	var obj = this;
-
-	this.sign(function(retval, time) {
-		$.ajax({
-	        method: "POST",
-	        crossDomain: true,
-	        dataType: "json",
-	        url: obj.url+'session/',
-	        data: {
-	        	'request': 'new',
-	        	'kyte-signature': retval.signature,
-	        	'kyte-time': time.toUTCString(),
-	        	'kyte-access-key': obj.access_key,
-	        	'email': email,
-	        	'password': password
-	        },
-	        success: function(response){
-				obj.setCookie('kyte-token', response.token, 60);
-				location.replace('dash/index.html');
-	        },
-	        error: function(response) {
-	        	obj.setCookie('kyte-token', '', -1);
-				if (typeof error === "function") {
-		      		error(response.responseJSON.error);
-		      	} else {
-		      		console.log(response.responseJSON.error);
-			        alert(response.responseJSON.error);
-			    }
-			    // location.replace('/');
-	        }
-	    });
+Kyte.prototype.sessionCreate = function(email, password, callback, error = null) {
+	this.insert('Session', { 'email' : email, 'password' : password },
+	function(response) {
+		obj.setCookie('kyte-token', response.token, 60);
+		if (typeof callback === "function") {
+			callback(response);
+		} else {
+			console.log(response);
+		}
 	},
 	function(response) {
-    	obj.setCookie('kyte-token', '', -1);
-    	if (typeof error === "function") {
-      		error(response.responseJSON.error);
-      	} else {
-      		console.log(response.responseJSON.error);
-	        alert(response.responseJSON.error);
-	    }
-	    // location.replace('/');
-    });
+		obj.setCookie('kyte-token', '', -1);
+		if (typeof error === "function") {
+			error(response.responseJSON.error);
+		} else {
+			console.log(response.responseJSON.error);
+			alert(response.responseJSON.error);
+		}
+	});
 };
 
 /* 
@@ -227,49 +255,24 @@ Kyte.prototype.sessionCreate = function(email, password, error = null) {
  * 
  */
 Kyte.prototype.sessionValidate = function(error = null) {
-	// if the site is displayed on localhost then bypass validation
-	if (location.hostname=='') return
-
-	var obj = this;
-
-	this.sign(function(retval, time) {
-		$.ajax({
-	        method: "POST",
-	        crossDomain: true,
-	        dataType: "json",
-	        url: obj.url+'session/',
-	        data: {
-	        	'request': 'validate',
-	        	'kyte-signature': retval.signature,
-	        	'kyte-time': time.toUTCString(),
-	        	'kyte-access-key': obj.access_key,
-	        	'kyte-token': obj.getCookie('kyte-token')
-	        },
-	        success: function(response){
-				obj.setCookie('kyte-token', response.token, 60);
-	        },
-	        error: function(response) {
-	        	obj.setCookie('kyte-token', '', -1);
-		    	if (typeof error === "function") {
-		      		error(response.responseJSON.error);
-		      	} else {
-		      		console.log(response.responseJSON.error);
-			        alert(response.responseJSON.error);
-			    }
-			    location.replace('/');
-	        }
-	    });
+	this.update('Session', 'Validate', 'User', null, null,
+	function(response) {
+		obj.setCookie('kyte-token', response.token, 60);
+		if (typeof callback === "function") {
+			callback(response);
+		} else {
+			console.log(response);
+		}
 	},
 	function(response) {
-    	obj.setCookie('kyte-token', '', -1);
-    	if (typeof error === "function") {
-      		error(response.responseJSON.error);
-      	} else {
-      		console.log(response.responseJSON.error);
-	        alert(response.responseJSON.error);
-	    }
-	    location.replace('/');
-    });
+		obj.setCookie('kyte-token', '', -1);
+		if (typeof error === "function") {
+			error(response.responseJSON.error);
+		} else {
+			console.log(response.responseJSON.error);
+			alert(response.responseJSON.error);
+		}
+	});
 };
 
 /* 
@@ -281,49 +284,27 @@ Kyte.prototype.sessionValidate = function(error = null) {
  * 
  */
 Kyte.prototype.sessionDestroy = function(error = null) {
-	let d = new Date();
-	$.ajax({
-        method: "POST",
-        crossDomain: true,
-        dataType: "json",
-        url: api.url+'sign/',
-        data: {
-            'kyte-time': d.toUTCString(),
-            'kyte-domain': location.origin,
-        	'kyte-access-key': api.access_key
-        },
-         success: function(response){
-            $.ajax({
-             	method: "POST",
-             	crossDomain: true,
-             	dataType: "json",
-             	url: api.url+'session/',
-             	data: {
-                	'request': 'destroy',
-                	'kyte-signature': response.signature,
-                	'kyte-time': d.toUTCString(),
-                	'kyte-access-key': api.access_key,
-                	'kyte-token': api.getCookie('kyte-token')
-             	},
-             	success: function(response){
-	            	api.setCookie('kyte-token', '', -1);
-	            	location.replace('/');
-	            	$('#loadingModal').modal('hide');
-             	},
-             	error: function() {
-                	api.setCookie('kyte-token', '', -1);
-	            	location.replace('/');
-	            	$('#loadingModal').modal('hide');
-             	}
-        	});
-        },
-        error: function() {
-            api.setCookie('kyte-token', '', -1);
-            location.replace('/');
-            $('#loadingModal').modal('hide');
-        }
-    });
+	this.delete('Session', 'Invalidate', 'User',
+	function(response) {
+		obj.setCookie('kyte-token', '', -1);
+		if (typeof error === "function") {
+			error(response.responseJSON.error);
+		} else {
+			console.log(response.responseJSON.error);
+			alert(response.responseJSON.error);
+		}
+	},
+	function(response) {
+		obj.setCookie('kyte-token', '', -1);
+		if (typeof error === "function") {
+			error(response.responseJSON.error);
+		} else {
+			console.log(response.responseJSON.error);
+			alert(response.responseJSON.error);
+		}
+	});
 }
+
 /* 
  * Check password minimums and update UI
  */
@@ -402,19 +383,3 @@ Kyte.prototype.validatePassword = function(obj) {
 
 	return true;
 }
-
-/**************************************/
-/*                                    */
-/* HELPER CODE NOT PART OF KYTE CLASS */
-/*                                    */
-/**************************************/
-/*
- * When multiple modal windows are open,
- * allow others to scroll even when top modal is closed.
- */
-$('body').on('hidden.bs.modal', function () {
-	if($('.modal.show').length > 0)
-	{
-	    $('body').addClass('modal-open');
-	}
-});
