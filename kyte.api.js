@@ -1,6 +1,7 @@
-function Kyte(url, accessKey) {
+function Kyte(url, accessKey, identifier) {
 	this.url = url;
 	this.access_key = accessKey;
+	this.identifier = identifier;
 }
 
 /* API Version
@@ -49,7 +50,7 @@ Kyte.prototype.sign = function(callback, error = null) {
 	    method: "GET",
 	    crossDomain: true,
 	    dataType: "json",
-	    url: obj.url+'/'+obj.access_key+'/'+encodeURIComponent(d.toUTCString())+'/'+location.origin,
+	    url: obj.url+'/'+obj.access_key+'/'+encodeURIComponent(d.toUTCString())+'/'+obj.identifier,
 	    success: function(response){
 	      	if (typeof callback === "function") {
 	      		callback(response, d);
@@ -76,12 +77,13 @@ Kyte.prototype.sign = function(callback, error = null) {
  */
 Kyte.prototype.sendData = function(method, model, field = null, value = null, data = null, formdata = null, callback, error = null) {
 	var obj = this;
+	var token = (obj.getCookie('kyte-token') ? obj.getCookie('kyte-token') : '1');
 
 	this.sign(
 		function(retval, time) {
 		// /{token}/{key}/{signature}/{time}/{model}/{field}/{value}
-		var apiURL = obj.url+'/'+obj.getCookie('kyte-token')+'/'+obj.access_key+'/'+retval.signature+'/'+encodeURIComponent(d.toUTCString())+'/'+model;
-		if (method == 'PUT' || method == 'DELETE' || method == 'GET') {
+		var apiURL = obj.url+'/'+token+'/'+obj.access_key+'/'+retval.signature+'/'+encodeURIComponent(time.toUTCString())+'/'+model;
+		if (field && value) {
 			apiURL += '/'+field+'/'+value;
 		}
 
@@ -225,7 +227,7 @@ Kyte.prototype.getUrlParameter = function(sParam) {
  * 
  */
 Kyte.prototype.sessionCreate = function(email, password, callback, error = null) {
-	this.insert('Session', { 'email' : email, 'password' : password },
+	this.insert('Session', { 'email' : email, 'password' : password }, null,
 	function(response) {
 		obj.setCookie('kyte-token', response.token, 60);
 		if (typeof callback === "function") {
@@ -255,7 +257,7 @@ Kyte.prototype.sessionCreate = function(email, password, callback, error = null)
  * 
  */
 Kyte.prototype.sessionValidate = function(error = null) {
-	this.update('Session', 'Validate', 'User', null, null,
+	this.update('Session', null, null, null, null,
 	function(response) {
 		obj.setCookie('kyte-token', response.token, 60);
 		if (typeof callback === "function") {
@@ -284,7 +286,7 @@ Kyte.prototype.sessionValidate = function(error = null) {
  * 
  */
 Kyte.prototype.sessionDestroy = function(error = null) {
-	this.delete('Session', 'Invalidate', 'User',
+	this.delete('Session', null, null,
 	function(response) {
 		obj.setCookie('kyte-token', '', -1);
 		if (typeof error === "function") {
