@@ -123,10 +123,10 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 	},
 	function(response) {
 		if (typeof error === "function") {
-			error(response.responseJSON.error);
+			error(response);
 		} else {
-			console.log(response.responseJSON.error);
-			alert(response.responseJSON.error);
+			console.log(response);
+			alert(response);
 		}
 	});
 };
@@ -217,6 +217,16 @@ Kyte.prototype.getUrlParameter = function(sParam) {
     }
 };
 
+Kyte.prototype.initSpinner = function() {
+	$('body').append('<div id="pageLoaderModal" class="modal hide" data-backdrop="static" data-keyboard="false" tabindex="-1"><div class="modal-dialog modal-sm"><div class="modal-content" style="width: 48px"><div class="spinner-wrapper text-center"><span class="fa fa-spinner fa-spin fa-3x"></span></div></div></div></div>');
+};
+Kyte.prototype.startSpinner = function() {
+	$('#pageLoaderModal').modal();
+}
+Kyte.prototype.stopSpinner = function() {
+	$('#pageLoaderModal').modal('hide');
+}
+
 /* 
  * Request backend to create new session
  *
@@ -227,6 +237,7 @@ Kyte.prototype.getUrlParameter = function(sParam) {
  * 
  */
 Kyte.prototype.sessionCreate = function(email, password, callback, error = null) {
+	var obj = this;
 	this.insert('Session', { 'email' : email, 'password' : password }, null,
 	function(response) {
 		obj.setCookie('kyte-token', response.token, 60);
@@ -239,10 +250,10 @@ Kyte.prototype.sessionCreate = function(email, password, callback, error = null)
 	function(response) {
 		obj.setCookie('kyte-token', '', -1);
 		if (typeof error === "function") {
-			error(response.responseJSON.error);
+			error(response);
 		} else {
-			console.log(response.responseJSON.error);
-			alert(response.responseJSON.error);
+			console.log(response);
+			alert(response);
 		}
 	});
 };
@@ -256,10 +267,16 @@ Kyte.prototype.sessionCreate = function(email, password, callback, error = null)
  * redirect users to login page.
  * 
  */
-Kyte.prototype.sessionValidate = function(error = null) {
-	this.update('Session', null, null, null, null,
+Kyte.prototype.sessionValidate = function(callback = null, error = null) {
+	var obj = this;
+	
+	obj.initSpinner();
+	obj.startSpinner();
+	
+	this.get('Session', null, null,
 	function(response) {
 		obj.setCookie('kyte-token', response.token, 60);
+		obj.stopSpinner();
 		if (typeof callback === "function") {
 			callback(response);
 		} else {
@@ -268,11 +285,12 @@ Kyte.prototype.sessionValidate = function(error = null) {
 	},
 	function(response) {
 		obj.setCookie('kyte-token', '', -1);
+		obj.stopSpinner();
 		if (typeof error === "function") {
-			error(response.responseJSON.error);
+			error(response);
 		} else {
-			console.log(response.responseJSON.error);
-			alert(response.responseJSON.error);
+			console.log(response);
+			alert(response);
 		}
 	});
 };
@@ -286,23 +304,24 @@ Kyte.prototype.sessionValidate = function(error = null) {
  * 
  */
 Kyte.prototype.sessionDestroy = function(error = null) {
+	var obj = this;
 	this.delete('Session', null, null,
 	function(response) {
 		obj.setCookie('kyte-token', '', -1);
 		if (typeof error === "function") {
-			error(response.responseJSON.error);
+			error(response);
 		} else {
-			console.log(response.responseJSON.error);
-			alert(response.responseJSON.error);
+			console.log(response);
+			alert(response);
 		}
 	},
 	function(response) {
 		obj.setCookie('kyte-token', '', -1);
 		if (typeof error === "function") {
-			error(response.responseJSON.error);
+			error(response);
 		} else {
-			console.log(response.responseJSON.error);
-			alert(response.responseJSON.error);
+			console.log(response);
+			alert(response);
 		}
 	});
 }
@@ -317,19 +336,25 @@ Kyte.prototype.makeid = function(length) {
 	return result;
  };
 
-Kyte.prototype.alert = function(title, message, type = 'success', time = 1000) {
+Kyte.prototype.alert = function(title, message, type = 'success', time = 1000, callback = null) {
 	let id = this.makeid(5);
 	$('body').append('<div class="kyte-alert" id="'+id+'"><div class="kyte-alert-body kyte-alert-'+type+'"><h3 class="kyte-alert-header">'+title+'</h3><p>'+message+'<div class="text-center"><button class="btn btn-primary kyte-alert-close d-none">OK</button></div></p></div></div>');
 	if (time > 0) {
 		setTimeout(function() {
 			$('#'+id).fadeOut('fast');
 			$('#'+id).addClass('d-none');
+			if (typeof callback === "function") {
+				callback();
+			}
 		}, time);
 	} else {
 		$('#'+id+' .kyte-alert-close').removeClass('d-none');
 		$('#'+id+' .kyte-alert-close').click(function() {
 			$('#'+id).fadeOut('fast');
 			$('#'+id).addClass('d-none');
+			if (typeof callback === "function") {
+				callback();
+			}
 		})
 	}
 };
