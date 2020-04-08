@@ -307,6 +307,33 @@ Kyte.prototype.sessionDestroy = function(error = null) {
 	});
 }
 
+Kyte.prototype.makeid = function(length) {
+	var result           = '';
+	var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	var charactersLength = characters.length;
+	for ( var i = 0; i < length; i++ ) {
+	   result += characters.charAt(Math.floor(Math.random() * charactersLength));
+	}
+	return result;
+ };
+
+Kyte.prototype.alert = function(title, message, type = 'success', time = 1000) {
+	let id = this.makeid(5);
+	$('body').append('<div class="kyte-alert" id="'+id+'"><div class="kyte-alert-body kyte-alert-'+type+'"><h3 class="kyte-alert-header">'+title+'</h3><p>'+message+'<div class="text-center"><button class="btn btn-primary kyte-alert-close d-none">OK</button></div></p></div></div>');
+	if (time > 0) {
+		setTimeout(function() {
+			$('#'+id).fadeOut('fast');
+			$('#'+id).addClass('d-none');
+		}, time);
+	} else {
+		$('#'+id+' .kyte-alert-close').removeClass('d-none');
+		$('#'+id+' .kyte-alert-close').click(function() {
+			$('#'+id).fadeOut('fast');
+			$('#'+id).addClass('d-none');
+		})
+	}
+};
+
 /* 
  * Check password minimums and update UI
  */
