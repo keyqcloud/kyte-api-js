@@ -83,8 +83,11 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 		function(retval, time) {
 		// /{token}/{key}/{signature}/{time}/{model}/{field}/{value}
 		var apiURL = obj.url+'/'+token+'/'+obj.access_key+'/'+retval.signature+'/'+encodeURIComponent(time.toUTCString())+'/'+model;
-		if (field && value) {
-			apiURL += '/'+field+'/'+value;
+		if (field) {
+			apiURL += '/'+field;
+		}
+		if (value) {
+			apiURL += '/'+value;
 		}
 
 		var encdata = '';
@@ -355,8 +358,29 @@ Kyte.prototype.alert = function(title, message, type = 'success', time = 1000, c
 			if (typeof callback === "function") {
 				callback();
 			}
-		})
+		});
 	}
+};
+
+Kyte.prototype.confirm = function(title, message, type = 'success', callback = null, cancel = null) {
+	let id = this.makeid(5);
+	$('body').append('<div class="kyte-alert" id="'+id+'"><div class="kyte-alert-body kyte-alert-'+type+'"><h3 class="kyte-alert-header">'+title+'</h3><p>'+message+'<div class="text-center"><button class="btn btn-primary kyte-alert-confirm">Yes</button> <button class="btn btn-secondary kyte-alert-cancel">No</button></div></p></div></div>');
+	
+	$('#'+id+' .kyte-alert-confirm').click(function() {
+		$('#'+id).fadeOut('fast');
+		$('#'+id).addClass('d-none');
+		if (typeof callback === "function") {
+			callback();
+		}
+	});
+
+	$('#'+id+' .kyte-alert-cancel').click(function() {
+		$('#'+id).fadeOut('fast');
+		$('#'+id).addClass('d-none');
+		if (typeof cancel === "function") {
+			cancel();
+		}
+	});
 };
 
 /* 
