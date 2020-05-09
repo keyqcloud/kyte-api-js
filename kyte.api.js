@@ -250,7 +250,7 @@ Kyte.prototype.stopSpinner = function() {
  */
 Kyte.prototype.sessionCreate = function(email, password, callback, error = null) {
 	var obj = this;
-	this.insert('Session', { 'email' : email, 'password' : password }, null,
+	this.post('Session', { 'email' : email, 'password' : password }, null,
 	function(response) {
 		obj.txToken = response.data.txToken;
 		obj.sessionToken = response.data.sessionToken;
