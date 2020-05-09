@@ -2,7 +2,14 @@ function Kyte(url, accessKey, identifier) {
 	this.url = url;
 	this.access_key = accessKey;
 	this.identifier = identifier;
+	this.txToken;
+	this.sessionToken;
 }
+
+Kyte.prototype.init = function() {
+	this.txToken = (obj.getCookie('txToken') ? obj.getCookie('txToken') : '0');
+	this.sessionToken = (obj.getCookie('sessionToken') ? obj.getCookie('sessionToken') : '0');
+};
 
 /* API Version
  *
@@ -47,10 +54,11 @@ Kyte.prototype.sign = function(callback, error = null) {
 	var obj = this;
 
 	$.ajax({
-	    method: "GET",
+	    method: "POST",
 	    crossDomain: true,
 	    dataType: "json",
-	    url: obj.url+'/'+obj.access_key+'/'+encodeURIComponent(d.toUTCString())+'/'+obj.identifier,
+		url: obj.url,
+		data: 'key='+obj.access_key+'&identifier='+obj.identifier+'&token='+obj.txToken+'&time='+d.toUTCString(),
 	    success: function(response){
 	      	if (typeof callback === "function") {
 	      		callback(response, d);
@@ -81,8 +89,9 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 
 	this.sign(
 		function(retval, time) {
-		// /{token}/{key}/{signature}/{time}/{model}/{field}/{value}
-		var apiURL = obj.url+'/'+token+'/'+obj.access_key+'/'+retval.signature+'/'+encodeURIComponent(time.toUTCString())+'/'+model;
+		// /{signature}/{identity}/{model}/{field}/{value}
+		let identity = encodeURIComponent(btoa(obj.access_key+':'+obj.sessionToken+':'+time.toUTCString()));
+		var apiURL = obj.url+'/'+retval.signature+'/'+identity+'/'+model;
 		if (field) {
 			apiURL += '/'+field;
 		}
@@ -134,23 +143,23 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 	});
 };
 
-/* Insert
+/* Post
  *
  * Use sign() to obtain authorization to transact and
  * send data accompanied with signature data
  *
  */
-Kyte.prototype.insert = function(model, data = null, formdata = null, callback, error = null) {
+Kyte.prototype.post = function(model, data = null, formdata = null, callback, error = null) {
 	this.sendData('POST', model, null, null, data, formdata, callback, error);
 };
 
-/* Update
+/* Put
  *
  * Use sign() to obtain authorization to transact and
  * send data accompanied with signature data
  *
  */
-Kyte.prototype.update = function(model, field = null, value = null, data = null, formdata = null, callback, error = null) {
+Kyte.prototype.put = function(model, field = null, value = null, data = null, formdata = null, callback, error = null) {
 	this.sendData('PUT', model, field, value, data, formdata, callback, error);
 };
 
@@ -243,7 +252,10 @@ Kyte.prototype.sessionCreate = function(email, password, callback, error = null)
 	var obj = this;
 	this.insert('Session', { 'email' : email, 'password' : password }, null,
 	function(response) {
-		obj.setCookie('kyte-token', response.token, 60);
+		obj.txToken = response.data.txToken;
+		obj.sessionToken = response.data.sessionToken;
+		obj.setCookie('txToken', obj.txToken, 60);
+		obj.setCookie('sessionToken', obj.sessionToken, 60);
 		if (typeof callback === "function") {
 			callback(response);
 		} else {
@@ -251,7 +263,8 @@ Kyte.prototype.sessionCreate = function(email, password, callback, error = null)
 		}
 	},
 	function(response) {
-		obj.setCookie('kyte-token', '', -1);
+		obj.setCookie('txToken', '', -1);
+		obj.setCookie('sessionToken', '', -1);
 		if (typeof error === "function") {
 			error(response);
 		} else {
@@ -278,7 +291,10 @@ Kyte.prototype.sessionValidate = function(callback = null, error = null) {
 	
 	this.get('Session', null, null,
 	function(response) {
-		obj.setCookie('kyte-token', response.token, 60);
+		obj.txToken = response.data.txToken;
+		obj.sessionToken = response.data.sessionToken;
+		obj.setCookie('txToken', obj.txToken, 60);
+		obj.setCookie('sessionToken', obj.sessionToken, 60);
 		obj.stopSpinner();
 		if (typeof callback === "function") {
 			callback(response);
@@ -287,7 +303,8 @@ Kyte.prototype.sessionValidate = function(callback = null, error = null) {
 		}
 	},
 	function(response) {
-		obj.setCookie('kyte-token', '', -1);
+		obj.setCookie('txToken', '', -1);
+		obj.setCookie('sessionToken', '', -1);
 		obj.stopSpinner();
 		if (typeof error === "function") {
 			error(response);
@@ -310,7 +327,8 @@ Kyte.prototype.sessionDestroy = function(error = null) {
 	var obj = this;
 	this.delete('Session', null, null,
 	function(response) {
-		obj.setCookie('kyte-token', '', -1);
+		obj.setCookie('txToken', '', -1);
+		obj.setCookie('sessionToken', '', -1);
 		if (typeof error === "function") {
 			error(response);
 		} else {
@@ -319,7 +337,8 @@ Kyte.prototype.sessionDestroy = function(error = null) {
 		}
 	},
 	function(response) {
-		obj.setCookie('kyte-token', '', -1);
+		obj.setCookie('txToken', '', -1);
+		obj.setCookie('sessionToken', '', -1);
 		if (typeof error === "function") {
 			error(response);
 		} else {
