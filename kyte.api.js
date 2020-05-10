@@ -7,8 +7,8 @@ function Kyte(url, accessKey, identifier) {
 }
 
 Kyte.prototype.init = function() {
-	this.txToken = (obj.getCookie('txToken') ? obj.getCookie('txToken') : '0');
-	this.sessionToken = (obj.getCookie('sessionToken') ? obj.getCookie('sessionToken') : '0');
+	this.txToken = (this.getCookie('txToken') ? this.getCookie('txToken') : '0');
+	this.sessionToken = (this.getCookie('sessionToken') ? this.getCookie('sessionToken') : '0');
 };
 
 /* API Version
