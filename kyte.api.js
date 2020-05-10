@@ -117,6 +117,11 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 			url: apiURL,
 			data: encdata,
 			success: function(response) {
+				obj.txToken = response.token;
+				obj.sessionToken = response.session;
+				obj.setCookie('txToken', obj.txToken, 60);
+				obj.setCookie('sessionToken', obj.sessionToken, 60);
+
 		        if (typeof callback === "function") {
 		      		callback(response);
 		      	} else {
@@ -124,6 +129,11 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 		      	}
 			},
 			error: function(response) {
+				obj.txToken = response.token;
+				obj.sessionToken = response.session;
+				obj.setCookie('txToken', obj.txToken, 60);
+				obj.setCookie('sessionToken', obj.sessionToken, 60);
+				
 		      	if (typeof error === "function") {
 		      		error(response.responseJSON.error);
 		      	} else {
