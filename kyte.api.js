@@ -90,7 +90,7 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 	this.sign(
 		function(retval, time) {
 		// /{signature}/{identity}/{model}/{field}/{value}
-		let identity = encodeURIComponent(btoa(obj.access_key+':'+obj.sessionToken+':'+time.toUTCString()));
+		let identity = encodeURIComponent(btoa(obj.access_key+'%'+obj.sessionToken+'%'+time.toUTCString()));
 		var apiURL = obj.url+'/'+retval.signature+'/'+identity+'/'+model;
 		if (field) {
 			apiURL += '/'+field;
@@ -133,7 +133,7 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 				obj.sessionToken = response.session;
 				obj.setCookie('txToken', obj.txToken, 60);
 				obj.setCookie('sessionToken', obj.sessionToken, 60);
-				
+
 		      	if (typeof error === "function") {
 		      		error(response.responseJSON.error);
 		      	} else {
