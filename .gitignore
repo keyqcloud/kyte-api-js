@@ -11,3 +11,4 @@ settings.php
 # schema.sql
 /vendor
 config.php
+kyte.framework.js
