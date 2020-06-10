@@ -68,10 +68,10 @@ Kyte.prototype.sign = function(callback, error = null) {
 	    },
 	    error: function(response) {
 	      	if (typeof error === "function") {
-	      		error(response.responseJSON.error);
+	      		error(response);
 	      	} else {
-	      		console.log(response.responseJSON.error);
-		        alert(response.responseJSON.error);
+	      		console.log(response);
+		        alert(response);
 		    }
 	    }
     });
@@ -258,9 +258,9 @@ Kyte.prototype.stopSpinner = function() {
  * redirect users to login page.
  * 
  */
-Kyte.prototype.sessionCreate = function(email, password, callback, error = null) {
+Kyte.prototype.sessionCreate = function(identity, callback, error = null, sessionController = 'Session') {
 	var obj = this;
-	this.post('Session', { 'email' : email, 'password' : password }, null,
+	this.post(sessionController, identity, null,
 	function(response) {
 		obj.txToken = response.data.txToken;
 		obj.sessionToken = response.data.sessionToken;
