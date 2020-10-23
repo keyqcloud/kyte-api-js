@@ -1,7 +1,8 @@
-function Kyte(url, accessKey, identifier) {
+function Kyte(url, accessKey, identifier, account_number) {
 	this.url = url;
 	this.access_key = accessKey;
 	this.identifier = identifier;
+	this.account_number = account_number;
 	this.txToken;
 	this.sessionToken;
 }
@@ -27,9 +28,9 @@ Kyte.prototype.version = function(callback, error = null) {
 		url: obj.url,
 		success: function(response){
 			if (typeof callback === "function") {
-				  callback(response.version);
+				  callback(response.engine_version, response.framework_version);
 			  } else {
-				  console.log(response.version);
+				  console.log("Engine: "+response.engine_version+"; Framework: "+response.framework_version);
 			  }
 		},
 		error: function(response) {
@@ -90,7 +91,7 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 	this.sign(
 		function(retval, time) {
 		// /{signature}/{identity}/{model}/{field}/{value}
-		let identity = encodeURIComponent(btoa(obj.access_key+'%'+obj.sessionToken+'%'+time.toUTCString()));
+		let identity = encodeURIComponent(btoa(obj.access_key+'%'+obj.sessionToken+'%'+time.toUTCString()+'%'+obj.account_number));
 		var apiURL = obj.url+'/'+retval.signature+'/'+identity+'/'+model;
 		if (field) {
 			apiURL += '/'+field;
@@ -239,8 +240,8 @@ Kyte.prototype.getUrlParameter = function(sParam) {
     }
 };
 
-Kyte.prototype.initSpinner = function() {
-	$('body').append('<div id="pageLoaderModal" class="modal hide" data-backdrop="static" data-keyboard="false" tabindex="-1"><div class="modal-dialog modal-sm"><div class="modal-content" style="width: 48px"><div class="spinner-wrapper text-center"><span class="fa fa-spinner fa-spin fa-3x"></span></div></div></div></div>');
+Kyte.prototype.initSpinner = function(selector) {
+	selector.append('<div id="pageLoaderModal" class="modal white" data-backdrop="static" data-keyboard="false" tabindex="-1"><div class="modal-dialog modal-sm h-100 d-flex"><div class="mx-auto align-self-center" style="width: 48px"><div class="spinner-wrapper text-center fa-6x"><span class="fas fa-sync fa-spin"></span></div></div></div></div>');
 };
 Kyte.prototype.startSpinner = function() {
 	$('#pageLoaderModal').modal();
@@ -248,82 +249,6 @@ Kyte.prototype.startSpinner = function() {
 Kyte.prototype.stopSpinner = function() {
 	$('#pageLoaderModal').modal('hide');
 }
-
-/* 
- * Request backend to create new session
- *
- * like all api requests, first obtain a transaction
- * authorization from sign() then pass email and password.
- * If user is valid then create cookie with token; otherwise
- * redirect users to login page.
- * 
- */
-Kyte.prototype.sessionCreate = function(identity, callback, error = null, sessionController = 'Session') {
-	var obj = this;
-	this.post(sessionController, identity, null,
-	function(response) {
-		obj.txToken = response.data.txToken;
-		obj.sessionToken = response.data.sessionToken;
-		obj.setCookie('txToken', obj.txToken, 60);
-		obj.setCookie('sessionToken', obj.sessionToken, 60);
-		if (typeof callback === "function") {
-			callback(response);
-		} else {
-			console.log(response);
-		}
-	},
-	function(response) {
-		obj.setCookie('txToken', '', -1);
-		obj.setCookie('sessionToken', '', -1);
-		if (typeof error === "function") {
-			error(response);
-		} else {
-			console.log(response);
-			alert(response);
-		}
-	});
-};
-
-/* 
- * Request backend to validate session
- *
- * like all api requests, first obtain a transaction
- * authorization from sign() then pass session token from cookie.
- * If session token is valid then update expiration; otherwise
- * redirect users to login page.
- * 
- */
-Kyte.prototype.sessionValidate = function(callback = null, error = null) {
-	var obj = this;
-	
-	obj.initSpinner();
-	obj.startSpinner();
-	
-	this.get('Session', null, null,
-	function(response) {
-		obj.txToken = response.data.txToken;
-		obj.sessionToken = response.data.sessionToken;
-		obj.setCookie('txToken', obj.txToken, 60);
-		obj.setCookie('sessionToken', obj.sessionToken, 60);
-		obj.stopSpinner();
-		if (typeof callback === "function") {
-			callback(response);
-		} else {
-			console.log(response);
-		}
-	},
-	function(response) {
-		obj.setCookie('txToken', '', -1);
-		obj.setCookie('sessionToken', '', -1);
-		obj.stopSpinner();
-		if (typeof error === "function") {
-			error(response);
-		} else {
-			console.log(response);
-			alert(response);
-		}
-	});
-};
 
 /* 
  * Request backend to destroy session
@@ -490,3 +415,60 @@ Kyte.prototype.validatePassword = function(obj) {
 
 	return true;
 }
+
+/*
+ * Class Definition for Kyte Table
+ *
+ * api : Kyte object
+ * selector : id tag
+ * model : json array defining model { 'name' : <model name>, 'field' : <null/field name>, 'value' : <null/field value> }
+ * def : json array with table definition 
+ * 		Definition:
+ * 		- targets (optional)
+ * 		- data (required)
+ * 		- label (required)
+ * 		- visible (optional) true/false
+ * 		- sortable (optional) true/false
+ * 		- render (optional) function (data, type, row, meta) {}
+ * order : array of order [[0, 'asc'], [1,'asc']]
+ * rowCallBack : optional function(row, data, index) {}
+ * initComplete : optional function() {}
+ */
+function KyteTable(api, selector, model, columnDefs, order = [], rowCallBack = null, initComplete = null, lang = "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/English.json") {
+	this.api = api;
+	this.model = model;
+
+	this.loaded = false;
+	this.table = null;
+
+	this.selector = selector;
+	this.lang = lang;
+
+	this.columnDefs = columnDefs;
+	this.order = order;
+	this.rowCallBack = rowCallBack;
+	this.initComplete = initComplete;
+};
+
+KyteTable.prototype.init = function() {
+	let tableContent = '<thead><tr>';
+	this.columnDefs.forEach(function (item) {
+		tableContent += '<th class="'+item.data.replace(/\./g, '_')+'">'+item.label+'<th>';
+	});
+	tableContent += '</tr></thead><tbody></tbody>';
+
+	this.selector.append();
+	this.api.get(this.model.name, this.model.field, this.model.value, function (response) {
+		this.table = this.selector.DataTable({
+			responsive: true,
+			language: { "url": this.lang },
+			data: response.data,
+			columnDefs: this.columnDefs,
+			order: this.order,
+			rowCallback: this.rowCallBack,
+			initComplete: this.initComplete
+		});
+	});
+};
+
+
