@@ -451,24 +451,38 @@ function KyteTable(api, selector, model, columnDefs, order = [], rowCallBack = n
 };
 
 KyteTable.prototype.init = function() {
-	let tableContent = '<thead><tr>';
-	this.columnDefs.forEach(function (item) {
-		tableContent += '<th class="'+item.data.replace(/\./g, '_')+'">'+item.label+'<th>';
-	});
-	tableContent += '</tr></thead><tbody></tbody>';
-
-	this.selector.append();
-	this.api.get(this.model.name, this.model.field, this.model.value, function (response) {
-		this.table = this.selector.DataTable({
-			responsive: true,
-			language: { "url": this.lang },
-			data: response.data,
-			columnDefs: this.columnDefs,
-			order: this.order,
-			rowCallback: this.rowCallBack,
-			initComplete: this.initComplete
+	if (!this.loaded) {
+		this.api.get(this.model.name, this.model.field, this.model.value, function (response) {
+			let tableContent = '<thead><tr>';
+			this.columnDefs.forEach(function (item) {
+				tableContent += '<th class="'+item.data.replace(/\./g, '_')+'">'+item.label+'<th>';
+			});
+			tableContent += '</tr></thead><tbody></tbody>';
+			this.selector.append(tableContent);
+			this.table = this.selector.DataTable({
+				responsive: true,
+				language: { "url": this.lang },
+				data: response.data,
+				columnDefs: this.columnDefs,
+				order: this.order,
+				rowCallback: this.rowCallBack,
+				initComplete: this.initComplete
+			});
+			this.loaded = true;
 		});
-	});
+	}
 };
 
 
+function KyteForm() {}
+KyteForm.prototype.init = function(selector) {
+
+};
+
+// Kyte.prototype.createNavBar = function(selector) {
+
+// };
+
+// Kyte.prototype.createSideBar = function(selector) {
+
+// };
