@@ -251,6 +251,41 @@ Kyte.prototype.stopSpinner = function() {
 }
 
 /* 
+ * Request backend to create new session
+ *
+ * like all api requests, first obtain a transaction
+ * authorization from sign() then pass email and password.
+ * If user is valid then create cookie with token; otherwise
+ * redirect users to login page.
+ * 
+ */
+Kyte.prototype.sessionCreate = function(identity, callback, error = null, sessionController = 'Session') {
+	var obj = this;
+	this.post(sessionController, identity, null,
+	function(response) {
+		obj.txToken = response.data.txToken;
+		obj.sessionToken = response.data.sessionToken;
+		obj.setCookie('txToken', obj.txToken, 60);
+		obj.setCookie('sessionToken', obj.sessionToken, 60);
+		if (typeof callback === "function") {
+			callback(response);
+		} else {
+			console.log(response);
+		}
+	},
+	function(response) {
+		obj.setCookie('txToken', '', -1);
+		obj.setCookie('sessionToken', '', -1);
+		if (typeof error === "function") {
+			error(response);
+		} else {
+			console.log(response);
+			alert(response);
+		}
+	});
+};
+
+/* 
  * Request backend to destroy session
  *
  * like all api requests, first obtain a transaction
@@ -414,6 +449,16 @@ Kyte.prototype.validatePassword = function(obj) {
 	}
 
 	return true;
+}
+
+Kyte.prototype.validateForm = function(form) {
+	let valid = true;
+	form.find('input').each(function(){
+		if ($(this).prop('required') && !$(this).val()) {
+			valid = false;
+		}
+	});
+	return valid;
 }
 
 /*
