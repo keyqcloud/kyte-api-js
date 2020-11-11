@@ -453,12 +453,12 @@ function KyteTable(api, selector, model, columnDefs, order = [], rowCallBack = n
 KyteTable.prototype.init = function() {
 	if (!this.loaded) {
 		this.api.get(this.model.name, this.model.field, this.model.value, function (response) {
-			let tableContent = '<thead><tr>';
+			let content = '<thead><tr>';
 			this.columnDefs.forEach(function (item) {
-				tableContent += '<th class="'+item.data.replace(/\./g, '_')+'">'+item.label+'<th>';
+				content += '<th class="'+item.data.replace(/\./g, '_')+'">'+item.label+'<th>';
 			});
-			tableContent += '</tr></thead><tbody></tbody>';
-			this.selector.append(tableContent);
+			content += '</tr></thead><tbody></tbody>';
+			this.selector.append(content);
 			this.table = this.selector.DataTable({
 				responsive: true,
 				language: { "url": this.lang },
@@ -469,14 +469,203 @@ KyteTable.prototype.init = function() {
 				initComplete: this.initComplete
 			});
 			this.loaded = true;
+		}, function() {
+			alert("Unable to load data");
 		});
 	}
 };
 
+/*
+ * Class Definition for Kyte Form
+ *
+ * api : Kyte object
+ * selector : id tag
+ * hidden : json array of hidden elements (do not include id as it will clash)
+ * 
+ * {
+ * 	'name' : '<field_name>',
+ * 	'value' : '<null/value>'
+ * }
+ * 
+ * elements : json array defining form elements
+ * 
+ * [
+ * 	[x-> direction],
+ * 	[x-> direction],
+ * 	[x-> direction], ...etc...
+ * ]
+ * 
+ * {
+ * 	'field' : '<model_attribute>',
+ * 	'type' : '<text/password/select/textarea>',
+ * 	'label' : '<label>',
+ * 	'required' : true/false,
+ * 
+ * 	### if field type is select, the following is required to set options
+ * 	## For using ajax data source:
+ * 	'options' : {
+ *	 	'ajax' : true,
+ * 		'data_model_name' : '<model_name>',
+ * 		'data_model_field' : <null/field_name>,
+ * 		'data_model_value' : <null/value>,
+ * 		'data_model_attribute' : <attribute_name>
+ * 	}
+ * 
+ * 	## For using predefined values:
+ * 	'ajax' : false,
+ * 	'options' : {
+ *	 	'ajax' : true,
+ *		'data' : {
+ *	 		'<option_value_1>' : '<option_name_1>',
+ * 			'<option_value_2>' : '<option_name_2>',
+ * 			'<option_value_3>' : '<option_name_3>',...etc....
+ *		}
+ * 	}
+ * }
+ * 
+ * successCallBack : optional function() {}
+ * failureCallBack : option function() {}
+ */
+function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'Form', modal = false, successCallBack = null, failureCallBack = null) {
+	this.api = api;
+	this.model = modelName;
+	this.modal = modal;
+	this.title = title;
+	this.hiddenFields = hiddenFields;
+	this.elements = elements;
+	this.id;
 
-function KyteForm() {}
-KyteForm.prototype.init = function(selector) {
+	this.success = successCallBack();
+	this.failureCallBack = failureCallBack();
 
+	this.loaded = false;
+
+	this.selector = selector;
+}
+
+// #### TODO: Hidden fields, edit feature to update id, etc...
+// ### Consider how to integrate modal/form edit with Data Table
+KyteForm.prototype.init = function() {
+	if (!this.loaded) {
+		this.id = this.makeID(8);
+		let content = '';
+
+		// if modal, then create modal tags
+		if (this.modal) {
+			content += '\
+<div class="modal fade" id="modal_'+this.model+'_'+this.id+'" tabindex="-1" role="dialog" aria-labelledby="modal_'+this.model+'_'+this.id+'" aria-hidden="true">\
+	<div class="modal-dialog modal-lg" role="document">\
+		<div class="modal-content">\
+			<div class="modal-header text-center">\
+				<h4 class="modal-title w-100 font-weight-bold">'+this.title+'</h4>\
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>\
+			</div>\
+			<div class="modal-body mx-3">';
+		}
+
+		// form content
+		content += '\
+				<form novalidate="novalidate" class="needs-validation" id="form_'+this.model+'_'+this.id+'">';
+
+		// append hidden fields
+		if (this.hiddenFields) {
+			this.hiddenFields.forEach(function(field) {
+				content += '\
+					<input type="hidden" id="form_'+this.model+'_'+this.id+'_'+field.name+'" name="'+field.name+'" value="'+field.value+'">';
+			});
+		}
+		
+				// iterate through form definition
+		this.elements.forEach(function (row) {
+			content += '\
+					<div class="row">';
+			row.forEach(function (column) {
+				content += '\
+						<div class="col-sm">\
+							<div class="form">\
+								<label for="form_'+this.model+'_'+this.id+'_'+column.field+'">'+column.label+'</label>';
+
+				if (column.type == 'option') {
+					content += '\
+								<select class="custom-select" id="form_'+this.model+'_'+this.id+'_'+column.field+'" class="form-control" name="'+column.field+'"';
+					content += column.required ? 'required="required"' : '';
+					content += '>';
+					// if not ajax, then populate with data - ajax will populate after appending html
+					if (!column.option.ajax) {
+						for (var key in column.option.data) {
+							if (column.option.data.hasOwnProperty(key)) {
+								content += '\
+									<option value="'+key+'">'+value+'</option>';
+							}
+						}
+					}
+					// close select
+					content += '\
+								</select>';
+				} else if (column.type == 'textarea') {
+					content += '\
+								<textarea id="form_'+this.model+'_'+this.id+'_'+column.field+'" name="'+column.field+'"';
+					content += column.required ? 'required="required"' : '';
+					content += '></textarea>';
+				} else {
+					content += '\
+								<input type="'+column.type+'" id="form_'+this.model+'_'+this.id+'_'+column.field+'" class="form-control" name="'+column.field+'"';
+					content += column.required ? 'required="required"' : '';
+					content += '>';
+				}
+
+				content += '\
+							</div>\
+						</div>';
+			});
+			content += '\
+					</div>';
+		});
+
+		// end form
+		content += '\
+				</form>';
+
+		// if modal, then close modal tags
+		if (this.modal) {
+			content += '\
+			</div>\
+		</div>\
+	</div>\
+</div>';
+		}
+		this.selector.append(content);
+
+		this.reloadAjax();
+
+		this.loaded = true;
+	}
+};
+KyteForm.prototype.reloadAjax = function() {
+	// if ajax, then populate data
+	this.elements.forEach(function (row) {
+		row.forEach(function (column) {
+			if (column.type == 'option') {
+				$("#form_"+this.model+"_"+this.id+'_'+column.field).html('');
+				this.api.get(column.option.data_model_name, column.option.data_model_field, column.option.data_model_value, function (response) {
+					$.each(response.data, function(index, value){
+						$("#form_"+this.model+"_"+this.id+'_'+column.field).append('<option value="'+value.id+'">'+value[column.option.data_model_attribute]+'</option>');
+					});
+				}, function() {
+					alert("Unable to load data");
+				});
+			}
+		});
+	});
+}
+KyteForm.prototype.makeID = function(length) {
+	var result           = '';
+	var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	var charactersLength = characters.length;
+	for ( var i = 0; i < length; i++ ) {
+		result += characters.charAt(Math.floor(Math.random() * charactersLength));
+	}
+	return result;
 };
 
 // Kyte.prototype.createNavBar = function(selector) {
