@@ -285,6 +285,14 @@ Kyte.prototype.sessionCreate = function(identity, callback, error = null, sessio
 	});
 };
 
+Kyte.prototype.addLogoutHandler = function(selector) {
+	selector.click(function () {
+		k.sessionDestroy(function () {
+			location.href = "/";
+		});
+	});
+}
+
 Kyte.prototype.isSession = function() {
 	return (this.getCookie('sessionToken') ? true : false);
 }
