@@ -285,6 +285,10 @@ Kyte.prototype.sessionCreate = function(identity, callback, error = null, sessio
 	});
 };
 
+Kyte.prototype.isSession = function() {
+	return (this.getCookie('sessionToken') ? true : false);
+}
+
 /* 
  * Request backend to destroy session
  *
