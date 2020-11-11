@@ -120,8 +120,13 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 			success: function(response) {
 				obj.txToken = response.token;
 				obj.sessionToken = response.session;
-				obj.setCookie('txToken', obj.txToken, 60);
-				obj.setCookie('sessionToken', obj.sessionToken, 60);
+				if (response.token == 0 || response.session == 0) {
+					obj.setCookie('txToken', '', -1);
+					obj.setCookie('sessionToken', '', -1);
+				} else {
+					obj.setCookie('txToken', obj.txToken, 60);
+					obj.setCookie('sessionToken', obj.sessionToken, 60);
+				}
 
 		        if (typeof callback === "function") {
 		      		callback(response);
@@ -132,8 +137,13 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 			error: function(response) {
 				obj.txToken = response.token;
 				obj.sessionToken = response.session;
-				obj.setCookie('txToken', obj.txToken, 60);
-				obj.setCookie('sessionToken', obj.sessionToken, 60);
+				if (response.token == 0 || response.session == 0) {
+					obj.setCookie('txToken', '', -1);
+					obj.setCookie('sessionToken', '', -1);
+				} else {
+					obj.setCookie('txToken', obj.txToken, 60);
+					obj.setCookie('sessionToken', obj.sessionToken, 60);
+				}
 
 		      	if (typeof error === "function") {
 		      		error(response.responseJSON.error);
