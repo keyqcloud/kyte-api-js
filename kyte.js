@@ -8,8 +8,8 @@ function Kyte(url, accessKey, identifier, account_number) {
 }
 
 Kyte.prototype.init = function() {
-	this.txToken = (this.getCookie('txToken') ? this.getCookie('txToken') : '0');
-	this.sessionToken = (this.getCookie('sessionToken') ? this.getCookie('sessionToken') : '0');
+	this.txToken = (this.getCookie('txToken') ? this.getCookie('txToken') : 0);
+	this.sessionToken = (this.getCookie('sessionToken') ? this.getCookie('sessionToken') : 0);
 };
 
 /* API Version
@@ -120,7 +120,7 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 			success: function(response) {
 				obj.txToken = response.token;
 				obj.sessionToken = response.session;
-				if (response.token == 0 || response.session == 0) {
+				if (!response.token && !response.session) {
 					obj.setCookie('txToken', '', -1);
 					obj.setCookie('sessionToken', '', -1);
 				} else {
@@ -137,7 +137,7 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 			error: function(response) {
 				obj.txToken = response.token;
 				obj.sessionToken = response.session;
-				if (response.token == 0 || response.session == 0) {
+				if (!response.token && !response.session) {
 					obj.setCookie('txToken', '', -1);
 					obj.setCookie('sessionToken', '', -1);
 				} else {
@@ -304,6 +304,10 @@ Kyte.prototype.addLogoutHandler = function(selector) {
 }
 
 Kyte.prototype.isSession = function() {
+	if (!this.sessionToken && !this.txToken) {
+		this.setCookie('txToken', '', -1);
+		this.setCookie('sessionToken', '', -1);
+	}
 	return (this.getCookie('sessionToken') ? true : false);
 }
 
