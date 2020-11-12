@@ -123,9 +123,11 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 				if (!response.token && !response.session) {
 					obj.setCookie('txToken', '', -1);
 					obj.setCookie('sessionToken', '', -1);
+					obj.setCookie('sessionPermission', '', -1);
 				} else {
 					obj.setCookie('txToken', obj.txToken, 60);
 					obj.setCookie('sessionToken', obj.sessionToken, 60);
+					obj.setCookie('sessionPermission', response.sessionPermission, 60);
 				}
 
 		        if (typeof callback === "function") {
@@ -140,9 +142,11 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 				if (!response.token && !response.session) {
 					obj.setCookie('txToken', '', -1);
 					obj.setCookie('sessionToken', '', -1);
+					obj.setCookie('sessionPermission', '', -1);
 				} else {
 					obj.setCookie('txToken', obj.txToken, 60);
 					obj.setCookie('sessionToken', obj.sessionToken, 60);
+					obj.setCookie('sessionPermission', response.sessionPermission, 60);
 				}
 
 		      	if (typeof error === "function") {
@@ -277,6 +281,7 @@ Kyte.prototype.sessionCreate = function(identity, callback, error = null, sessio
 		obj.sessionToken = response.data.sessionToken;
 		obj.setCookie('txToken', obj.txToken, 60);
 		obj.setCookie('sessionToken', obj.sessionToken, 60);
+		obj.setCookie('sessionPermission', obj.data.User.role, 60);
 		if (typeof callback === "function") {
 			callback(response);
 		} else {
@@ -286,6 +291,7 @@ Kyte.prototype.sessionCreate = function(identity, callback, error = null, sessio
 	function(response) {
 		obj.setCookie('txToken', '', -1);
 		obj.setCookie('sessionToken', '', -1);
+		obj.setCookie('sessionPermission', '', -1);
 		if (typeof error === "function") {
 			error(response);
 		} else {
@@ -307,6 +313,7 @@ Kyte.prototype.isSession = function() {
 	if (!this.sessionToken && !this.txToken) {
 		this.setCookie('txToken', '', -1);
 		this.setCookie('sessionToken', '', -1);
+		this.setCookie('sessionPermission', '', -1);
 	}
 	return (this.getCookie('sessionToken') ? true : false);
 }
@@ -325,6 +332,7 @@ Kyte.prototype.sessionDestroy = function(error = null) {
 	function(response) {
 		obj.setCookie('txToken', '', -1);
 		obj.setCookie('sessionToken', '', -1);
+		obj.setCookie('sessionPermission', '', -1);
 		if (typeof error === "function") {
 			error(response);
 		} else {
@@ -335,6 +343,7 @@ Kyte.prototype.sessionDestroy = function(error = null) {
 	function(response) {
 		obj.setCookie('txToken', '', -1);
 		obj.setCookie('sessionToken', '', -1);
+		obj.setCookie('sessionPermission', '', -1);
 		if (typeof error === "function") {
 			error(response);
 		} else {
