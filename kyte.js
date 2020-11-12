@@ -495,7 +495,7 @@ Kyte.prototype.validateForm = function(form) {
  * model : json array defining model { 'name' : <model name>, 'field' : <null/field name>, 'value' : <null/field value> }
  * def : json array with table definition 
  * 		Definition:
- * 		- targets (optional)
+ * 		- targets (required)
  * 		- data (required)
  * 		- label (required)
  * 		- visible (optional) true/false
@@ -505,7 +505,7 @@ Kyte.prototype.validateForm = function(form) {
  * rowCallBack : optional function(row, data, index) {}
  * initComplete : optional function() {}
  */
-function KyteTable(api, selector, model, columnDefs, order = [], rowCallBack = null, initComplete = null, lang = "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/English.json") {
+function KyteTable(api, selector, model, columnDefs, searching = true, order = [], rowCallBack = null, initComplete = null, lang = "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/English.json") {
 	this.api = api;
 	this.model = model;
 
@@ -514,6 +514,7 @@ function KyteTable(api, selector, model, columnDefs, order = [], rowCallBack = n
 
 	this.selector = selector;
 	this.lang = lang;
+	this.searching = searching;
 
 	this.columnDefs = columnDefs;
 	this.order = order;
@@ -522,24 +523,29 @@ function KyteTable(api, selector, model, columnDefs, order = [], rowCallBack = n
 };
 
 KyteTable.prototype.init = function() {
+	let self = this;
 	if (!this.loaded) {
 		this.api.get(this.model.name, this.model.field, this.model.value, function (response) {
 			let content = '<thead><tr>';
-			this.columnDefs.forEach(function (item) {
-				content += '<th class="'+item.data.replace(/\./g, '_')+'">'+item.label+'<th>';
+			let i = 0;
+			self.columnDefs.forEach(function (item) {
+				content += '<th class="'+item.data.replace(/\./g, '_')+'">'+item.label+'</th>';
+				delete self.columnDefs[i]['label'];
+				i++;
 			});
 			content += '</tr></thead><tbody></tbody>';
-			this.selector.append(content);
-			this.table = this.selector.DataTable({
+			self.selector.append(content);
+			self.table = self.selector.DataTable({
+				searching: self.searching,
 				responsive: true,
-				language: { "url": this.lang },
+				language: { "url": self.lang },
 				data: response.data,
-				columnDefs: this.columnDefs,
-				order: this.order,
-				rowCallback: this.rowCallBack,
-				initComplete: this.initComplete
+				columnDefs: self.columnDefs,
+				order: self.order,
+				rowCallback: self.rowCallBack,
+				initComplete: self.initComplete
 			});
-			this.loaded = true;
+			self.loaded = true;
 		}, function() {
 			alert("Unable to load data");
 		});
@@ -720,7 +726,7 @@ KyteForm.prototype.reloadAjax = function() {
 				$("#form_"+this.model+"_"+this.id+'_'+column.field).html('');
 				this.api.get(column.option.data_model_name, column.option.data_model_field, column.option.data_model_value, function (response) {
 					$.each(response.data, function(index, value){
-						$("#form_"+this.model+"_"+this.id+'_'+column.field).append('<option value="'+value.id+'">'+value[column.option.data_model_attribute]+'</option>');
+						$("#form_"+self.model+"_"+self.id+'_'+column.field).append('<option value="'+value.id+'">'+value[column.option.data_model_attribute]+'</option>');
 					});
 				}, function() {
 					alert("Unable to load data");
