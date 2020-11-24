@@ -617,7 +617,7 @@ KyteTable.prototype.init = function() {
  * successCallBack : optional function() {}
  * failureCallBack : option function() {}
  */
-function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'Form', modal = false, successCallBack = null, failureCallBack = null) {
+function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'Form', modal = false, modalButton = null,  successCallBack = null, failureCallBack = null) {
 	this.api = api;
 	this.model = modelName;
 	this.modal = modal;
@@ -626,8 +626,8 @@ function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'For
 	this.elements = elements;
 	this.id;
 
-	this.success = successCallBack();
-	this.failureCallBack = failureCallBack();
+	this.success = successCallBack;
+	this.failureCallBack = failureCallBack;
 
 	this.loaded = false;
 
@@ -643,6 +643,11 @@ KyteForm.prototype.init = function() {
 
 		// if modal, then create modal tags
 		if (this.modal) {
+			// add click listener to modal button
+			this.modalButton.click(function() {
+				$('#modal_'+this.model+'_'+this.id).modal('show');
+			});
+
 			content += '\
 <div class="modal fade" id="modal_'+this.model+'_'+this.id+'" tabindex="-1" role="dialog" aria-labelledby="modal_'+this.model+'_'+this.id+'" aria-hidden="true">\
 	<div class="modal-dialog modal-lg" role="document">\
