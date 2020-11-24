@@ -621,6 +621,7 @@ function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'For
 	this.api = api;
 	this.model = modelName;
 	this.modal = modal;
+	this.modalButton = modalButton;
 	this.title = title;
 	this.hiddenFields = hiddenFields;
 	this.elements = elements;
