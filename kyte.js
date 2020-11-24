@@ -663,12 +663,10 @@ KyteForm.prototype.init = function() {
 
 		// form content
 		content += '\
-				<div id="'+this.model+'_'+this.id+'_modal-loader" class="modal" >\
-					<div class="modal-ploader_status">\
-						<div class="modal-loader_spinner">\
-							<div class="d-flex justify-content-center">\
-								<div class="spinner-border" role="status"></div>\
-							</div>\
+				<div id="'+this.model+'_'+this.id+'_modal-loader" class="modal" style="background: white; opacity: 0.6;" data-backdrop="static" data-keyboard="false" tabindex="-1">\
+					<div class="modal-dialog modal-sm h-100 d-flex">\
+						<div class="mx-auto align-self-center" style="width: 48px">\
+							<div class="spinner-wrapper text-center fa-6x"><span class="fas fa-sync fa-spin"></span></div>\
 						</div>\
 					</div>\
 				</div>\
@@ -690,7 +688,7 @@ KyteForm.prototype.init = function() {
 			row.forEach(function (column) {
 				content += '\
 						<div class="col-sm">\
-							<div class="form">\
+							<div class="form-group">\
 								<label for="form_'+obj.model+'_'+obj.id+'_'+column.field+'">'+column.label+'</label>';
 
 				if (column.type == 'option') {
@@ -729,6 +727,8 @@ KyteForm.prototype.init = function() {
 			content += '\
 					</div>';
 		});
+
+		content += '<div class="row my-4"><div class="col text-center"><input type="submit" name="submit" value="Submit" class="btn btn-primary btn-medium d-none d-sm-inline-block"></div></div>';
 
 		// end form
 		content += '\
