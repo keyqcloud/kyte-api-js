@@ -627,7 +627,7 @@ function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'For
 	this.id;
 
 	this.success = successCallBack;
-	this.failureCallBack = failureCallBack;
+	this.fail = failureCallBack;
 
 	this.loaded = false;
 
@@ -661,7 +661,17 @@ KyteForm.prototype.init = function() {
 
 		// form content
 		content += '\
-				<form novalidate="novalidate" class="needs-validation" id="form_'+this.model+'_'+this.id+'">';
+				<div id="'+this.model+'_'+this.id+'_'+field.name+'modal-preloader">\
+					<div class="modal-preloader_status">\
+						<div class="modal-preloader_spinner">\
+							<div class="d-flex justify-content-center">\
+								<div class="spinner-border" role="status"></div>\
+							</div>\
+						</div>\
+					</div>\
+				</div>\
+				<form novalidate="novalidate" class="needs-validation" id="form_'+this.model+'_'+this.id+'">\
+					<div class="error-msg text-danger"></div>';
 
 		// append hidden fields
 		if (this.hiddenFields) {
@@ -733,6 +743,64 @@ KyteForm.prototype.init = function() {
 		this.selector.append(content);
 
 		this.reloadAjax();
+
+		// add submit listener
+		$("#form_'+this.model+'_'+this.id").submit(function(e) {
+			var form = $(this);
+			e.preventDefault();
+
+			// validate and make sure required fields are filled
+			var valid = true;
+			form.find('input').each(function () { if ($(this).prop('required') && !$(this).val()) { valid = false; } });
+			
+			// if valid, prep to send data
+			if (valid) {
+				// open model
+				$('#'+this.model+'_'+this.id+'_'+field.name+'modal-preloader').modal('show');
+				// if an ID is set, then update entry
+				if (form.data('idx')) {
+					k.put(this.modelName, 'id', form.data('idx'), null, form.serialize(),
+						function (response) {
+							$('#'+this.model+'_'+this.id+'_'+field.name+'modal-preloader').modal('hide');
+							if (typeof this.success === "function") {
+								this.success(response)
+							}
+							if (this.modal) {
+								$('#modal_'+this.model+'_'+this.id).modal('hide');
+							}
+						},
+						function (response) {
+							$('#'+this.model+'_'+this.id+'_'+field.name+'modal-preloader').modal('hide');
+							$("#form_'+this.model+'_'+this.id .error-msg").html(response);
+							if (typeof this.success === "function") {
+								this.fail(response)
+							}
+						}
+					);
+				}
+				// else, create new entry
+				else {
+					k.post(this.modelName, null, form.serialize(),
+						function (response) {
+							$('#'+this.model+'_'+this.id+'_'+field.name+'modal-preloader').modal('hide');
+							if (typeof this.success === "function") {
+								this.success(response)
+							}
+							if (this.modal) {
+								$('#modal_'+this.model+'_'+this.id).modal('hide');
+							}
+						},
+						function (response) {
+							$('#'+this.model+'_'+this.id+'_'+field.name+'modal-preloader').modal('hide');
+							$("#form_'+this.model+'_'+this.id .error-msg").html(response);
+							if (typeof this.success === "function") {
+								this.fail(response)
+							}
+						}
+					);
+				}
+			}
+		});
 
 		this.loaded = true;
 	}
