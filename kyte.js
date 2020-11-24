@@ -641,12 +641,13 @@ KyteForm.prototype.init = function() {
 	if (!this.loaded) {
 		this.id = this.makeID(8);
 		let content = '';
+		let obj = this;
 
 		// if modal, then create modal tags
 		if (this.modal) {
 			// add click listener to modal button
-			this.modalButton.click(function() {
-				$('#modal_'+this.model+'_'+this.id).modal('show');
+			this.modalButton.on('click', function() {
+				$('#modal_'+obj.model+'_'+obj.id).modal('show');
 			});
 
 			content += '\
@@ -662,9 +663,9 @@ KyteForm.prototype.init = function() {
 
 		// form content
 		content += '\
-				<div id="'+this.model+'_'+this.id+'_'+field.name+'modal-preloader">\
-					<div class="modal-preloader_status">\
-						<div class="modal-preloader_spinner">\
+				<div id="'+this.model+'_'+this.id+'_modal-loader" class="modal" >\
+					<div class="modal-ploader_status">\
+						<div class="modal-loader_spinner">\
 							<div class="d-flex justify-content-center">\
 								<div class="spinner-border" role="status"></div>\
 							</div>\
@@ -678,7 +679,7 @@ KyteForm.prototype.init = function() {
 		if (this.hiddenFields) {
 			this.hiddenFields.forEach(function(field) {
 				content += '\
-					<input type="hidden" id="form_'+this.model+'_'+this.id+'_'+field.name+'" name="'+field.name+'" value="'+field.value+'">';
+					<input type="hidden" id="form_'+obj.model+'_'+obj.id+'_'+field.name+'" name="'+field.name+'" value="'+field.value+'">';
 			});
 		}
 		
@@ -690,11 +691,11 @@ KyteForm.prototype.init = function() {
 				content += '\
 						<div class="col-sm">\
 							<div class="form">\
-								<label for="form_'+this.model+'_'+this.id+'_'+column.field+'">'+column.label+'</label>';
+								<label for="form_'+obj.model+'_'+obj.id+'_'+column.field+'">'+column.label+'</label>';
 
 				if (column.type == 'option') {
 					content += '\
-								<select class="custom-select" id="form_'+this.model+'_'+this.id+'_'+column.field+'" class="form-control" name="'+column.field+'"';
+								<select class="custom-select" id="form_'+obj.model+'_'+obj.id+'_'+column.field+'" class="form-control" name="'+column.field+'"';
 					content += column.required ? 'required="required"' : '';
 					content += '>';
 					// if not ajax, then populate with data - ajax will populate after appending html
@@ -711,12 +712,12 @@ KyteForm.prototype.init = function() {
 								</select>';
 				} else if (column.type == 'textarea') {
 					content += '\
-								<textarea id="form_'+this.model+'_'+this.id+'_'+column.field+'" name="'+column.field+'"';
+								<textarea id="form_'+obj.model+'_'+obj.id+'_'+column.field+'" name="'+column.field+'"';
 					content += column.required ? 'required="required"' : '';
 					content += '></textarea>';
 				} else {
 					content += '\
-								<input type="'+column.type+'" id="form_'+this.model+'_'+this.id+'_'+column.field+'" class="form-control" name="'+column.field+'"';
+								<input type="'+column.type+'" id="form_'+obj.model+'_'+obj.id+'_'+column.field+'" class="form-control" name="'+column.field+'"';
 					content += column.required ? 'required="required"' : '';
 					content += '>';
 				}
@@ -746,7 +747,7 @@ KyteForm.prototype.init = function() {
 		this.reloadAjax();
 
 		// add submit listener
-		$("#form_'+this.model+'_'+this.id").submit(function(e) {
+		$('#form_'+this.model+'_'+this.id).submit(function(e) {
 			var form = $(this);
 			e.preventDefault();
 
@@ -757,24 +758,24 @@ KyteForm.prototype.init = function() {
 			// if valid, prep to send data
 			if (valid) {
 				// open model
-				$('#'+this.model+'_'+this.id+'_'+field.name+'modal-preloader').modal('show');
+				$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('show');
 				// if an ID is set, then update entry
 				if (form.data('idx')) {
-					k.put(this.modelName, 'id', form.data('idx'), null, form.serialize(),
+					k.put(obj.modelName, 'id', form.data('idx'), null, form.serialize(),
 						function (response) {
-							$('#'+this.model+'_'+this.id+'_'+field.name+'modal-preloader').modal('hide');
-							if (typeof this.success === "function") {
-								this.success(response)
+							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
+							if (typeof obj.success === "function") {
+								obj.success(response)
 							}
-							if (this.modal) {
-								$('#modal_'+this.model+'_'+this.id).modal('hide');
+							if (obj.modal) {
+								$('#modal_'+obj.model+'_'+obj.id).modal('hide');
 							}
 						},
 						function (response) {
-							$('#'+this.model+'_'+this.id+'_'+field.name+'modal-preloader').modal('hide');
-							$("#form_'+this.model+'_'+this.id .error-msg").html(response);
-							if (typeof this.success === "function") {
-								this.fail(response)
+							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
+							$('#form_'+obj.model+'_'+obj.id .error-msg).html(response);
+							if (typeof obj.success === "function") {
+								obj.fail(response)
 							}
 						}
 					);
@@ -783,19 +784,19 @@ KyteForm.prototype.init = function() {
 				else {
 					k.post(this.modelName, null, form.serialize(),
 						function (response) {
-							$('#'+this.model+'_'+this.id+'_'+field.name+'modal-preloader').modal('hide');
-							if (typeof this.success === "function") {
-								this.success(response)
+							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
+							if (typeof obj.success === "function") {
+								obj.success(response)
 							}
-							if (this.modal) {
-								$('#modal_'+this.model+'_'+this.id).modal('hide');
+							if (obj.modal) {
+								$('#modal_'+obj.model+'_'+obj.id).modal('hide');
 							}
 						},
 						function (response) {
-							$('#'+this.model+'_'+this.id+'_'+field.name+'modal-preloader').modal('hide');
-							$("#form_'+this.model+'_'+this.id .error-msg").html(response);
-							if (typeof this.success === "function") {
-								this.fail(response)
+							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
+							$('#form_'+obj.model+'_'+obj.id .error-msg).html(response);
+							if (typeof obj.success === "function") {
+								obj.fail(response)
 							}
 						}
 					);
@@ -807,12 +808,13 @@ KyteForm.prototype.init = function() {
 	}
 };
 KyteForm.prototype.reloadAjax = function() {
+	let obj = this;
 	// if ajax, then populate data
 	this.elements.forEach(function (row) {
 		row.forEach(function (column) {
 			if (column.type == 'option') {
-				$("#form_"+this.model+"_"+this.id+'_'+column.field).html('');
-				this.api.get(column.option.data_model_name, column.option.data_model_field, column.option.data_model_value, function (response) {
+				$("#form_"+obj.model+"_"+obj.id+'_'+column.field).html('');
+				obj.api.get(column.option.data_model_name, column.option.data_model_field, column.option.data_model_value, function (response) {
 					$.each(response.data, function(index, value){
 						$("#form_"+self.model+"_"+self.id+'_'+column.field).append('<option value="'+value.id+'">'+value[column.option.data_model_attribute]+'</option>');
 					});
