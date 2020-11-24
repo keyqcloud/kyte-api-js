@@ -1,10 +1,11 @@
-function Kyte(url, accessKey, identifier, account_number) {
+function Kyte(url, accessKey, identifier, account_number, adminRoleID = 1) {
 	this.url = url;
 	this.access_key = accessKey;
 	this.identifier = identifier;
 	this.account_number = account_number;
 	this.txToken;
 	this.sessionToken;
+	this.adminRole = adminRoleID;
 }
 
 Kyte.prototype.init = function() {
@@ -215,7 +216,7 @@ Kyte.prototype.setCookie = function (cname, cvalue, minutes) {
 	var d = new Date();
 	d.setTime(d.getTime() + (minutes*60*1000));
 	var expires = "expires="+ d.toUTCString();
-	document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;secure";
+	document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;" + (location.protocol === 'https:' ? 'secure;' : '');
 };
 
 /* 
@@ -281,7 +282,7 @@ Kyte.prototype.sessionCreate = function(identity, callback, error = null, sessio
 		obj.sessionToken = response.data.sessionToken;
 		obj.setCookie('txToken', obj.txToken, 60);
 		obj.setCookie('sessionToken', obj.sessionToken, 60);
-		obj.setCookie('sessionPermission', obj.data.User.role, 60);
+		obj.setCookie('sessionPermission', response.data.User.role, 60);
 		if (typeof callback === "function") {
 			callback(response);
 		} else {
@@ -316,6 +317,10 @@ Kyte.prototype.isSession = function() {
 		this.setCookie('sessionPermission', '', -1);
 	}
 	return (this.getCookie('sessionToken') ? true : false);
+}
+
+Kyte.prototype.isAdmin = function() {
+	return this.getCookie("sessionPermission") == this.adminRole;
 }
 
 /* 
