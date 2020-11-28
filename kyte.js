@@ -6,6 +6,7 @@ function Kyte(url, accessKey, identifier, account_number, adminRoleID = 1) {
 	this.txToken;
 	this.sessionToken;
 	this.adminRole = adminRoleID;
+	this.dateFormat = 'mm/dd/yy';
 }
 
 Kyte.prototype.init = function() {
@@ -260,6 +261,13 @@ Kyte.prototype.getUrlParameter = function(sParam) {
         }
     }
 };
+Kyte.prototype.getPageRequest = function() {
+	let encoded = this.getUrlParameter('request');
+	let decoded = decodeURIComponent(atob(encoded));
+	let obj = JSON.parse(decoded);
+
+	return obj;
+}
 
 Kyte.prototype.initSpinner = function(selector) {
 	selector.append('<div id="pageLoaderModal" class="modal" style="background: white; opacity: 0.6;" data-backdrop="static" data-keyboard="false" tabindex="-1"><div class="modal-dialog modal-sm h-100 d-flex"><div class="mx-auto align-self-center" style="width: 48px"><div class="spinner-wrapper text-center fa-6x"><span class="fas fa-sync fa-spin"></span></div></div></div></div>');
@@ -585,12 +593,13 @@ KyteTable.prototype.init = function() {
 				let targetIdx = self.columnDefs.length;
 				var actionHTML = '';
 				if (self.actionEdit) {
-					actionHTML += '<a class="mr-3 edit" href="#"><i class="fas fa-edit text-primary"></i></a>';
+					actionHTML += '<a class="mr-3 edit btn btn-small btn-outline-primary" href="#"><i class="fas fa-edit"></i></a>';
 				}
 				if (self.actionDelete) {
-					actionHTML += '<a class="mr-3 delete" href="#"><i class="fas fa-trash-alt text-danger"></i></a>';
+					actionHTML += '<a class="mr-3 delete btn btn-small btn-outline-danger" href="#"><i class="fas fa-trash-alt"></i></a>';
 					// bind listener
-					self.selector.on('click', '.delete', function () {
+					self.selector.on('click', '.delete', function (e) {
+						e.preventDefault();
 						let row = self.table.row($(this).parents('tr'));
 						let data = row.data();
 						self.api.confirm('Delete', 'Are you sure you wish to delete?', function() {
@@ -602,10 +611,26 @@ KyteTable.prototype.init = function() {
 						});
 					});
 				}
+				if (self.actionView) {
+					self.selector.on('click', 'tbody tr', function (e) {
+						e.preventDefault();
+						let row = self.table.row(this);
+						let data = row.data();
+						if (self.viewTarget) {
+							let obj = {'model': self.model.name,'idx':data['id']};
+							let encoded = encodeURIComponent(btoa(JSON.stringify(obj)));
+							location.href=self.viewTarget+"?request="+encoded;
+						}
+					});
+					self.selector.on('click', 'tbody td.row-actions', function (e) {
+						e.stopPropagation();
+					});
+				}
 				self.columnDefs.push({
 					"targets": targetIdx,
 					"sortable": false,
 					"data": "",
+					"className": "text-right row-actions",
 					render: function (data, type, row, meta) {
 						const returnString = actionHTML;
 						return returnString;
@@ -625,6 +650,11 @@ KyteTable.prototype.init = function() {
 				initComplete: self.initComplete
 			});
 			self.loaded = true;
+			// initialize hand pointer if frow is clickable
+			if (self.actionView) {
+				self.selector.find('tbody').addClass('row-pointer-hand');
+				$('<style>tbody.row-pointer-hand tr { cursor: pointer } tbody td {vertical-align: middle !important;}</style>').appendTo('body');
+			}
 		}, function() {
 			alert("Unable to load data");
 		});
@@ -636,7 +666,8 @@ KyteTable.prototype.bindEdit = function(editForm) {
 	self.editForm = editForm;
 	if (this.actionEdit) {
 		// bind listener
-		this.selector.on('click', '.edit', function () {
+		this.selector.on('click', '.edit', function (e) {
+			e.preventDefault();
 			self.editForm.selectedRow = self.table.row($(this).parents('tr'));
 			let data = self.editForm.selectedRow.data();
 			self.editForm.setID(data['id']);
@@ -671,6 +702,9 @@ KyteTable.prototype.bindEdit = function(editForm) {
  * 	'label' : '<label>',
  * 	'placeholder' : '<placeholder>',
  * 	'required' : true/false,
+ * 
+ * For dates:
+ * 'date': true/false,
  * 
  * 	### if field type is select, the following is required to set options
  * 	## For using ajax data source:
@@ -803,7 +837,7 @@ KyteForm.prototype.init = function() {
 					content += '></textarea>';
 				} else {
 					content += '\
-								<input type="'+column.type+'" id="form_'+obj.model+'_'+obj.id+'_'+column.field+'" class="form-control" name="'+column.field+'"';
+								<input type="'+column.type+'" id="form_'+obj.model+'_'+obj.id+'_'+column.field+'" class="form-control'+(column.date ? ' form-datepicker':'')+'" name="'+column.field+'"';
 					content += column.required ? 'required="required"' : '';
 					if (column.placeholder) {
 						content += ' placeholder="'+column.placeholder+'"';
@@ -836,6 +870,16 @@ KyteForm.prototype.init = function() {
 		this.selector.append(content);
 
 		this.reloadAjax();
+
+		// initialize datepicker
+		this.elements.forEach(function (row) {
+			row.forEach(function (column) {
+				if (column.date) {
+					$('#form_'+obj.model+'_'+obj.id+'_'+column.field).datepicker();
+					$('#form_'+obj.model+'_'+obj.id+'_'+column.field).datepicker("option", "dateFormat", obj.api.dateFormat);
+				}
+			});
+		});
 
 		// bind submit listener
 		$('#form_'+this.model+'_'+this.id).submit(function(e) {
@@ -886,8 +930,15 @@ KyteForm.prototype.init = function() {
 							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
 
 							if (obj.KyteTable) {
-								// update data table
-								obj.KyteTable.table.row.add(response.data).draw();
+								if (response.data.length > 1) {
+									response.data.forEach(function(item) {
+										// update data table
+									obj.KyteTable.table.row.add(item).draw();
+									});
+								} else {
+									// update data table
+									obj.KyteTable.table.row.add(response.data).draw();
+								}
 							}
 
 							// run call back function if any
