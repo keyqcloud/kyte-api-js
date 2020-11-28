@@ -138,16 +138,22 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 		      	}
 			},
 			error: function(response) {
-				obj.txToken = response.token;
-				obj.sessionToken = response.session;
-				if (!response.token && !response.session) {
+				if (response.status == 403) {
 					obj.setCookie('txToken', '', -1);
 					obj.setCookie('sessionToken', '', -1);
 					obj.setCookie('sessionPermission', '', -1);
 				} else {
-					obj.setCookie('txToken', obj.txToken, 60);
-					obj.setCookie('sessionToken', obj.sessionToken, 60);
-					obj.setCookie('sessionPermission', response.sessionPermission, 60);
+					obj.txToken = response.responseJSON.token;
+					obj.sessionToken = response.responseJSON.session;
+					if (!response.responseJSON.token && !response.responseJSON.session) {
+						obj.setCookie('txToken', '', -1);
+						obj.setCookie('sessionToken', '', -1);
+						obj.setCookie('sessionPermission', '', -1);
+					} else {
+						obj.setCookie('txToken', obj.txToken, 60);
+						obj.setCookie('sessionToken', obj.sessionToken, 60);
+						obj.setCookie('sessionPermission', response.responseJSON.sessionPermission, 60);
+					}
 				}
 
 		      	if (typeof error === "function") {
@@ -256,7 +262,7 @@ Kyte.prototype.getUrlParameter = function(sParam) {
 };
 
 Kyte.prototype.initSpinner = function(selector) {
-	selector.append('<div id="pageLoaderModal" class="modal white" data-backdrop="static" data-keyboard="false" tabindex="-1"><div class="modal-dialog modal-sm h-100 d-flex"><div class="mx-auto align-self-center" style="width: 48px"><div class="spinner-wrapper text-center fa-6x"><span class="fas fa-sync fa-spin"></span></div></div></div></div>');
+	selector.append('<div id="pageLoaderModal" class="modal" style="background: white; opacity: 0.6;" data-backdrop="static" data-keyboard="false" tabindex="-1"><div class="modal-dialog modal-sm h-100 d-flex"><div class="mx-auto align-self-center" style="width: 48px"><div class="spinner-wrapper text-center fa-6x"><span class="fas fa-sync fa-spin"></span></div></div></div></div>');
 };
 Kyte.prototype.startSpinner = function() {
 	$('#pageLoaderModal').modal();
@@ -303,15 +309,24 @@ Kyte.prototype.sessionCreate = function(identity, callback, error = null, sessio
 };
 
 Kyte.prototype.addLogoutHandler = function(selector) {
+	self = this;
 	selector.click(function () {
-		k.sessionDestroy(function () {
+		self.sessionDestroy(function () {
 			location.href = "/";
 		});
 	});
 }
 
 Kyte.prototype.isSession = function() {
-	if (!this.sessionToken && !this.txToken) {
+	if (this.sessionToken == 0 || this.sessionToken == '0') {
+		this.setCookie('sessionToken', '', -1);
+		this.setCookie('sessionPermission', '', -1);
+	}
+	if (this.txToken == 0 || this.txToken == '0') {
+		this.setCookie('txToken', '', -1);
+		this.setCookie('sessionPermission', '', -1);
+	}
+	if (!this.sessionToken || !this.txToken) {
 		this.setCookie('txToken', '', -1);
 		this.setCookie('sessionToken', '', -1);
 		this.setCookie('sessionPermission', '', -1);
@@ -368,46 +383,56 @@ Kyte.prototype.makeid = function(length) {
 	return result;
  };
 
-Kyte.prototype.alert = function(title, message, type = 'success', time = 1000, callback = null) {
+Kyte.prototype.alert = function(title, message, callback = null) {
 	let id = this.makeid(5);
-	$('body').append('<div class="kyte-alert" id="'+id+'"><div class="kyte-alert-body kyte-alert-'+type+'"><h3 class="kyte-alert-header">'+title+'</h3><p>'+message+'<div class="text-center"><button class="btn btn-primary kyte-alert-close d-none">OK</button></div></p></div></div>');
-	if (time > 0) {
-		setTimeout(function() {
-			$('#'+id).fadeOut('fast');
-			$('#'+id).addClass('d-none');
-			if (typeof callback === "function") {
-				callback();
+	$('<div></div>').appendTo('body').html('<div><h6>'+message+'</h6></div>')
+	.dialog({
+		modal: true,
+		title: title,
+		zIndex: 10000,
+		autoOpen: true,
+		width: 'auto',
+		resizeable: false,
+		buttons: {
+			OK: function() {
+				if (typeof callback === "function") {
+					callback();
+				}
+				$(this).dialog('close');
 			}
-		}, time);
-	} else {
-		$('#'+id+' .kyte-alert-close').removeClass('d-none');
-		$('#'+id+' .kyte-alert-close').click(function() {
-			$('#'+id).fadeOut('fast');
-			$('#'+id).addClass('d-none');
-			if (typeof callback === "function") {
-				callback();
-			}
-		});
-	}
-};
-
-Kyte.prototype.confirm = function(title, message, type = 'success', callback = null, cancel = null) {
-	let id = this.makeid(5);
-	$('body').append('<div class="kyte-alert" id="'+id+'"><div class="kyte-alert-body kyte-alert-'+type+'"><h3 class="kyte-alert-header">'+title+'</h3><p>'+message+'<div class="text-center"><button class="btn btn-primary kyte-alert-confirm">Yes</button> <button class="btn btn-secondary kyte-alert-cancel">No</button></div></p></div></div>');
-	
-	$('#'+id+' .kyte-alert-confirm').click(function() {
-		$('#'+id).fadeOut('fast');
-		$('#'+id).addClass('d-none');
-		if (typeof callback === "function") {
-			callback();
+		},
+		close: function(e, ui) {
+			$(this).remove();
 		}
 	});
+};
 
-	$('#'+id+' .kyte-alert-cancel').click(function() {
-		$('#'+id).fadeOut('fast');
-		$('#'+id).addClass('d-none');
-		if (typeof cancel === "function") {
-			cancel();
+Kyte.prototype.confirm = function(title, message, callback = null, cancel = null) {
+	let id = this.makeid(5);
+	$('<div></div>').appendTo('body').html('<div><h6>'+message+'</h6></div>')
+	.dialog({
+		modal: true,
+		title: title,
+		zIndex: 10000,
+		autoOpen: true,
+		width: 'auto',
+		resizeable: false,
+		buttons: {
+			Yes: function() {
+				if (typeof callback === "function") {
+					callback();
+				}
+				$(this).dialog('close');
+			},
+			No: function() {
+				if (typeof cancel === "function") {
+					cancel();
+				}
+				$(this).dialog('close');
+			}
+		},
+		close: function(e, ui) {
+			$(this).remove();
 		}
 	});
 };
@@ -519,7 +544,7 @@ Kyte.prototype.validateForm = function(form) {
  * rowCallBack : optional function(row, data, index) {}
  * initComplete : optional function() {}
  */
-function KyteTable(api, selector, model, columnDefs, searching = true, order = [], rowCallBack = null, initComplete = null, lang = "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/English.json") {
+function KyteTable(api, selector, model, columnDefs, searching = true, order = [], actionEdit = false, actionDelete = false, actionView = false, viewTarget = null, rowCallBack = null, initComplete = null, lang = "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/English.json") {
 	this.api = api;
 	this.model = model;
 
@@ -532,6 +557,12 @@ function KyteTable(api, selector, model, columnDefs, searching = true, order = [
 
 	this.columnDefs = columnDefs;
 	this.order = order;
+
+	this.actionEdit = actionEdit;
+	this.editForm = null;
+	this.actionDelete = actionDelete;
+	this.actionView = actionView;
+	this.viewTarget = viewTarget;
 	this.rowCallBack = rowCallBack;
 	this.initComplete = initComplete;
 };
@@ -547,6 +578,40 @@ KyteTable.prototype.init = function() {
 				delete self.columnDefs[i]['label'];
 				i++;
 			});
+			if (self.actionEdit || self.actionDelete) {
+				// add column for actions
+				content += '<th></th>';
+				// calculate new target
+				let targetIdx = self.columnDefs.length;
+				var actionHTML = '';
+				if (self.actionEdit) {
+					actionHTML += '<a class="mr-3 edit" href="#"><i class="fas fa-edit text-primary"></i></a>';
+				}
+				if (self.actionDelete) {
+					actionHTML += '<a class="mr-3 delete" href="#"><i class="fas fa-trash-alt text-danger"></i></a>';
+					// bind listener
+					self.selector.on('click', '.delete', function () {
+						let row = self.table.row($(this).parents('tr'));
+						let data = row.data();
+						self.api.confirm('Delete', 'Are you sure you wish to delete?', function() {
+							self.api.delete(self.model.name, 'id', data['id'], function() {
+								row.remove().draw();
+							}, function() {
+								alert('Unable to delete. Please try again later.');
+							});
+						});
+					});
+				}
+				self.columnDefs.push({
+					"targets": targetIdx,
+					"sortable": false,
+					"data": "",
+					render: function (data, type, row, meta) {
+						const returnString = actionHTML;
+						return returnString;
+					}
+				});
+			}
 			content += '</tr></thead><tbody></tbody>';
 			self.selector.append(content);
 			self.table = self.selector.DataTable({
@@ -565,6 +630,20 @@ KyteTable.prototype.init = function() {
 		});
 	}
 };
+
+KyteTable.prototype.bindEdit = function(editForm) {
+	var self = this;
+	self.editForm = editForm;
+	if (this.actionEdit) {
+		// bind listener
+		this.selector.on('click', '.edit', function () {
+			self.editForm.selectedRow = self.table.row($(this).parents('tr'));
+			let data = self.editForm.selectedRow.data();
+			self.editForm.setID(data['id']);
+			self.editForm.showModal();
+		});
+	}
+}
 
 /*
  * Class Definition for Kyte Form
@@ -590,6 +669,7 @@ KyteTable.prototype.init = function() {
  * 	'field' : '<model_attribute>',
  * 	'type' : '<text/password/select/textarea>',
  * 	'label' : '<label>',
+ * 	'placeholder' : '<placeholder>',
  * 	'required' : true/false,
  * 
  * 	### if field type is select, the following is required to set options
@@ -603,9 +683,8 @@ KyteTable.prototype.init = function() {
  * 	}
  * 
  * 	## For using predefined values:
- * 	'ajax' : false,
  * 	'options' : {
- *	 	'ajax' : true,
+ *	 	'ajax' : false,
  *		'data' : {
  *	 		'<option_value_1>' : '<option_name_1>',
  * 			'<option_value_2>' : '<option_name_2>',
@@ -617,11 +696,12 @@ KyteTable.prototype.init = function() {
  * successCallBack : optional function() {}
  * failureCallBack : option function() {}
  */
-function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'Form', modal = false, modalButton = null,  successCallBack = null, failureCallBack = null) {
+function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'Form', table = null, modal = false, modalButton = null,  successCallBack = null, failureCallBack = null) {
 	this.api = api;
 	this.model = modelName;
 	this.modal = modal;
 	this.modalButton = modalButton;
+	this.KyteTable = table;
 	this.title = title;
 	this.hiddenFields = hiddenFields;
 	this.elements = elements;
@@ -633,6 +713,8 @@ function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'For
 	this.loaded = false;
 
 	this.selector = selector;
+
+	this.selectedRow = null;
 }
 
 // #### TODO: Hidden fields, edit feature to update id, etc...
@@ -688,10 +770,15 @@ KyteForm.prototype.init = function() {
 			row.forEach(function (column) {
 				content += '\
 						<div class="col-sm">\
-							<div class="form-group">\
-								<label for="form_'+obj.model+'_'+obj.id+'_'+column.field+'">'+column.label+'</label>';
+							<div class="form-group">';
 
-				if (column.type == 'option') {
+				// if label option is provided
+				if (column.label) {
+					content += '\
+								<label for="form_'+obj.model+'_'+obj.id+'_'+column.field+'">'+column.label+'</label>';
+				}
+
+				if (column.type == 'select') {
 					content += '\
 								<select class="custom-select" id="form_'+obj.model+'_'+obj.id+'_'+column.field+'" class="form-control" name="'+column.field+'"';
 					content += column.required ? 'required="required"' : '';
@@ -701,7 +788,7 @@ KyteForm.prototype.init = function() {
 						for (var key in column.option.data) {
 							if (column.option.data.hasOwnProperty(key)) {
 								content += '\
-									<option value="'+key+'">'+value+'</option>';
+									<option value="'+key+'">'+column.option.data[key]+'</option>';
 							}
 						}
 					}
@@ -710,13 +797,19 @@ KyteForm.prototype.init = function() {
 								</select>';
 				} else if (column.type == 'textarea') {
 					content += '\
-								<textarea id="form_'+obj.model+'_'+obj.id+'_'+column.field+'" name="'+column.field+'"';
+								<textarea style="width:100%" id="form_'+obj.model+'_'+obj.id+'_'+column.field+'" name="'+column.field+'"';
 					content += column.required ? 'required="required"' : '';
+					if (column.placeholder) {
+						content += ' placeholder="'+column.placeholder+'"';
+					}
 					content += '></textarea>';
 				} else {
 					content += '\
 								<input type="'+column.type+'" id="form_'+obj.model+'_'+obj.id+'_'+column.field+'" class="form-control" name="'+column.field+'"';
 					content += column.required ? 'required="required"' : '';
+					if (column.placeholder) {
+						content += ' placeholder="'+column.placeholder+'"';
+					}
 					content += '>';
 				}
 
@@ -746,34 +839,42 @@ KyteForm.prototype.init = function() {
 
 		this.reloadAjax();
 
-		// add submit listener
+		// bind submit listener
 		$('#form_'+this.model+'_'+this.id).submit(function(e) {
 			var form = $(this);
 			e.preventDefault();
 
 			// validate and make sure required fields are filled
 			var valid = true;
-			form.find('input').each(function () { if ($(this).prop('required') && !$(this).val()) { valid = false; } });
+			form.find('input').each(function () { if ($(this).prop('required') && !$(this).val()) { valid = false; $(this).addClass('is-invalid'); $(this).removeClass('is-valid'); } else { $(this).addClass('is-valid'); $(this).removeClass('is-invalid'); } });
+			form.find('textarea').each(function () { if ($(this).prop('required') && !$(this).val()) { valid = false; $(this).addClass('is-invalid'); $(this).removeClass('is-valid'); } else { $(this).addClass('is-valid'); $(this).removeClass('is-invalid'); } });
 			
 			// if valid, prep to send data
 			if (valid) {
 				// open model
 				$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('show');
 				// if an ID is set, then update entry
-				if (form.data('idx')) {
-					k.put(obj.modelName, 'id', form.data('idx'), null, form.serialize(),
+				let idx = form.data('idx');
+				if (idx > 0) {
+					obj.api.put(obj.model, 'id', idx, null, form.serialize(),
 						function (response) {
 							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
+
+							// run call back function if any
 							if (typeof obj.success === "function") {
 								obj.success(response)
 							}
-							if (obj.modal) {
-								$('#modal_'+obj.model+'_'+obj.id).modal('hide');
+
+							if (obj.KyteTable) {
+								obj.selectedRow.data(response.data).draw();
 							}
+
+							// close modal if form is a modal dialog
+							obj.hideModal();
 						},
 						function (response) {
 							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
-							$('#form_'+obj.model+'_'+obj.id .error-msg).html(response);
+							$('#form_'+obj.model+'_'+obj.id+' .error-msg').html(response);
 							if (typeof obj.success === "function") {
 								obj.fail(response)
 							}
@@ -782,19 +883,26 @@ KyteForm.prototype.init = function() {
 				}
 				// else, create new entry
 				else {
-					k.post(this.modelName, null, form.serialize(),
+					obj.api.post(obj.model, null, form.serialize(),
 						function (response) {
 							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
+
+							if (obj.KyteTable) {
+								// update data table
+								obj.KyteTable.table.row.add(response.data).draw();
+							}
+
+							// run call back function if any
 							if (typeof obj.success === "function") {
 								obj.success(response)
 							}
-							if (obj.modal) {
-								$('#modal_'+obj.model+'_'+obj.id).modal('hide');
-							}
+
+							// close modal if form is a modal dialog
+							obj.hideModal();
 						},
 						function (response) {
 							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
-							$('#form_'+obj.model+'_'+obj.id .error-msg).html(response);
+							$('#form_'+obj.model+'_'+obj.id+' .error-msg').html(response);
 							if (typeof obj.success === "function") {
 								obj.fail(response)
 							}
@@ -804,9 +912,92 @@ KyteForm.prototype.init = function() {
 			}
 		});
 
+		// initializer for modal
+		if (this.modal) {
+			// bind modal hide listener - reset form
+			$('#modal_'+this.model+'_'+this.id).on('hidden.bs.modal', function (e) {
+				if (e.target.id == 'modal_'+obj.model+'_'+obj.id) {
+					var form = $('#form_'+obj.model+'_'+obj.id);
+					form.data('idx','');
+					form.data('row','');
+					form.find('.error-msg').html('');
+					form.find('input').each(function () {
+						$(this).removeClass('is-invalid');
+						$(this).removeClass('is-valid');
+					});
+					form.find('input[type="text"').each(function () {
+						$(this).val('');
+					});
+					form.find('input[type="email"').each(function () {
+						$(this).val('');
+					});
+					form.find('input[type="password"').each(function () {
+						$(this).val('');
+					});
+					form.find('input[type="tel"').each(function () {
+						$(this).val('');
+					});
+					form.find('input[type="checkbox"').each(function () {
+						$(this).prop('checked', false);
+					});
+					form.find('input[type="radio"').each(function () {
+						$(this).prop('checked', false);
+					});
+					form.find('select').each(function () {
+						$(this).prop('selectedIndex', 0);
+					});
+				}
+			});
+
+			$('#modal_'+this.model+'_'+this.id).on('shown.bs.modal', function (e) {
+				if (e.target.id == 'modal_'+obj.model+'_'+obj.id) {
+					var form = $('#form_'+obj.model+'_'+obj.id);
+					let idx = form.data('idx');
+					// check if idx is set and retrieve information
+					if (idx) {
+						$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('show');
+
+						obj.api.get(obj.model, 'id', idx, function(response) {
+							// populate form
+
+							// start with hidden
+							if (obj.hiddenFields) {
+								obj.hiddenFields.forEach(function(field) {
+									$('#form_'+obj.model+'_'+obj.id+'_'+field.name).val(response.data[0][field.name]);
+								});
+							}
+
+							// next form visible elements
+							obj.elements.forEach(function (row) {
+								row.forEach(function (column) {
+									$('#form_'+obj.model+'_'+obj.id+'_'+column.field).val(response.data[0][column.field]);
+								});
+							});
+
+							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
+						}, function() {
+							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
+							obj.hideModal();
+							alert('Unable to load form. Please try again later');
+						});
+					}
+				}
+			});
+		}
+
 		this.loaded = true;
 	}
 };
+KyteForm.prototype.showModal = function() {
+	if (this.modal) {
+		$('#modal_'+this.model+'_'+this.id).modal('show');
+	}
+}
+KyteForm.prototype.hideModal = function() {
+	if (this.modal) {
+		$('#modal_'+this.model+'_'+this.id).modal('hide');
+	}
+}
 KyteForm.prototype.reloadAjax = function() {
 	let obj = this;
 	// if ajax, then populate data
@@ -825,6 +1016,12 @@ KyteForm.prototype.reloadAjax = function() {
 		});
 	});
 }
+KyteForm.prototype.setID = function(idx) {
+	$('#form_'+this.model+'_'+this.id).data('idx',idx);
+}
+KyteForm.prototype.getID = function() {
+	return $('#form_'+this.model+'_'+this.id).data('idx');
+}
 KyteForm.prototype.makeID = function(length) {
 	var result           = '';
 	var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -834,11 +1031,3 @@ KyteForm.prototype.makeID = function(length) {
 	}
 	return result;
 };
-
-// Kyte.prototype.createNavBar = function(selector) {
-
-// };
-
-// Kyte.prototype.createSideBar = function(selector) {
-
-// };
