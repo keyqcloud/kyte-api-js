@@ -674,7 +674,7 @@ KyteTable.prototype.bindEdit = function(editForm) {
  * 
  * 	### if field type is select, the following is required to set options
  * 	## For using ajax data source:
- * 	'options' : {
+ * 	'option' : {
  *	 	'ajax' : true,
  * 		'data_model_name' : '<model_name>',
  * 		'data_model_field' : <null/field_name>,
@@ -683,7 +683,7 @@ KyteTable.prototype.bindEdit = function(editForm) {
  * 	}
  * 
  * 	## For using predefined values:
- * 	'options' : {
+ * 	'option' : {
  *	 	'ajax' : false,
  *		'data' : {
  *	 		'<option_value_1>' : '<option_name_1>',
@@ -717,8 +717,6 @@ function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'For
 	this.selectedRow = null;
 }
 
-// #### TODO: Hidden fields, edit feature to update id, etc...
-// ### Consider how to integrate modal/form edit with Data Table
 KyteForm.prototype.init = function() {
 	if (!this.loaded) {
 		this.id = this.makeID(8);
@@ -957,23 +955,7 @@ KyteForm.prototype.init = function() {
 					if (idx) {
 						$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('show');
 
-						obj.api.get(obj.model, 'id', idx, function(response) {
-							// populate form
-
-							// start with hidden
-							if (obj.hiddenFields) {
-								obj.hiddenFields.forEach(function(field) {
-									$('#form_'+obj.model+'_'+obj.id+'_'+field.name).val(response.data[0][field.name]);
-								});
-							}
-
-							// next form visible elements
-							obj.elements.forEach(function (row) {
-								row.forEach(function (column) {
-									$('#form_'+obj.model+'_'+obj.id+'_'+column.field).val(response.data[0][column.field]);
-								});
-							});
-
+						obj.loadFormData(idx, function() {
 							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
 						}, function() {
 							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
@@ -997,6 +979,34 @@ KyteForm.prototype.hideModal = function() {
 	if (this.modal) {
 		$('#modal_'+this.model+'_'+this.id).modal('hide');
 	}
+}
+KyteForm.prototype.loadFormData = function(idx, success = null, fail = null) {
+	var obj = this;
+	obj.api.get(obj.model, 'id', idx, function(response) {
+		// populate form
+
+		// start with hidden
+		if (obj.hiddenFields) {
+			obj.hiddenFields.forEach(function(field) {
+				$('#form_'+obj.model+'_'+obj.id+'_'+field.name).val(response.data[0][field.name]);
+			});
+		}
+
+		// next form visible elements
+		obj.elements.forEach(function (row) {
+			row.forEach(function (column) {
+				$('#form_'+obj.model+'_'+obj.id+'_'+column.field).val(response.data[0][column.field]);
+			});
+		});
+
+		if (typeof success === "function") {
+			success();
+		}
+	}, function() {
+		if (typeof success === "function") {
+			success();
+		}
+	});
 }
 KyteForm.prototype.reloadAjax = function() {
 	let obj = this;
