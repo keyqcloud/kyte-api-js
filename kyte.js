@@ -1036,12 +1036,12 @@ KyteForm.prototype.loadFormData = function(idx, success = null, fail = null) {
 	obj.api.get(obj.model, 'id', idx, function(response) {
 		// populate form
 
-		// start with hidden
-		if (obj.hiddenFields) {
-			obj.hiddenFields.forEach(function(field) {
-				$('#form_'+obj.model+'_'+obj.id+'_'+field.name).val(response.data[0][field.name]);
-			});
-		}
+		// do not populate hidden fields as return data is object....
+		// if (obj.hiddenFields) {
+		// 	obj.hiddenFields.forEach(function(field) {
+		// 		$('#form_'+obj.model+'_'+obj.id+'_'+field.name).val(response.data[0][field.name]);
+		// 	});
+		// }
 
 		// next form visible elements
 		obj.elements.forEach(function (row) {
