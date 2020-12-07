@@ -740,6 +740,9 @@ function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'For
 	this.hiddenFields = hiddenFields;
 	this.elements = elements;
 	this.id;
+	this.submitButton = 'Submit';
+
+	this.itemized = false;
 
 	this.success = successCallBack;
 	this.fail = failureCallBack;
@@ -853,7 +856,17 @@ KyteForm.prototype.init = function() {
 					</div>';
 		});
 
-		content += '<div class="row my-4"><div class="col text-center"><input type="submit" name="submit" value="Submit" class="btn btn-primary btn-medium d-none d-sm-inline-block"></div></div>';
+		// if itemized is specified, populate with template information
+		if (this.itemized) {
+			content += '\
+					<hr>\
+					<h6>'+this.itemized.title+'</h6>\
+					<div id="itemized_'+this.model+'_'+this.id+'"></div>\
+					<div class="row my-4"><div class="col text-right"><a href="#" class="itemized-add-item btn btn-small btn-outline-secondary">Add</a></div></div>\
+					<hr>';
+		}
+
+		content += '<div class="row my-4"><div class="col text-center"><input type="submit" name="submit" value="'+obj.submitButton+'" class="btn btn-primary btn-medium d-none d-sm-inline-block"></div></div>';
 
 		// end form
 		content += '\
@@ -930,7 +943,7 @@ KyteForm.prototype.init = function() {
 							$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('hide');
 
 							if (obj.KyteTable) {
-								if (response.data.length > 1) {
+								if (response.data.constructor === Array) {
 									response.data.forEach(function(item) {
 										// update data table
 									obj.KyteTable.table.row.add(item).draw();
@@ -995,6 +1008,12 @@ KyteForm.prototype.init = function() {
 					form.find('select').each(function () {
 						$(this).prop('selectedIndex', 0);
 					});
+					form.find('textarea').each(function () {
+						$(this).val('');
+					});
+					if (obj.itemized) {
+						$('#itemized_'+obj.model+'_'+obj.id).html('');
+					}
 				}
 			});
 
@@ -1015,6 +1034,80 @@ KyteForm.prototype.init = function() {
 						});
 					}
 				}
+			});
+		}
+
+		if (this.itemized) {
+			// bind listener for itemized
+			$('#form_'+this.model+'_'+this.id).on('click', '.itemized-add-item', function(e) {
+				var uniqueId = obj.makeID(8);	// ID used to track newly created selects to populate if Ajax is set to true
+				
+				e.preventDefault(); // prevent default link behaviour
+				
+				let itemizedHTML = '<div class="row itemized-row">';	// init html string
+
+				obj.itemized.fields.forEach(function(field) {
+					itemizedHTML += '<div class="col"><div class="form-group">'
+					if (field.type == 'select') {
+						itemizedHTML += '<select id="'+field.option.data_model_name+'_'+field.option.data_model_value+'_'+uniqueId+'" class="custom-select" id="itemized_'+obj.model+'_'+obj.id+'_'+field.name+'" class="form-control" name="'+field.name+'"';
+						itemizedHTML += field.required ? 'required="required"' : '';
+						itemizedHTML += '>';
+						// if not ajax, then populate with data - ajax will populate after appending html
+						if (!field.option.ajax) {
+							for (var key in field.option.data) {
+								if (field.option.data.hasOwnProperty(key)) {
+									itemizedHTML += '<option value="'+key+'">'+field.option.data[key]+'</option>';
+								}
+							}
+						}
+						// close select
+						itemizedHTML += '</select>';
+					} else if (field.type == 'textarea') {
+						itemizedHTML += '<textarea style="width:100%" id="itemized_'+obj.model+'_'+obj.id+'_'+field.name+'" name="'+field.name+'"';
+						itemizedHTML += field.required ? 'required="required"' : '';
+						if (field.placeholder) {
+							itemizedHTML += ' placeholder="'+field.placeholder+'"';
+						}
+						itemizedHTML += '></textarea>';
+					} else {
+						itemizedHTML += '<input type="'+field.type+'" id="itemized_'+obj.model+'_'+obj.id+'_'+field.name+'" class="form-control'+(field.date ? ' form-datepicker':'')+'" name="'+field.name+'"';
+						itemizedHTML += field.required ? 'required="required"' : '';
+						if (field.placeholder) {
+							itemizedHTML += ' placeholder="'+field.placeholder+'"';
+						}
+						itemizedHTML += '>';
+					}
+					itemizedHTML += '</div></div>';
+				});
+				itemizedHTML += '<div class="col-2 text-right"><a href="#" class="itemized-delete-item btn btn-small btn-outline-danger">remove</a></div></div>';
+				// append fields
+				$('#itemized_'+obj.model+'_'+obj.id).append(itemizedHTML);
+
+				// run ajax for any selects
+				obj.itemized.fields.forEach(function(field) {
+					if (field.type == 'select') {
+						if (field.option.ajax) {
+							obj.api.get(field.option.data_model_name, null, null, function(response) {
+								response.data.forEach(function(item) {
+									let label = '';
+									field.option.data_model_attributes.forEach(function(attribute) {
+										if (item[attribute]) {
+											label += item[attribute]+' ';
+										} else {
+											label += attribute+' ';
+										}
+									});
+									$('#'+field.option.data_model_name+'_'+field.option.data_model_value+'_'+uniqueId).append('<option value="'+item[field.option.data_model_value]+'">'+label+'</option>');
+								});
+							});
+						}
+					}
+				});
+			});
+
+			$('#form_'+this.model+'_'+this.id).on('click', '.itemized-delete-item', function(e) {
+				e.preventDefault();
+				$(this).closest('.itemized-row').remove();
 			});
 		}
 
