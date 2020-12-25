@@ -763,9 +763,11 @@ KyteForm.prototype.init = function() {
 		// if modal, then create modal tags
 		if (this.modal) {
 			// add click listener to modal button
-			this.modalButton.on('click', function() {
-				$('#modal_'+obj.model+'_'+obj.id).modal('show');
-			});
+			if (this.modalButton) {
+				this.modalButton.on('click', function() {
+					$('#modal_'+obj.model+'_'+obj.id).modal('show');
+				});
+			}
 
 			content += '\
 <div class="modal fade" id="modal_'+this.model+'_'+this.id+'" tabindex="-1" role="dialog" aria-labelledby="modal_'+this.model+'_'+this.id+'" aria-hidden="true">\
