@@ -1163,8 +1163,16 @@ KyteForm.prototype.reloadAjax = function() {
 				if (column.option.ajax) {
 					$("#form_"+obj.model+"_"+obj.id+'_'+column.field).html('');
 					obj.api.get(column.option.data_model_name, column.option.data_model_field, column.option.data_model_value, function (response) {
-						$.each(response.data, function(index, value){
-							$("#form_"+self.model+"_"+self.id+'_'+column.field).append('<option value="'+value.id+'">'+value[column.option.data_model_attribute]+'</option>');
+						response.data.forEach(function(item) {
+							let label = '';
+							field.option.data_model_attributes.forEach(function(attribute) {
+								if (item[attribute]) {
+									label += item[attribute]+' ';
+								} else {
+									label += attribute+' ';
+								}
+							});
+							$("#form_"+self.model+"_"+self.id+'_'+column.field).append('<option value="'+item[field.option.data_model_value]+'">'+label+'</option>');
 						});
 					}, function() {
 						alert("Unable to load data");
