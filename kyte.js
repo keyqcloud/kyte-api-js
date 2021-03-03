@@ -611,21 +611,6 @@ KyteTable.prototype.init = function() {
 						});
 					});
 				}
-				if (self.actionView) {
-					self.selector.on('click', 'tbody tr', function (e) {
-						e.preventDefault();
-						let row = self.table.row(this);
-						let data = row.data();
-						if (self.viewTarget) {
-							let obj = {'model': self.model.name,'idx':data['id']};
-							let encoded = encodeURIComponent(btoa(JSON.stringify(obj)));
-							location.href=self.viewTarget+"?request="+encoded;
-						}
-					});
-					self.selector.on('click', 'tbody td.row-actions', function (e) {
-						e.stopPropagation();
-					});
-				}
 				self.columnDefs.push({
 					"targets": targetIdx,
 					"sortable": false,
@@ -635,6 +620,21 @@ KyteTable.prototype.init = function() {
 						const returnString = actionHTML;
 						return returnString;
 					}
+				});
+			}
+			if (self.actionView) {
+				self.selector.on('click', 'tbody tr', function (e) {
+					e.preventDefault();
+					let row = self.table.row(this);
+					let data = row.data();
+					if (self.viewTarget) {
+						let obj = {'model': self.model.name,'idx':data[self.actionView]};
+						let encoded = encodeURIComponent(btoa(JSON.stringify(obj)));
+						location.href=self.viewTarget+"?request="+encoded;
+					}
+				});
+				self.selector.on('click', 'tbody td.row-actions', function (e) {
+					e.stopPropagation();
 				});
 			}
 			content += '</tr></thead><tbody></tbody>';
@@ -1159,7 +1159,7 @@ KyteForm.prototype.reloadAjax = function() {
 	// if ajax, then populate data
 	this.elements.forEach(function (row) {
 		row.forEach(function (column) {
-			if (column.type == 'option') {
+			if (column.type == 'select') {
 				$("#form_"+obj.model+"_"+obj.id+'_'+column.field).html('');
 				obj.api.get(column.option.data_model_name, column.option.data_model_field, column.option.data_model_value, function (response) {
 					$.each(response.data, function(index, value){
