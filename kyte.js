@@ -1165,14 +1165,14 @@ KyteForm.prototype.reloadAjax = function() {
 					obj.api.get(column.option.data_model_name, column.option.data_model_field, column.option.data_model_value, function (response) {
 						response.data.forEach(function(item) {
 							let label = '';
-							field.option.data_model_attributes.forEach(function(attribute) {
+							column.option.data_model_attributes.forEach(function(attribute) {
 								if (item[attribute]) {
 									label += item[attribute]+' ';
 								} else {
 									label += attribute+' ';
 								}
 							});
-							$("#form_"+self.model+"_"+self.id+'_'+column.field).append('<option value="'+item[field.option.data_model_value]+'">'+label+'</option>');
+							$("#form_"+obj.model+"_"+obj.id+'_'+column.field).append('<option value="'+item['id']+'">'+label+'</option>');
 						});
 					}, function() {
 						alert("Unable to load data");
