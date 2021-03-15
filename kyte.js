@@ -136,9 +136,9 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 					obj.access_key = response.kyte_pub;
 					obj.identifier = response.kyte_iden;
 					obj.account_number = response.kyte_num;
-					obj.setCookie('kyte_pub', obj.kyte_pub, 60);
-					obj.setCookie('kyte_iden', obj.kyte_iden, 60);
-					obj.setCookie('kyte_num', obj.kyte_num, 60);
+					obj.setCookie('kyte_pub', obj.access_key, 60);
+					obj.setCookie('kyte_iden', obj.identifier, 60);
+					obj.setCookie('kyte_num', obj.account_number, 60);
 				} else {
 					// destroy api handoff cookies
 					obj.setCookie('kyte_pub', '', -1);
@@ -185,9 +185,9 @@ Kyte.prototype.sendData = function(method, model, field = null, value = null, da
 						obj.access_key = response.kyte_pub;
 						obj.identifier = response.kyte_iden;
 						obj.account_number = response.kyte_num;
-						obj.setCookie('kyte_pub', obj.kyte_pub, 60);
-						obj.setCookie('kyte_iden', obj.kyte_iden, 60);
-						obj.setCookie('kyte_num', obj.kyte_num, 60);
+						obj.setCookie('kyte_pub', obj.access_key, 60);
+						obj.setCookie('kyte_iden', obj.identifier, 60);
+						obj.setCookie('kyte_num', obj.account_number, 60);
 					} else {
 						// destroy api handoff cookies
 						obj.setCookie('kyte_pub', '', -1);
@@ -361,9 +361,9 @@ Kyte.prototype.sessionCreate = function(identity, callback, error = null, sessio
 		obj.access_key = response.kyte_pub;
 		obj.identifier = response.kyte_iden;
 		obj.account_number = response.kyte_num;
-		obj.setCookie('kyte_pub', obj.kyte_pub, 60);
-		obj.setCookie('kyte_iden', obj.kyte_iden, 60);
-		obj.setCookie('kyte_num', obj.kyte_num, 60);
+		obj.setCookie('kyte_pub', obj.access_key, 60);
+		obj.setCookie('kyte_iden', obj.identifier, 60);
+		obj.setCookie('kyte_num', obj.account_number, 60);
 		if (typeof callback === "function") {
 			callback(response);
 		} else {
