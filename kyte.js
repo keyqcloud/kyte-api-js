@@ -978,8 +978,14 @@ KyteForm.prototype.init = function() {
 		if (this.itemized) {
 			content += '\
 					<hr>\
-					<h6>'+this.itemized.title+'</h6>\
-					<div id="itemized_'+this.model+'_'+this.id+'"></div>\
+					<h6>'+this.itemized.title+'</h6><div class="row>';
+
+			// add column headers
+			this.itemized.fields.forEach(function(field) {
+				content += '<div class="col">'+field.label+'</div>';
+			});
+
+			content += '</div><div id="itemized_'+this.model+'_'+this.id+'"></div>\
 					<div class="row my-4"><div class="col text-right"><a href="#" class="itemized-add-item btn btn-small btn-outline-secondary">Add</a></div></div>\
 					<hr>';
 		}
