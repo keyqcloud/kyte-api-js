@@ -1211,14 +1211,20 @@ KyteForm.prototype.init = function() {
 				obj.itemized.fields.forEach(function(field) {
 					if (field.type == 'select') {
 						if (field.option.ajax) {
-							obj.api.get(field.option.data_model_name, null, null, function(response) {
+							obj.api.get(field.option.data_model_name, field.option.data_model_field, field.option.data_model_value, function(response) {
 								response.data.forEach(function(item) {
 									let label = '';
 									field.option.data_model_attributes.forEach(function(attribute) {
 										if (item[attribute]) {
 											label += item[attribute]+' ';
 										} else {
-											label += attribute+' ';
+											// attempt to split by dot notation
+											let c = attribute.split('.');
+											if (c.length >= 2) {
+												label += item[c[0]][c[1]]+' ';
+											} else {
+												label += attribute+' ';
+											}
 										}
 									});
 									$('#'+field.option.data_model_name+'_'+field.option.data_model_value+'_'+uniqueId).append('<option value="'+item[field.option.data_model_value]+'">'+label+'</option>');
@@ -1295,7 +1301,13 @@ KyteForm.prototype.reloadAjax = function() {
 								if (item[attribute]) {
 									label += item[attribute]+' ';
 								} else {
-									label += attribute+' ';
+									// attempt to split by dot notation
+									let c = attribute.split('.');
+									if (c.length >= 2) {
+										label += item[c[0]][c[1]]+' ';
+									} else {
+										label += attribute+' ';
+									}
 								}
 							});
 							$("#form_"+obj.model+"_"+obj.id+'_'+column.field).append('<option value="'+item['id']+'">'+label+'</option>');
