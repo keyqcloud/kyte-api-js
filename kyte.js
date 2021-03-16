@@ -978,7 +978,7 @@ KyteForm.prototype.init = function() {
 		if (this.itemized) {
 			content += '\
 					<hr>\
-					<h6>'+this.itemized.title+'</h6><div class="row>';
+					<h6>'+this.itemized.title+'</h6><div class="row">';
 
 			// add column headers
 			this.itemized.fields.forEach(function(field) {
