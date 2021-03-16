@@ -1257,7 +1257,11 @@ KyteForm.prototype.loadFormData = function(idx, success = null, fail = null) {
 		// next form visible elements
 		obj.elements.forEach(function (row) {
 			row.forEach(function (column) {
-				$('#form_'+obj.model+'_'+obj.id+'_'+column.field).val(response.data[0][column.field]);
+				if (typeof response.data[0][column.field] === 'object' && response.data[0][column.field] !== null) {
+					$('#form_'+obj.model+'_'+obj.id+'_'+column.field).val(response.data[0][column.field].id).change();
+				} else {
+					$('#form_'+obj.model+'_'+obj.id+'_'+column.field).val(response.data[0][column.field]).change();
+				}
 			});
 		});
 
