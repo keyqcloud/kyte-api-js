@@ -985,7 +985,7 @@ KyteForm.prototype.init = function() {
 				content += '<div class="col">'+field.label+'</div>';
 			});
 
-			content += '</div><div id="itemized_'+this.model+'_'+this.id+'"></div>\
+			content += '<div class="col"></div></div><div id="itemized_'+this.model+'_'+this.id+'"></div>\
 					<div class="row my-4"><div class="col text-right"><a href="#" class="itemized-add-item btn btn-small btn-outline-secondary">Add</a></div></div>\
 					<hr>';
 		}
