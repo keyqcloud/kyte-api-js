@@ -689,6 +689,8 @@ function KyteTable(api, selector, model, columnDefs, searching = true, order = [
 	this.viewTarget = viewTarget;
 	this.rowCallBack = rowCallBack;
 	this.initComplete = initComplete;
+
+	this.pageLength = 50;
 };
 
 KyteTable.prototype.init = function() {
@@ -762,6 +764,7 @@ KyteTable.prototype.init = function() {
 				data: response.data,
 				columnDefs: self.columnDefs,
 				order: self.order,
+				pageLength: self.pageLength,
 				rowCallback: self.rowCallBack,
 				initComplete: self.initComplete
 			});
