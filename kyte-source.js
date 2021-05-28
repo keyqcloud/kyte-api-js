@@ -98,7 +98,6 @@ Kyte.prototype.sign = function(callback, error = null) {
  */
 Kyte.prototype.sendData = function(method, model, field = null, value = null, data = null, formdata = null, callback, error = null) {
 	var obj = this;
-	var token = (obj.getCookie('kyte-token') ? obj.getCookie('kyte-token') : '1');
 
 	this.sign(
 		function(retval, time) {
