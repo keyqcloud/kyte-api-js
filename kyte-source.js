@@ -870,6 +870,8 @@ function KyteForm(api, selector, modelName, hiddenFields, elements, title = 'For
 	this.selector = selector;
 
 	this.selectedRow = null;
+
+	this.editOnlyMode = false;
 }
 
 KyteForm.prototype.init = function() {
@@ -965,6 +967,9 @@ KyteForm.prototype.init = function() {
 					if (column.placeholder) {
 						content += ' placeholder="'+column.placeholder+'"';
 					}
+					if (column.value) {
+						content += ' value="'+column.value+'"';
+					}
 					content += '>';
 				}
 
@@ -1035,7 +1040,7 @@ KyteForm.prototype.init = function() {
 				// open model
 				$('#'+obj.model+'_'+obj.id+'_modal-loader').modal('show');
 				// if an ID is set, then update entry
-				let idx = form.data('idx');
+				let idx = obj.editOnlyMode ? obj.editOnlyMode : form.data('idx');
 				if (idx > 0) {
 					obj.api.put(obj.model, 'id', idx, null, form.serialize(),
 						function (response) {
