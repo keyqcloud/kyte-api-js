@@ -137,7 +137,7 @@ class Kyte {
 						xhr.setRequestHeader('x-kyte-identity', identity);
 						// if application ID is supplied, pass those - this is for provisioned containers
 						if (obj.applicationId) {
-							xhr.setRequestHeader('x-kyte-appId', obj.applicationId);
+							xhr.setRequestHeader('x-kyte-application-id', obj.applicationId);
 						}
 						// if custom headers are specified, add them
 						if (headers.length > 0) {
