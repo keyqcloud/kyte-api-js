@@ -643,28 +643,6 @@ class Kyte {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
  * Class Definition for Kyte Table
  *
