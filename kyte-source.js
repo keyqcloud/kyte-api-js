@@ -97,7 +97,7 @@ class Kyte {
 	 * send data accompanied with signature data
 	 *
 	 */
-	sendData(method, model, field = null, value = null, data = null, formdata = null, callback, error = null) {
+	sendData(method, model, field = null, value = null, data = null, formdata = null, headers = [], callback, error = null) {
 		var obj = this;
 		var token = (obj.getCookie('kyte-token') ? obj.getCookie('kyte-token') : '1');
 
@@ -138,6 +138,12 @@ class Kyte {
 						// if application ID is supplied, pass those - this is for provisioned containers
 						if (obj.applicationId) {
 							xhr.setRequestHeader('x-kyte-appId', obj.applicationId);
+						}
+						// if custom headers are specified, add them
+						if (headers.length > 0) {
+							headers.forEach(function (item) {
+								xhr.setRequestHeader(item.header, item.value);
+							});
 						}
 					},
 					data: encdata,
@@ -253,8 +259,8 @@ class Kyte {
 	 * send data accompanied with signature data
 	 *
 	 */
-	post(model, data = null, formdata = null, callback, error = null) {
-		this.sendData('POST', model, null, null, data, formdata, callback, error);
+	post(model, data = null, formdata = null, headers = [], callback, error = null) {
+		this.sendData('POST', model, null, null, data, formdata, headers, callback, error);
 	}
 	/* Put
 	 *
@@ -262,8 +268,8 @@ class Kyte {
 	 * send data accompanied with signature data
 	 *
 	 */
-	put(model, field = null, value = null, data = null, formdata = null, callback, error = null) {
-		this.sendData('PUT', model, field, value, data, formdata, callback, error);
+	put(model, field = null, value = null, data = null, formdata = null, headers = [], callback, error = null) {
+		this.sendData('PUT', model, field, value, data, formdata, headers, callback, error);
 	}
 	/* Get
 	 *
@@ -271,8 +277,8 @@ class Kyte {
 	 * send data accompanied with signature data
 	 *
 	 */
-	get(model, field = null, value = null, callback, error = null) {
-		this.sendData('GET', model, field, value, null, null, callback, error);
+	get(model, field = null, value = null, headers = [], callback, error = null) {
+		this.sendData('GET', model, field, value, null, null, headers, callback, error);
 	}
 	/* Delete
 	 *
@@ -280,8 +286,8 @@ class Kyte {
 	 * send data accompanied with signature data
 	 *
 	 */
-	delete(model, field = null, value = null, callback, error = null) {
-		this.sendData('DELETE', model, field, value, null, null, callback, error);
+	delete(model, field = null, value = null, headers = [], callback, error = null) {
+		this.sendData('DELETE', model, field, value, null, null, headers, callback, error);
 	}
 	/*
 	 * Set browser cookie
