@@ -141,9 +141,9 @@ class Kyte {
 						}
 						// if custom headers are specified, add them
 						if (headers.length > 0) {
-							headers.forEach(function (item) {
-								xhr.setRequestHeader(item.header, item.value);
-							});
+							for (const header of headers) {
+								xhr.setRequestHeader(header.name, header.value);
+							}
 						}
 					},
 					data: encdata,
@@ -356,7 +356,7 @@ class Kyte {
 	 */
 	sessionCreate(identity, callback, error = null, sessionController = 'Session') {
 		var obj = this;
-		this.post(sessionController, identity, null,
+		this.post(sessionController, identity, null, [],
 			function (response) {
 				obj.txToken = response.data.txToken;
 				obj.sessionToken = response.data.sessionToken;
@@ -458,7 +458,7 @@ class Kyte {
 	 */
 	sessionDestroy(error = null) {
 		var obj = this;
-		this.delete('Session', null, null,
+		this.delete('Session', null, null, [],
 			function (response) {
 				obj.setCookie('txToken', '', -1);
 				obj.setCookie('sessionToken', '', -1);
@@ -695,7 +695,7 @@ class KyteTable {
 	init() {
 		let self = this;
 		if (!this.loaded) {
-			this.api.get(this.model.name, this.model.field, this.model.value, function (response) {
+			this.api.get(this.model.name, this.model.field, this.model.value, [], function (response) {
 				let content = '<thead><tr>';
 				let i = 0;
 				self.columnDefs.forEach(function (item) {
@@ -720,7 +720,7 @@ class KyteTable {
 							let row = self.table.row($(this).parents('tr'));
 							let data = row.data();
 							self.api.confirm('Delete', 'Are you sure you wish to delete?', function () {
-								self.api.delete(self.model.name, 'id', data['id'], function () {
+								self.api.delete(self.model.name, 'id', data['id'], [], function () {
 									row.remove().draw();
 								}, function () {
 									alert('Unable to delete. Please try again later.');
@@ -1044,7 +1044,7 @@ class KyteForm {
 					// if an ID is set, then update entry
 					let idx = obj.editOnlyMode ? obj.editOnlyMode : form.data('idx');
 					if (idx > 0) {
-						obj.api.put(obj.model, 'id', idx, null, form.serialize(),
+						obj.api.put(obj.model, 'id', idx, null, form.serialize(), [],
 							function (response) {
 								$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
 
@@ -1072,7 +1072,7 @@ class KyteForm {
 
 					// else, create new entry
 					else {
-						obj.api.post(obj.model, null, form.serialize(),
+						obj.api.post(obj.model, null, form.serialize(), [],
 							function (response) {
 								$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
 
@@ -1221,7 +1221,7 @@ class KyteForm {
 					obj.itemized.fields.forEach(function (field) {
 						if (field.type == 'select') {
 							if (field.option.ajax) {
-								obj.api.get(field.option.data_model_name, field.option.data_model_field, field.option.data_model_value, function (response) {
+								obj.api.get(field.option.data_model_name, field.option.data_model_field, field.option.data_model_value, [], function (response) {
 									response.data.forEach(function (item) {
 										let label = '';
 										field.option.data_model_attributes.forEach(function (attribute) {
@@ -1266,7 +1266,7 @@ class KyteForm {
 	}
 	loadFormData(idx, success = null, fail = null) {
 		var obj = this;
-		obj.api.get(obj.model, 'id', idx, function (response) {
+		obj.api.get(obj.model, 'id', idx, [], function (response) {
 			// populate form
 			// do not populate hidden fields as return data is object....
 			// if (obj.hiddenFields) {
@@ -1302,7 +1302,7 @@ class KyteForm {
 				if (column.type == 'select') {
 					if (column.option.ajax) {
 						$("#form_" + obj.model + "_" + obj.id + '_' + column.field).html('');
-						obj.api.get(column.option.data_model_name, column.option.data_model_field, column.option.data_model_value, function (response) {
+						obj.api.get(column.option.data_model_name, column.option.data_model_field, column.option.data_model_value, [], function (response) {
 							response.data.forEach(function (item) {
 								let label = '';
 								column.option.data_model_attributes.forEach(function (attribute) {
