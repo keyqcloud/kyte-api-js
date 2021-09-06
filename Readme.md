@@ -1,4 +1,4 @@
-#Kyte JS Framework
+# Kyte JS Framework
 
 * Install javascript-obfuscator
 After installing Node.js, run the following in a terminal to install the javascript-obfuscator
