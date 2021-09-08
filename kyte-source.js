@@ -890,7 +890,9 @@ class KyteForm {
 			if (this.modal) {
 				// add click listener to modal button
 				if (this.modalButton) {
-					this.modalButton.on('click', function () {
+					this.modalButton.on('click', function (e) {
+						e.stopPropagation();
+						e.preventDefault();
 						$('#modal_' + obj.model + '_' + obj.id).modal('show');
 					});
 				}
