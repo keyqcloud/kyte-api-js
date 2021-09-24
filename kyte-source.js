@@ -340,6 +340,12 @@ class Kyte {
 		
 		return null;
 	}
+	setPageRequest(model, value) {
+		let obj = {'model': model, 'value':value};
+		let encoded = encodeURIComponent(btoa(JSON.stringify(obj)));
+
+		return encoded;
+	}
 	initSpinner(selector) {
 		selector.append('<div id="pageLoaderModal" class="modal" style="background: white; opacity: 0.6;" data-backdrop="static" data-keyboard="false" tabindex="-1"><div class="modal-dialog modal-sm h-100 d-flex"><div class="mx-auto align-self-center" style="width: 48px"><div class="spinner-wrapper text-center fa-6x"><span class="fas fa-sync fa-spin"></span></div></div></div></div>');
 	}
@@ -903,7 +909,7 @@ class KyteForm {
 		<div class="modal-content">\
 			<div class="modal-header text-center">\
 				<h4 class="modal-title w-100 font-weight-bold">' + this.title + '</h4>\
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>\
+				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>\
 			</div>\
 			<div class="modal-body mx-3">';
 			}
@@ -945,7 +951,7 @@ class KyteForm {
 
 					if (column.type == 'select') {
 						content += '\
-								<select class="custom-select" id="form_' + obj.model + '_' + obj.id + '_' + column.field + '" class="form-control" name="' + column.field + '"';
+								<select id="form_' + obj.model + '_' + obj.id + '_' + column.field + '" class="form-control" name="' + column.field + '"';
 						content += column.required ? 'required="required"' : '';
 						content += '>';
 						// if not ajax, then populate with data - ajax will populate after appending html
@@ -1189,7 +1195,7 @@ class KyteForm {
 					obj.itemized.fields.forEach(function (field) {
 						itemizedHTML += '<div class="col"><div class="form-group">';
 						if (field.type == 'select') {
-							itemizedHTML += '<select id="' + field.option.data_model_name + '_' + field.option.data_model_value + '_' + uniqueId + '" class="custom-select" id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '" class="form-control" name="' + field.name + '"';
+							itemizedHTML += '<select id="' + field.option.data_model_name + '_' + field.option.data_model_value + '_' + uniqueId + '" id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '" class="form-control" name="' + field.name + '"';
 							itemizedHTML += field.required ? 'required="required"' : '';
 							itemizedHTML += '>';
 							// if not ajax, then populate with data - ajax will populate after appending html
