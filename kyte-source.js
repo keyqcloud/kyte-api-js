@@ -1011,7 +1011,7 @@ class KyteForm {
 					<hr>';
 			}
 
-			content += '<div class="row my-4"><div class="col text-center"><input type="submit" name="submit" value="' + obj.submitButton + '" class="btn btn-primary btn-medium d-none d-sm-inline-block"></div></div>';
+			content += '<div class="row my-4"><div class="col text-center"><input type="submit" name="submit" value="' + obj.submitButton + '" class="btn btn-primary btn-medium d-sm-inline-block"></div></div>';
 
 			// end form
 			content += '\
