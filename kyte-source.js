@@ -576,7 +576,7 @@ class Kyte {
 		var pswd = obj.val();
 
 		// check password length
-		if (pswd.length < 6) {
+		if (pswd.length < 8) {
 			obj.removeClass('is-valid').addClass('is-invalid');
 			$('ul li.validate-length i').removeClass('fa-circle');
 			$('ul li.validate-length i').removeClass('fa-check-circle').addClass('fa-times-circle');
