@@ -575,6 +575,30 @@ class Kyte {
 	validatePassword(obj) {
 		var pswd = obj.val();
 
+		if (!pswd.val()) {
+			obj.removeClass('is-valid').addClass('is-invalid');
+			$('ul li.validate-length i').removeClass('fa-circle');
+			$('ul li.validate-length i').removeClass('fa-check-circle').addClass('fa-times-circle');
+			$('ul li.validate-length i').removeClass('text-success').addClass('text-danger');
+
+			$('ul li.validate-small i').removeClass('fa-circle');
+			$('ul li.validate-small i').removeClass('fa-check-circle').addClass('fa-times-circle');
+			$('ul li.validate-small i').removeClass('text-success').addClass('text-danger');
+
+			$('ul li.validate-large i').removeClass('fa-circle');
+			$('ul li.validate-large i').removeClass('fa-check-circle').addClass('fa-times-circle');
+			$('ul li.validate-large i').removeClass('text-success').addClass('text-danger');
+
+			$('ul li.validate-number i').removeClass('fa-circle');
+			$('ul li.validate-number i').removeClass('fa-check-circle').addClass('fa-times-circle');
+			$('ul li.validate-number i').removeClass('text-success').addClass('text-danger');
+
+			$('ul li.validate-symbol i').removeClass('fa-circle');
+			$('ul li.validate-symbol i').removeClass('fa-check-circle').addClass('fa-times-circle');
+			$('ul li.validate-symbol i').removeClass('text-success').addClass('text-danger');
+			return false;
+		}
+
 		// check password length
 		if (pswd.length < 8) {
 			obj.removeClass('is-valid').addClass('is-invalid');
