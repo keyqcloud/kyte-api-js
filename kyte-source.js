@@ -575,7 +575,7 @@ class Kyte {
 	validatePassword(obj) {
 		var pswd = obj.val();
 
-		if (!pswd.val()) {
+		if (!pswd) {
 			obj.removeClass('is-valid').addClass('is-invalid');
 			$('ul li.validate-length i').removeClass('fa-circle');
 			$('ul li.validate-length i').removeClass('fa-check-circle').addClass('fa-times-circle');
