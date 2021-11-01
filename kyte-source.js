@@ -569,108 +569,7 @@ class Kyte {
 				}
 			});
 	}
-	/*
-	 * Check password minimums and update UI
-	 */
-	validatePassword(obj) {
-		var pswd = obj.val();
 
-		if (!pswd) {
-			obj.removeClass('is-valid').addClass('is-invalid');
-			$('ul li.validate-length i').removeClass('fa-circle');
-			$('ul li.validate-length i').removeClass('fa-check-circle').addClass('fa-times-circle');
-			$('ul li.validate-length i').removeClass('text-success').addClass('text-danger');
-
-			$('ul li.validate-small i').removeClass('fa-circle');
-			$('ul li.validate-small i').removeClass('fa-check-circle').addClass('fa-times-circle');
-			$('ul li.validate-small i').removeClass('text-success').addClass('text-danger');
-
-			$('ul li.validate-large i').removeClass('fa-circle');
-			$('ul li.validate-large i').removeClass('fa-check-circle').addClass('fa-times-circle');
-			$('ul li.validate-large i').removeClass('text-success').addClass('text-danger');
-
-			$('ul li.validate-number i').removeClass('fa-circle');
-			$('ul li.validate-number i').removeClass('fa-check-circle').addClass('fa-times-circle');
-			$('ul li.validate-number i').removeClass('text-success').addClass('text-danger');
-
-			$('ul li.validate-symbol i').removeClass('fa-circle');
-			$('ul li.validate-symbol i').removeClass('fa-check-circle').addClass('fa-times-circle');
-			$('ul li.validate-symbol i').removeClass('text-success').addClass('text-danger');
-			return false;
-		}
-
-		// check password length
-		if (pswd.length < 8) {
-			obj.removeClass('is-valid').addClass('is-invalid');
-			$('ul li.validate-length i').removeClass('fa-circle');
-			$('ul li.validate-length i').removeClass('fa-check-circle').addClass('fa-times-circle');
-			$('ul li.validate-length i').removeClass('text-success').addClass('text-danger');
-			return false;
-		} else {
-			obj.removeClass('is-invalid').addClass('is-valid');
-			$('ul li.validate-length i').removeClass('fa-circle');
-			$('ul li.validate-length i').removeClass('fa-times-circle').addClass('fa-check-circle');
-			$('ul li.validate-length i').removeClass('text-danger').addClass('text-success');
-		}
-
-		//validate letter
-		if (pswd.match(/[A-z]/)) {
-			obj.removeClass('is-invalid').addClass('is-valid');
-			$('ul li.validate-small i').removeClass('fa-circle');
-			$('ul li.validate-small i').removeClass('fa-times-circle').addClass('fa-check-circle');
-			$('ul li.validate-small i').removeClass('text-danger').addClass('text-success');
-		} else {
-			obj.removeClass('is-valid').addClass('is-invalid');
-			$('ul li.validate-small i').removeClass('fa-circle');
-			$('ul li.validate-small i').removeClass('fa-check-circle').addClass('fa-times-circle');
-			$('ul li.validate-small i').removeClass('text-success').addClass('text-danger');
-			return false;
-		}
-
-		//validate capital letter
-		if (pswd.match(/[A-Z]/)) {
-			obj.removeClass('is-invalid').addClass('is-valid');
-			$('ul li.validate-large i').removeClass('fa-circle');
-			$('ul li.validate-large i').removeClass('fa-times-circle').addClass('fa-check-circle');
-			$('ul li.validate-large i').removeClass('text-danger').addClass('text-success');
-		} else {
-			obj.removeClass('is-valid').addClass('is-invalid');
-			$('ul li.validate-large i').removeClass('fa-circle');
-			$('ul li.validate-large i').removeClass('fa-check-circle').addClass('fa-times-circle');
-			$('ul li.validate-large i').removeClass('text-success').addClass('text-danger');
-			return false;
-		}
-
-		//validate number
-		if (pswd.match(/\d/)) {
-			obj.removeClass('is-invalid').addClass('is-valid');
-			$('ul li.validate-number i').removeClass('fa-circle');
-			$('ul li.validate-number i').removeClass('fa-times-circle').addClass('fa-check-circle');
-			$('ul li.validate-number i').removeClass('text-danger').addClass('text-success');
-		} else {
-			obj.removeClass('is-valid').addClass('is-invalid');
-			$('ul li.validate-number i').removeClass('fa-circle');
-			$('ul li.validate-number i').removeClass('fa-check-circle').addClass('fa-times-circle');
-			$('ul li.validate-number i').removeClass('text-success').addClass('text-danger');
-			return false;
-		}
-
-		// symbol
-		if (pswd.match(/[@$!%*#?&]/)) {
-			obj.removeClass('is-invalid').addClass('is-valid');
-			$('ul li.validate-symbol i').removeClass('fa-circle');
-			$('ul li.validate-symbol i').removeClass('fa-times-circle').addClass('fa-check-circle');
-			$('ul li.validate-symbol i').removeClass('text-danger').addClass('text-success');
-		} else {
-			obj.removeClass('is-valid').addClass('is-invalid');
-			$('ul li.validate-symbol i').removeClass('fa-circle');
-			$('ul li.validate-symbol i').removeClass('fa-check-circle').addClass('fa-times-circle');
-			$('ul li.validate-symbol i').removeClass('text-success').addClass('text-danger');
-			return false;
-		}
-
-		return true;
-	}
 	validateForm(form) {
 		let valid = true;
 		form.find('input').each(function () {
@@ -1381,4 +1280,165 @@ class KyteForm {
 	}
 }
 
+class KytePasswordRequirement {
+	constructor(api, selector, passwordField, confirmField) {
+		this.api = api;
+		this.selector = selector;
+		this.passwordField = passwordField;
+		this.confirmField = confirmField;
+		this.minLength = 8;
+		this.lengthText = "Minimum length of "+this.minLength;
+		this.lowerCaseText = "At least one lower case letter";
+		this.upperCaseText = "At least one upper case letter";
+		this.numberText = "At least one number";
+		this.symbolText = "At least one symbol";
+		// password requirements
+		this.reqLength = true;
+		this.reqLowerCase = true;
+		this.reqUpperCase = true;
+		this.reqNumber = true;
+		this.reqSymbol = true;
+		//
+		this.valid = false;
+	}
 
+	init() {
+		let obj = this;
+		this.selector.html('');
+		let passreqhtml = '<ul class="fa-ul">';
+		if (this.reqLength) {
+			passreqhtml += '<li class="validate-length"><i class="fa-li far fa-circle"></i> '+this.lengthText+'</li>';
+		}
+		if (this.reqLowerCase) {
+			passreqhtml += '<li class="validate-small"><i class="fa-li far fa-circle"></i> '+this.lowerCaseText+'</li>';
+		}
+		if (this.reqUpperCase) {
+			passreqhtml += '<li class="validate-large"><i class="fa-li far fa-circle"></i> '+this.upperCaseText+'</li>';
+		}
+		if (this.reqNumber) {
+			passreqhtml += '<li class="validate-number"><i class="fa-li far fa-circle"></i> '+this.numberText+'</li>';
+		}
+		if (this.reqSymbol) {
+			passreqhtml += '<li class="validate-number"><i class="fa-li far fa-circle"></i> '+this.symbolText+'</li>';
+		}
+		passreqhtml += '</ul>'
+		this.selector.append(passreqhtml);
+
+		this.passwordField.on('keyup', function() {
+			this.valid = obj.validatePassword();
+		});
+	}
+
+	/*
+	 * Check password minimums and update UI
+	 */
+	validatePassword() {
+		var pswd = this.passwordField.val();
+
+		if (!pswd) {
+			this.passwordField.removeClass('is-valid').addClass('is-invalid');
+			$('ul li.validate-length i').removeClass('fa-circle');
+			$('ul li.validate-length i').removeClass('fa-check-circle').addClass('fa-times-circle');
+			$('ul li.validate-length i').removeClass('text-success').addClass('text-danger');
+
+			$('ul li.validate-small i').removeClass('fa-circle');
+			$('ul li.validate-small i').removeClass('fa-check-circle').addClass('fa-times-circle');
+			$('ul li.validate-small i').removeClass('text-success').addClass('text-danger');
+
+			$('ul li.validate-large i').removeClass('fa-circle');
+			$('ul li.validate-large i').removeClass('fa-check-circle').addClass('fa-times-circle');
+			$('ul li.validate-large i').removeClass('text-success').addClass('text-danger');
+
+			$('ul li.validate-number i').removeClass('fa-circle');
+			$('ul li.validate-number i').removeClass('fa-check-circle').addClass('fa-times-circle');
+			$('ul li.validate-number i').removeClass('text-success').addClass('text-danger');
+
+			$('ul li.validate-symbol i').removeClass('fa-circle');
+			$('ul li.validate-symbol i').removeClass('fa-check-circle').addClass('fa-times-circle');
+			$('ul li.validate-symbol i').removeClass('text-success').addClass('text-danger');
+			return false;
+		}
+
+		// check password length
+		if (this.reqLength) {
+			if (pswd.length < 8) {
+				this.passwordField.removeClass('is-valid').addClass('is-invalid');
+				$('ul li.validate-length i').removeClass('fa-circle');
+				$('ul li.validate-length i').removeClass('fa-check-circle').addClass('fa-times-circle');
+				$('ul li.validate-length i').removeClass('text-success').addClass('text-danger');
+				return false;
+			} else {
+				this.passwordField.removeClass('is-invalid').addClass('is-valid');
+				$('ul li.validate-length i').removeClass('fa-circle');
+				$('ul li.validate-length i').removeClass('fa-times-circle').addClass('fa-check-circle');
+				$('ul li.validate-length i').removeClass('text-danger').addClass('text-success');
+			}
+		}
+
+		//validate lower letter
+		if (this.reqLowerCase) {
+			if (pswd.match(/[a-z]/)) {
+				obj.removeClass('is-invalid').addClass('is-valid');
+				$('ul li.validate-small i').removeClass('fa-circle');
+				$('ul li.validate-small i').removeClass('fa-times-circle').addClass('fa-check-circle');
+				$('ul li.validate-small i').removeClass('text-danger').addClass('text-success');
+			} else {
+				this.passwordField.removeClass('is-valid').addClass('is-invalid');
+				$('ul li.validate-small i').removeClass('fa-circle');
+				$('ul li.validate-small i').removeClass('fa-check-circle').addClass('fa-times-circle');
+				$('ul li.validate-small i').removeClass('text-success').addClass('text-danger');
+				return false;
+			}
+		}
+
+		//validate capital letter
+		if (this.reqUpperCase) {
+			if (pswd.match(/[A-Z]/)) {
+				obj.removeClass('is-invalid').addClass('is-valid');
+				$('ul li.validate-large i').removeClass('fa-circle');
+				$('ul li.validate-large i').removeClass('fa-times-circle').addClass('fa-check-circle');
+				$('ul li.validate-large i').removeClass('text-danger').addClass('text-success');
+			} else {
+				this.passwordField.removeClass('is-valid').addClass('is-invalid');
+				$('ul li.validate-large i').removeClass('fa-circle');
+				$('ul li.validate-large i').removeClass('fa-check-circle').addClass('fa-times-circle');
+				$('ul li.validate-large i').removeClass('text-success').addClass('text-danger');
+				return false;
+			}
+		}
+
+		//validate number
+		if (this.reqNumber) {
+			if (pswd.match(/\d/)) {
+				this.passwordField.removeClass('is-invalid').addClass('is-valid');
+				$('ul li.validate-number i').removeClass('fa-circle');
+				$('ul li.validate-number i').removeClass('fa-times-circle').addClass('fa-check-circle');
+				$('ul li.validate-number i').removeClass('text-danger').addClass('text-success');
+			} else {
+				this.passwordField.removeClass('is-valid').addClass('is-invalid');
+				$('ul li.validate-number i').removeClass('fa-circle');
+				$('ul li.validate-number i').removeClass('fa-check-circle').addClass('fa-times-circle');
+				$('ul li.validate-number i').removeClass('text-success').addClass('text-danger');
+				return false;
+			}
+		}
+
+		// symbol
+		if (this.reqSymbol) {
+			if (pswd.match(/[@$!%*#?&]/)) {
+				this.passwordField.removeClass('is-invalid').addClass('is-valid');
+				$('ul li.validate-symbol i').removeClass('fa-circle');
+				$('ul li.validate-symbol i').removeClass('fa-times-circle').addClass('fa-check-circle');
+				$('ul li.validate-symbol i').removeClass('text-danger').addClass('text-success');
+			} else {
+				this.passwordField.removeClass('is-valid').addClass('is-invalid');
+				$('ul li.validate-symbol i').removeClass('fa-circle');
+				$('ul li.validate-symbol i').removeClass('fa-check-circle').addClass('fa-times-circle');
+				$('ul li.validate-symbol i').removeClass('text-success').addClass('text-danger');
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
