@@ -643,10 +643,10 @@ class KyteTable {
 					let targetIdx = self.columnDefs.length;
 					var actionHTML = '';
 					if (self.actionEdit) {
-						actionHTML += '<a class="mr-3 edit btn btn-small btn-outline-primary" href="#"><i class="fas fa-edit"></i></a>';
+						actionHTML += '<a class="me-3 edit btn btn-small btn-outline-primary" href="#"><i class="fas fa-edit"></i></a>';
 					}
 					if (self.actionDelete) {
-						actionHTML += '<a class="mr-3 delete btn btn-small btn-outline-danger" href="#"><i class="fas fa-trash-alt"></i></a>';
+						actionHTML += '<a class="me-3 delete btn btn-small btn-outline-danger" href="#"><i class="fas fa-trash-alt"></i></a>';
 						// bind listener
 						self.selector.on('click', '.delete', function (e) {
 							e.preventDefault();
@@ -907,7 +907,7 @@ class KyteForm {
 						if (column.value) {
 							content += ' value="' + column.value + '"';
 						}
-						content += '>';
+						content += (column.readonly ? 'readonly ' : '') + '>';
 					}
 
 					content += '\
@@ -1113,7 +1113,7 @@ class KyteForm {
 
 					e.preventDefault(); // prevent default link behaviour
 
-					let itemizedHTML = '<div class="row itemized-row">'; // init html string
+					let itemizedHTML = '<div class="row itemized-row my-3">'; // init html string
 
 					obj.itemized.fields.forEach(function (field) {
 						itemizedHTML += '<div class="col"><div class="form-group">';
@@ -1144,7 +1144,7 @@ class KyteForm {
 							if (field.placeholder) {
 								itemizedHTML += ' placeholder="' + field.placeholder + '"';
 							}
-							itemizedHTML += '>';
+							itemizedHTML += (field.readonly ? 'readonly ' : '') + '>';
 						}
 						itemizedHTML += '</div></div>';
 					});
