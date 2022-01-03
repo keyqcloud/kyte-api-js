@@ -325,7 +325,7 @@ class Kyte {
 			sParameterName = sURLVariables[i].split('=');
 
 			if (sParameterName[0] === sParam) {
-				return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+				return sParameterName[1] === undefined ? false : decodeURIComponent(sParameterName[1]);
 			}
 		}
 	}
