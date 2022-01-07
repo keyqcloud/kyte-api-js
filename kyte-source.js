@@ -1378,7 +1378,7 @@ class KytePasswordRequirement {
 		//validate lower letter
 		if (this.reqLowerCase) {
 			if (pswd.match(/[a-z]/)) {
-				this.removeClass('is-invalid').addClass('is-valid');
+				this.passwordField.removeClass('is-invalid').addClass('is-valid');
 				$('ul li.validate-small i').removeClass('fa-circle');
 				$('ul li.validate-small i').removeClass('fa-times-circle').addClass('fa-check-circle');
 				$('ul li.validate-small i').removeClass('text-danger').addClass('text-success');
@@ -1394,7 +1394,7 @@ class KytePasswordRequirement {
 		//validate capital letter
 		if (this.reqUpperCase) {
 			if (pswd.match(/[A-Z]/)) {
-				this.removeClass('is-invalid').addClass('is-valid');
+				this.passwordField.removeClass('is-invalid').addClass('is-valid');
 				$('ul li.validate-large i').removeClass('fa-circle');
 				$('ul li.validate-large i').removeClass('fa-times-circle').addClass('fa-check-circle');
 				$('ul li.validate-large i').removeClass('text-danger').addClass('text-success');
