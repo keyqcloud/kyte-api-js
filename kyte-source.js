@@ -1319,7 +1319,7 @@ class KytePasswordRequirement {
 			passreqhtml += '<li class="validate-number"><i class="fa-li far fa-circle"></i> '+this.numberText+'</li>';
 		}
 		if (this.reqSymbol) {
-			passreqhtml += '<li class="validate-number"><i class="fa-li far fa-circle"></i> '+this.symbolText+'</li>';
+			passreqhtml += '<li class="validate-symbol"><i class="fa-li far fa-circle"></i> '+this.symbolText+'</li>';
 		}
 		passreqhtml += '</ul>'
 		this.selector.append(passreqhtml);
@@ -1334,6 +1334,7 @@ class KytePasswordRequirement {
 	 */
 	validatePassword() {
 		var pswd = this.passwordField.val();
+		let result = true;
 
 		if (!pswd) {
 			this.passwordField.removeClass('is-valid').addClass('is-invalid');
@@ -1356,7 +1357,7 @@ class KytePasswordRequirement {
 			$('ul li.validate-symbol i').removeClass('fa-circle');
 			$('ul li.validate-symbol i').removeClass('fa-check-circle').addClass('fa-times-circle');
 			$('ul li.validate-symbol i').removeClass('text-success').addClass('text-danger');
-			return false;
+			result = false;
 		}
 
 		// check password length
@@ -1366,7 +1367,7 @@ class KytePasswordRequirement {
 				$('ul li.validate-length i').removeClass('fa-circle');
 				$('ul li.validate-length i').removeClass('fa-check-circle').addClass('fa-times-circle');
 				$('ul li.validate-length i').removeClass('text-success').addClass('text-danger');
-				return false;
+				result = false;
 			} else {
 				this.passwordField.removeClass('is-invalid').addClass('is-valid');
 				$('ul li.validate-length i').removeClass('fa-circle');
@@ -1387,7 +1388,7 @@ class KytePasswordRequirement {
 				$('ul li.validate-small i').removeClass('fa-circle');
 				$('ul li.validate-small i').removeClass('fa-check-circle').addClass('fa-times-circle');
 				$('ul li.validate-small i').removeClass('text-success').addClass('text-danger');
-				return false;
+				result = false;
 			}
 		}
 
@@ -1403,7 +1404,7 @@ class KytePasswordRequirement {
 				$('ul li.validate-large i').removeClass('fa-circle');
 				$('ul li.validate-large i').removeClass('fa-check-circle').addClass('fa-times-circle');
 				$('ul li.validate-large i').removeClass('text-success').addClass('text-danger');
-				return false;
+				result = false;
 			}
 		}
 
@@ -1419,7 +1420,7 @@ class KytePasswordRequirement {
 				$('ul li.validate-number i').removeClass('fa-circle');
 				$('ul li.validate-number i').removeClass('fa-check-circle').addClass('fa-times-circle');
 				$('ul li.validate-number i').removeClass('text-success').addClass('text-danger');
-				return false;
+				result = false;
 			}
 		}
 
@@ -1435,10 +1436,10 @@ class KytePasswordRequirement {
 				$('ul li.validate-symbol i').removeClass('fa-circle');
 				$('ul li.validate-symbol i').removeClass('fa-check-circle').addClass('fa-times-circle');
 				$('ul li.validate-symbol i').removeClass('text-success').addClass('text-danger');
-				return false;
+				result = false;
 			}
 		}
 
-		return true;
+		return result;
 	}
 }
