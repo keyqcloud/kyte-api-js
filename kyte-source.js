@@ -315,6 +315,9 @@ class Kyte {
 		}
 		return "";
 	}
+	getUrlHash() {
+		return location.hash;
+	}
 	/*
 	 * Get params from URL
 	 */
@@ -415,7 +418,7 @@ class Kyte {
 			});
 		});
 	}
-	isSession() {
+	checkSession() {
 		if (this.sessionToken == 0 || this.sessionToken == '0') {
 			this.setCookie('sessionToken', '', -1);
 			this.setCookie('sessionPermission', '', -1);
@@ -454,6 +457,19 @@ class Kyte {
 			this.account_number = this.initial_account_number;
 		}
 		return (this.getCookie('sessionToken') ? true : false);
+	}
+	isSession() {
+		let session = this.checkSession();
+		let timer = setInterval(function () {
+			console.log("checking session...");
+			// Check if cookie is present, 
+			if (!session) {
+				console.log("session expired");
+				window.location.href="/";
+			}
+		}, 30000);
+
+		return session;
 	}
 	isAdmin() {
 		return this.getCookie("sessionPermission") == this.adminRole;
@@ -617,11 +633,14 @@ class KyteTable {
 
 		this.actionEdit = actionEdit;
 		this.editForm = null;
+		this.actionDownload = null;
 		this.actionDelete = actionDelete;
 		this.actionView = actionView;
 		this.viewTarget = viewTarget;
 		this.rowCallBack = rowCallBack;
 		this.initComplete = initComplete;
+
+		this.customAction = null;
 
 		this.pageLength = 50;
 	}
@@ -667,7 +686,14 @@ class KyteTable {
 						"data": "",
 						"className": "text-right row-actions",
 						render: function (data, type, row, meta) {
-							const returnString = actionHTML;
+							let returnString = '';
+							if (typeof self.customAction === "function") {
+								returnString += self.customAction(data, type, row, meta);
+							}
+							if (self.actionDownload && row[self.actionDownload]) {
+								returnString += '<a class="me-3 download btn btn-small btn-outline-primary" href="'+row[self.actionDownload]+'"><i class="fas fa-cloud-download-alt"></i></a>';
+							}
+							returnString += actionHTML;
 							return returnString;
 						}
 					});
@@ -796,6 +822,9 @@ class KyteForm {
 		this.id;
 		this.submitButton = 'Submit';
 
+		// file upload
+		this.fileUploadField = null;
+
 		this.itemized = false;
 
 		this.success = successCallBack;
@@ -897,6 +926,10 @@ class KyteForm {
 							content += ' placeholder="' + column.placeholder + '"';
 						}
 						content += '></textarea>';
+					} else if (column.type == 'file') {
+						content += '\
+								<input type="file" id="form_' + obj.model + '_' + obj.id + '_' + column.field + '" name="' + column.field + '" class="form-control" data-max-file-size="2M" accept="image/*;capture=camera"' + (column.required ? ' required="required"' : '') + ' />';
+						obj.fileUploadField = 'form_' + obj.model + '_' + obj.id + '_' + column.field;
 					} else {
 						content += '\
 								<input type="' + column.type + '" id="form_' + obj.model + '_' + obj.id + '_' + column.field + '" class="form-control' + (column.date ? ' form-datepicker' : '') + '" name="' + column.field + '"';
@@ -1007,10 +1040,14 @@ class KyteForm {
 
 					// else, create new entry
 					else {
+						// if file get file name and add that to form
+						if (obj.fileUploadField) {
+							let f = document.getElementById(obj.fileUploadField).files[0];
+							let ext = f.name.split('.').pop();
+							form.append('<input id="fileExtension" type="hidden" name="ext" value="' + ext +'" />');
+						}
 						obj.api.post(obj.model, null, form.serialize(), [],
 							function (response) {
-								$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
-
 								if (obj.KyteTable) {
 									if (response.data.constructor === Array) {
 										response.data.forEach(function (item) {
@@ -1023,18 +1060,72 @@ class KyteForm {
 									}
 								}
 
-								// run call back function if any
-								if (typeof obj.success === "function") {
-									obj.success(response);
-								}
+								// if there's a file upload process it
+								if (obj.fileUploadField) {
+									// clear up form incase it's reused
+									$("#fileExtension").remove();
 
-								// close modal if form is a modal dialog
-								obj.hideModal();
+									// the expected return fields from the response are:
+									// - key
+									// - policy
+									// - credential
+									// - date
+									// - siganture
+									// - s3endpoint
+
+									// get id of newly creatd entry
+									let fileIdx = response.data.id;
+									// get file input
+									let file = document.getElementById(obj.fileUploadField).files[0];
+									// create upload form to submit directly to s3
+									let uploadForm = new FormData();
+									// configure upload form
+									uploadForm.append('acl', 'private');
+									uploadForm.append('key', response.data.key);
+									uploadForm.append('policy', response.data.policy);
+									uploadForm.append('x-amz-algorithm', 'AWS4-HMAC-SHA256');
+									uploadForm.append('x-amz-credential', response.data.credential);
+									uploadForm.append('x-amz-date', response.data.date);
+									uploadForm.append('x-amz-signature', response.data.signature);
+									uploadForm.append('file', file);
+
+									$.ajax({
+										url: response.data.s3endpoint,
+										type: 'post',
+										data: uploadForm,
+										dataType: 'json',
+										cache: false,
+										contentType: false,
+										processData: false,
+										success: function(data) {
+											// run call back function if any
+											if (typeof obj.success === "function") { obj.success(response); }
+											// close modal if form is a modal dialog
+											$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
+											obj.hideModal();
+										},
+										error: function(error) {
+											$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
+											$('#form_' + obj.model + '_' + obj.id + ' .error-msg').html(error);
+											if (typeof obj.fail === "function") {
+												obj.fail(error);
+											}
+											k.delete(obj.model, 'id', fileIdx, []);
+										}
+									});
+
+								} else {
+									// run call back function if any
+									if (typeof obj.success === "function") { obj.success(response); }
+									// close modal if form is a modal dialog
+									$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
+									obj.hideModal();
+								}
 							},
 							function (response) {
 								$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
 								$('#form_' + obj.model + '_' + obj.id + ' .error-msg').html(response);
-								if (typeof obj.success === "function") {
+								if (typeof obj.fail === "function") {
 									obj.fail(response);
 								}
 							}
@@ -1253,7 +1344,7 @@ class KyteForm {
 										}
 									}
 								});
-								$("#form_" + obj.model + "_" + obj.id + '_' + column.field).append('<option value="' + item['id'] + '">' + label + '</option>');
+								$("#form_" + obj.model + "_" + obj.id + '_' + column.field).append('<option value="' + item['id'] + '"' + (item[column.option.data_model_default_field] == column.option.data_model_default_value ? 'selected="selected"' : '')  + '>' + label + '</option>');
 							});
 						}, function () {
 							alert("Unable to load data");
