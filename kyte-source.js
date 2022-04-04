@@ -459,17 +459,16 @@ class Kyte {
 		return (this.getCookie('sessionToken') ? true : false);
 	}
 	isSession() {
-		let session = this.checkSession();
+		let api = this;
 		let timer = setInterval(function () {
-			console.log("checking session...");
+			let session = api.checkSession();
 			// Check if cookie is present, 
 			if (!session) {
-				console.log("session expired");
 				window.location.href="/";
 			}
 		}, 30000);
 
-		return session;
+		return  this.checkSession();
 	}
 	isAdmin() {
 		return this.getCookie("sessionPermission") == this.adminRole;
@@ -1043,8 +1042,10 @@ class KyteForm {
 						// if file get file name and add that to form
 						if (obj.fileUploadField) {
 							let f = document.getElementById(obj.fileUploadField).files[0];
-							let ext = f.name.split('.').pop();
-							form.append('<input id="fileExtension" type="hidden" name="ext" value="' + ext +'" />');
+							if (f) {
+								let ext = f.name.split('.').pop();
+								form.append('<input id="fileExtension" type="hidden" name="ext" value="' + ext +'" />');
+							}
 						}
 						obj.api.post(obj.model, null, form.serialize(), [],
 							function (response) {
@@ -1061,7 +1062,7 @@ class KyteForm {
 								}
 
 								// if there's a file upload process it
-								if (obj.fileUploadField) {
+								if (obj.fileUploadField && response.data.s3endpoint) {
 									// clear up form incase it's reused
 									$("#fileExtension").remove();
 
