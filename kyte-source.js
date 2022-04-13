@@ -1021,7 +1021,7 @@ class KyteForm {
 								}
 
 								if (obj.KyteTable) {
-									obj.selectedRow.data(response.data).draw();
+									obj.selectedRow.data(response.data[0]).draw();
 								}
 
 								// close modal if form is a modal dialog
@@ -1062,7 +1062,7 @@ class KyteForm {
 								}
 
 								// if there's a file upload process it
-								if (obj.fileUploadField && response.data.s3endpoint) {
+								if (obj.fileUploadField && response.data[0].s3endpoint) {
 									// clear up form incase it's reused
 									$("#fileExtension").remove();
 
@@ -1075,23 +1075,23 @@ class KyteForm {
 									// - s3endpoint
 
 									// get id of newly creatd entry
-									let fileIdx = response.data.id;
+									let fileIdx = response.data[0].id;
 									// get file input
 									let file = document.getElementById(obj.fileUploadField).files[0];
 									// create upload form to submit directly to s3
 									let uploadForm = new FormData();
 									// configure upload form
 									uploadForm.append('acl', 'private');
-									uploadForm.append('key', response.data.key);
-									uploadForm.append('policy', response.data.policy);
+									uploadForm.append('key', response.data[0].key);
+									uploadForm.append('policy', response.data[0].policy);
 									uploadForm.append('x-amz-algorithm', 'AWS4-HMAC-SHA256');
-									uploadForm.append('x-amz-credential', response.data.credential);
-									uploadForm.append('x-amz-date', response.data.date);
-									uploadForm.append('x-amz-signature', response.data.signature);
+									uploadForm.append('x-amz-credential', response.data[0].credential);
+									uploadForm.append('x-amz-date', response.data[0].date);
+									uploadForm.append('x-amz-signature', response.data[0].signature);
 									uploadForm.append('file', file);
 
 									$.ajax({
-										url: response.data.s3endpoint,
+										url: response.data[0].s3endpoint,
 										type: 'post',
 										data: uploadForm,
 										dataType: 'json',
