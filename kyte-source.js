@@ -1043,8 +1043,8 @@ class KyteForm {
 						if (obj.fileUploadField) {
 							let f = document.getElementById(obj.fileUploadField).files[0];
 							if (f) {
-								let ext = f.name.split('.').pop();
-								form.append('<input id="fileExtension" type="hidden" name="ext" value="' + ext +'" />');
+								form.append('<input id="fileExtension" type="hidden" name="filename" value="' + f.name +'" />');
+								console.log(f.name);
 							}
 						}
 						obj.api.post(obj.model, null, form.serialize(), [],
