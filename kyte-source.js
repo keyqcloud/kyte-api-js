@@ -1043,28 +1043,22 @@ class KyteForm {
 						if (obj.fileUploadField) {
 							let f = document.getElementById(obj.fileUploadField).files[0];
 							if (f) {
-								form.append('<input id="fileExtension" type="hidden" name="filename" value="' + f.name +'" />');
-								console.log(f.name);
+								form.append('<input id="filename" type="hidden" name="filename" value="' + f.name +'" />');
 							}
 						}
 						obj.api.post(obj.model, null, form.serialize(), [],
 							function (response) {
 								if (obj.KyteTable) {
-									if (response.data.constructor === Array) {
-										response.data.forEach(function (item) {
-											// update data table
-											obj.KyteTable.table.row.add(item).draw();
-										});
-									} else {
+									response.data.forEach(function (item) {
 										// update data table
-										obj.KyteTable.table.row.add(response.data).draw();
-									}
+										obj.KyteTable.table.row.add(item).draw();
+									});
 								}
 
 								// if there's a file upload process it
 								if (obj.fileUploadField && response.data[0].s3endpoint) {
 									// clear up form incase it's reused
-									$("#fileExtension").remove();
+									$("#filename").remove();
 
 									// the expected return fields from the response are:
 									// - key
