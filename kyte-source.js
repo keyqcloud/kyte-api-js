@@ -1024,6 +1024,9 @@ class KyteForm {
 									obj.selectedRow.data(response.data[0]).draw();
 								}
 
+								// reset form
+								$('#form_' + obj.model + '_' + obj.id).trigger("reset");
+
 								// close modal if form is a modal dialog
 								obj.hideModal();
 							},
@@ -1097,6 +1100,9 @@ class KyteForm {
 											if (typeof obj.success === "function") { obj.success(response); }
 											// close modal if form is a modal dialog
 											$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
+											// reset form
+											$('#form_' + obj.model + '_' + obj.id).trigger("reset");
+											// dismiss modal
 											obj.hideModal();
 										},
 										error: function(error) {
@@ -1112,6 +1118,10 @@ class KyteForm {
 								} else {
 									// run call back function if any
 									if (typeof obj.success === "function") { obj.success(response); }
+
+									// reset form
+									$('#form_' + obj.model + '_' + obj.id).trigger("reset");
+
 									// close modal if form is a modal dialog
 									$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
 									obj.hideModal();
@@ -1169,6 +1179,7 @@ class KyteForm {
 						if (obj.itemized) {
 							$('#itemized_' + obj.model + '_' + obj.id).html('');
 						}
+						$('#form_' + obj.model + '_' + obj.id).trigger("reset");
 					}
 				});
 
