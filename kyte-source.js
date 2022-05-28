@@ -331,6 +331,8 @@ class Kyte {
 				return sParameterName[1] === undefined ? false : decodeURIComponent(sParameterName[1]);
 			}
 		}
+
+		return false;
 	}
 	getPageRequest() {
 		let encoded = this.getUrlParameter('request');
