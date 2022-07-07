@@ -639,14 +639,28 @@ class KyteTable {
 		this.rowCallBack = rowCallBack;
 		this.initComplete = initComplete;
 
+		// array of object with following structure
+		// [
+		// 	{
+		// 		'className':'myCustomAction',
+		// 		'label':'Click Me!',
+		//		'faicon': 'fas fa-edit', // optional
+		// 		'callback': function(data, model) {
+		// 			// my call back function goes here
+		// 			// idx = data['id']
+		// 		}
+		// 	}
+		// ]
 		this.customAction = null;
+
+		this.page_idx = 1;
 
 		this.pageLength = 50;
 	}
 	init() {
 		let self = this;
 		if (!this.loaded) {
-			this.api.get(this.model.name, this.model.field, this.model.value, [], function (response) {
+			// this.api.get(this.model.name, this.model.field, this.model.value, [], function (response) {
 				let content = '<thead><tr>';
 				let i = 0;
 				self.columnDefs.forEach(function (item) {
@@ -658,14 +672,9 @@ class KyteTable {
 					// add column for actions
 					content += '<th></th>';
 					// calculate new target
-					let targetIdx = self.columnDefs.length;
-					var actionHTML = '';
-					if (self.actionEdit) {
-						actionHTML += '<a class="me-3 edit btn btn-small btn-outline-primary" href="#"><i class="fas fa-edit"></i></a>';
-					}
+
+					// delete button listener
 					if (self.actionDelete) {
-						actionHTML += '<a class="me-3 delete btn btn-small btn-outline-danger" href="#"><i class="fas fa-trash-alt"></i></a>';
-						// bind listener
 						self.selector.on('click', '.delete', function (e) {
 							e.preventDefault();
 							let row = self.table.row($(this).parents('tr'));
@@ -679,20 +688,54 @@ class KyteTable {
 							});
 						});
 					}
+
+					// custom action listener and callback
+					if (self.customAction && self.customAction.length > 0){
+						// iterate through each custom action
+						self.customAction.forEach(a => {
+							self.selector.on('click', '.'+a.className, function(e) {
+								e.preventDefault();
+								let row = self.table.row($(this).parents('tr'));
+								let data = row.data();
+								a.callback(data, self.model.name);
+							});
+						});
+					}
+					
+					let targetIdx = self.columnDefs.length;
 					self.columnDefs.push({
 						"targets": targetIdx,
 						"sortable": false,
 						"data": "",
 						"className": "text-right row-actions",
 						render: function (data, type, row, meta) {
-							let returnString = '';
-							if (typeof self.customAction === "function") {
-								returnString += self.customAction(data, type, row, meta);
+							let dropdownIdx = self.api.makeid(8);
+							let returnString = '<div class="dropdown"><button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dataTableDropdown'+dropdownIdx+'" data-bs-toggle="dropdown" aria-expanded="false"><i class="far fa-caret-square-down"></i></button><ul class="dropdown-menu" aria-labelledby="dataTableDropdown'+dropdownIdx+'">';
+							var actionHTML = ''
+							// TODO MAKE CUSTOM ACTION BUTTON
+							// if (typeof self.customAction === "function") {
+							// 	returnString += self.customAction(data, type, row, meta);
+							// }
+							if (self.actionEdit) {
+								actionHTML += '<li><a class="dropdown-item edit" href="#"><i class="fas fa-edit"></i> Edit</a></li>';
+							}
+							if (self.actionDelete) {
+								actionHTML += '<li><a class="dropdown-item delete" href="#"><i class="fas fa-trash-alt"></i> Delete</a></li>';
 							}
 							if (self.actionDownload && row[self.actionDownload]) {
-								returnString += '<a class="me-3 download btn btn-small btn-outline-primary" href="'+row[self.actionDownload]+'"><i class="fas fa-cloud-download-alt"></i></a>';
+								actionHTML += '<li><a class="dropdown-item download" href="'+row[self.actionDownload]+'"><i class="fas fa-cloud-download-alt"></i> Download</a></li>';
+							}
+							if (self.customAction && self.customAction.length > 0){
+								actionHTML += '<li><hr class="dropdown-divider"></li>';
+								// iterate through each custom action
+								self.customAction.forEach(a => {
+									if (a.className && a.label && typeof a.callback === "function") {
+										actionHTML += '<li><a class="dropdown-item '+a.className+'" href="#">'+(a.faicon ? '<i class="'+a.faicon+'"></i> ' : '')+a.label+'</a></li>';
+									}
+								});
 							}
 							returnString += actionHTML;
+							returnString += '</ul></div>';
 							return returnString;
 						}
 					});
@@ -715,13 +758,49 @@ class KyteTable {
 				content += '</tr></thead><tbody></tbody>';
 				self.selector.append(content);
 				self.table = self.selector.DataTable({
-					searching: self.searching,
+					// searching: self.searching,
+					processing: true,
+					serverSide: true,
 					responsive: true,
 					language: { "url": self.lang },
-					data: response.data,
+					// data: response.data,
 					columnDefs: self.columnDefs,
 					order: self.order,
-					pageLength: self.pageLength,
+					ajax: function(data, callback, settings) {
+						let fields = [];
+						self.columnDefs.forEach( o => {
+							fields.push(o.data);
+						});
+						
+						let headers = [
+							{'name':'x-kyte-draw','value':data.draw},
+							{'name':'x-kyte-page-size','value':data.length},
+							{'name':'x-kyte-page-idx','value':Math.ceil((data.start+1)/data.length)},
+							{'name':'x-kyte-page-search-value','value':data.search.value ? data.search.value : ""},
+							{'name':'x-kyte-page-search-fields','value':fields.join().replace(/,\s*$/, "")},
+						]
+
+						if (data.order.length > 0) {
+							let column = fields[data.order[0].column];
+							let dir = data.order[0].dir;
+
+							headers.push({'name':'x-kyte-page-order-col','value':column ? column : ""});
+							headers.push({'name':'x-kyte-page-order-dir','value':dir ? dir : ""});
+						}
+
+						self.api.get(self.model.name, self.model.field, self.model.value, headers, function (response) {
+							let data = {
+								draw: parseInt(response.draw),
+								recordsTotal: parseInt(response.total_count),
+								recordsFiltered: parseInt(response.total_filtered),
+								data: response.data
+							};
+							callback(data);
+						}, function () {
+							alert("Unable to load data");
+						});
+					},
+					// pageLength: self.pageLength,
 					rowCallback: self.rowCallBack,
 					initComplete: self.initComplete
 				});
@@ -731,9 +810,6 @@ class KyteTable {
 					self.selector.find('tbody').addClass('row-pointer-hand');
 					$('<style>tbody.row-pointer-hand tr { cursor: pointer } tbody td {vertical-align: middle !important;}</style>').appendTo('body');
 				}
-			}, function () {
-				alert("Unable to load data");
-			});
 		}
 	}
 	bindEdit(editForm) {
