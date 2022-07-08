@@ -634,7 +634,6 @@ class KyteTable {
 
 		this.actionEdit = actionEdit;
 		this.editForm = null;
-		this.actionDownload = null;
 		this.actionDelete = actionDelete;
 		this.actionView = actionView;
 		this.viewTarget = viewTarget;
@@ -654,6 +653,13 @@ class KyteTable {
 		// 	}
 		// ]
 		this.customAction = null;
+		// same format as customAction.
+		// Result will be a button instead of a dropdown
+		this.customActionButton = null;
+
+		// hooks
+		this.deleteDisplayHook = null;
+		this.editDisplayHook = null;
 
 		this.page_idx = 1;
 
@@ -703,6 +709,17 @@ class KyteTable {
 							});
 						});
 					}
+					if (self.customActionButton && self.customActionButton.length > 0){
+						// iterate through each custom action
+						self.customActionButton.forEach(a => {
+							self.selector.on('click', '.'+a.className, function(e) {
+								e.preventDefault();
+								let row = self.table.row($(this).parents('tr'));
+								let data = row.data();
+								a.callback(data, self.model.name);
+							});
+						});
+					}
 					
 					let targetIdx = self.columnDefs.length;
 					self.columnDefs.push({
@@ -711,33 +728,62 @@ class KyteTable {
 						"data": "",
 						"className": "text-right row-actions",
 						render: function (data, type, row, meta) {
-							let dropdownIdx = self.api.makeid(8);
-							let returnString = '<div class="dropdown"><button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dataTableDropdown'+dropdownIdx+'" data-bs-toggle="dropdown" aria-expanded="false"><i class="far fa-caret-square-down"></i></button><ul class="dropdown-menu" aria-labelledby="dataTableDropdown'+dropdownIdx+'">';
-							var actionHTML = ''
-							// TODO MAKE CUSTOM ACTION BUTTON
-							// if (typeof self.customAction === "function") {
-							// 	returnString += self.customAction(data, type, row, meta);
-							// }
-							if (self.actionEdit) {
-								actionHTML += '<li><a class="dropdown-item edit" href="#"><i class="fas fa-edit"></i> Edit</a></li>';
-							}
-							if (self.actionDelete) {
-								actionHTML += '<li><a class="dropdown-item delete" href="#"><i class="fas fa-trash-alt"></i> Delete</a></li>';
-							}
-							if (self.actionDownload && row[self.actionDownload]) {
-								actionHTML += '<li><a class="dropdown-item download" href="'+row[self.actionDownload]+'"><i class="fas fa-cloud-download-alt"></i> Download</a></li>';
-							}
-							if (self.customAction && self.customAction.length > 0){
-								actionHTML += '<li><hr class="dropdown-divider"></li>';
+							let returnString = "";
+							//
+							// Button custom actions
+							//
+							if (self.customActionButton && self.customActionButton.length > 0){
 								// iterate through each custom action
-								self.customAction.forEach(a => {
+								self.customActionButton.forEach(a => {
 									if (a.className && a.label && typeof a.callback === "function") {
-										actionHTML += '<li><a class="dropdown-item '+a.className+'" href="#">'+(a.faicon ? '<i class="'+a.faicon+'"></i> ' : '')+a.label+'</a></li>';
+										returnString += '<a class="me-3 '+a.className+' btn btn-small btn-outline-primary" href="#">'+(a.faicon ? '<i class="'+a.faicon+'"></i> ' : '')+a.label+'</a>';
 									}
 								});
 							}
-							returnString += actionHTML;
-							returnString += '</ul></div>';
+
+							//
+							// Dropdown custom actions
+							//
+							let dropdownIdx = self.api.makeid(8);
+							if (self.actionEdit || self.actionDelete || (self.customAction && self.customAction.length > 0)) {
+								// html for dropdown menu items
+								let actionHTML = ''
+
+								returnString += '<div class="dropdown d-inline-block"><button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dataTableDropdown'+dropdownIdx+'" data-bs-toggle="dropdown" aria-expanded="false"><i class="far fa-caret-square-down"></i></button><ul class="dropdown-menu" aria-labelledby="dataTableDropdown'+dropdownIdx+'">';
+								
+								// TODO MAKE CUSTOM ACTION BUTTON
+								// if (typeof self.customAction === "function") {
+								// 	returnString += self.customAction(data, type, row, meta);
+								// }
+								if (self.actionEdit) {
+									let html = '<li><a class="dropdown-item edit" href="#"><i class="fas fa-edit"></i> Edit</a></li>';
+									if (typeof self.editDisplayHook === "function") {
+										html = self.editDisplayHook(row, self.model.name, html);
+									}
+									actionHTML += html;
+								}
+								if (self.actionDelete) {
+									let html = '<li><a class="dropdown-item delete" href="#"><i class="fas fa-trash-alt"></i> Delete</a></li>';
+									if (typeof self.deleteDisplayHook === "function") {
+										html = self.deleteDisplayHook(row, self.model.name, html);
+									}
+									actionHTML += html;
+								}
+								if (self.customAction && self.customAction.length > 0){
+									actionHTML += '<li><hr class="dropdown-divider"></li>';
+									// iterate through each custom action
+									self.customAction.forEach(a => {
+										if (a.className && a.label && typeof a.callback === "function") {
+											actionHTML += '<li><a class="dropdown-item '+a.className+'" href="#">'+(a.faicon ? '<i class="'+a.faicon+'"></i> ' : '')+a.label+'</a></li>';
+										}
+									});
+								}
+
+								// add dropdown menu items
+								returnString += actionHTML;
+								// close dropdown tags
+								returnString += '</ul></div>';
+							}
 							return returnString;
 						}
 					});
