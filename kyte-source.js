@@ -415,7 +415,7 @@ class Kyte {
 	addLogoutHandler(selector) {
 		self = this;
 		// check if the selector exists
-		if ( selector.length ) {
+		if ( $(selector).length ) {
 			$('body').on('click', selector, function() {
 				self.sessionDestroy(function () {
 					location.href = "/";
