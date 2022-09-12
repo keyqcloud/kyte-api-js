@@ -414,7 +414,7 @@ class Kyte {
 	}
 	addLogoutHandler(selector) {
 		self = this;
-		selector.click(function () {
+		$('body').on('click', selector, function() {
 			self.sessionDestroy(function () {
 				location.href = "/";
 			});
@@ -676,7 +676,7 @@ class KyteTable {
 					delete self.columnDefs[i]['label'];
 					i++;
 				});
-				if (self.actionEdit || self.actionDelete) {
+				if (self.actionEdit || self.actionDelete || (self.customAction && self.customAction.length > 0) || (self.customActionButton && self.customActionButton.length > 0)) {
 					// add column for actions
 					content += '<th></th>';
 					// calculate new target
@@ -1029,6 +1029,10 @@ class KyteForm {
 								<select id="form_' + obj.model + '_' + obj.id + '_' + column.field + '" class="form-control" name="' + column.field + '"';
 						content += column.required ? 'required="required"' : '';
 						content += '>';
+						if (column.placeholder) {
+							content += '\
+									<option selected="selected" disabled>' + column.placeholder + '</option>';
+						}
 						// if not ajax, then populate with data - ajax will populate after appending html
 						if (!column.option.ajax) {
 							for (var key in column.option.data) {
@@ -1064,6 +1068,19 @@ class KyteForm {
 							content += ' value="' + column.value + '"';
 						}
 						content += (column.readonly ? 'readonly ' : '') + '>';
+					}
+
+					// add event listeners
+					if (typeof column.click === "function") {
+						$('body').on('click', '#form_' + obj.model + '_' + obj.id + '_' + column.field, function(e) {
+							column.click(e);
+						});
+					}
+
+					if (typeof column.change === "function") {
+						$('body').on('change', '#form_' + obj.model + '_' + obj.id + '_' + column.field, function(e) {
+							column.change(e);
+						});
 					}
 
 					content += '\
@@ -1458,6 +1475,9 @@ class KyteForm {
 				if (column.type == 'select') {
 					if (column.option.ajax) {
 						$("#form_" + obj.model + "_" + obj.id + '_' + column.field).html('');
+						if (column.placeholder) {
+							$("#form_" + obj.model + "_" + obj.id + '_' + column.field).append('<option selected="selected" disabled>' + column.placeholder + '</option>');
+						}
 						obj.api.get(column.option.data_model_name, column.option.data_model_field, column.option.data_model_value, [], function (response) {
 							response.data.forEach(function (item) {
 								let label = '';
