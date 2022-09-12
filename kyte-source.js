@@ -414,11 +414,14 @@ class Kyte {
 	}
 	addLogoutHandler(selector) {
 		self = this;
-		$('body').on('click', selector, function() {
-			self.sessionDestroy(function () {
-				location.href = "/";
+		// check if the selector exists
+		if ( selector.length ) {
+			$('body').on('click', selector, function() {
+				self.sessionDestroy(function () {
+					location.href = "/";
+				});
 			});
-		});
+		}
 	}
 	checkSession() {
 		if (this.sessionToken == 0 || this.sessionToken == '0') {
