@@ -1,5 +1,5 @@
 class Kyte {
-	constructor(url, accessKey, identifier, account_number, applicationId = null, adminRoleID = 1) {
+	constructor(url, accessKey, identifier, account_number, applicationId = null) {
 		this.url = url;
 		this.access_key = accessKey;
 		this.identifier = identifier;
@@ -12,7 +12,6 @@ class Kyte {
 
 		this.txToken;
 		this.sessionToken;
-		this.adminRole = adminRoleID;
 		this.dateFormat = 'mm/dd/yy';
 	}
 	init() {
@@ -170,7 +169,8 @@ class Kyte {
 						if (!response.token && !response.session) {
 							obj.setCookie('txToken', '', -1);
 							obj.setCookie('sessionToken', '', -1);
-							obj.setCookie('sessionPermission', '', -1);
+							obj.setCookie('roleIdx', '', -1);
+							obj.setCookie('roleName', '', -1);
 							// destroy api handoff cookies
 							obj.setCookie('kyte_pub', '', -1);
 							obj.setCookie('kyte_num', '', -1);
@@ -182,7 +182,8 @@ class Kyte {
 						} else {
 							obj.setCookie('txToken', obj.txToken, 60);
 							obj.setCookie('sessionToken', obj.sessionToken, 60);
-							obj.setCookie('sessionPermission', response.sessionPermission, 60);
+							obj.setCookie('roleIdx', response.role.id, 60);
+							obj.setCookie('roleName', response.role.name, 60);
 						}
 
 						if (typeof callback === "function") {
@@ -195,7 +196,8 @@ class Kyte {
 						if (response.status == 403) {
 							obj.setCookie('txToken', '', -1);
 							obj.setCookie('sessionToken', '', -1);
-							obj.setCookie('sessionPermission', '', -1);
+							obj.setCookie('roleIdx', '', -1);
+							obj.setCookie('roleName', '', -1);
 						} else {
 							obj.txToken = response.responseJSON.token;
 							obj.sessionToken = response.responseJSON.session;
@@ -219,7 +221,8 @@ class Kyte {
 							if (!response.responseJSON.token && !response.responseJSON.session) {
 								obj.setCookie('txToken', '', -1);
 								obj.setCookie('sessionToken', '', -1);
-								obj.setCookie('sessionPermission', '', -1);
+								obj.setCookie('roleIdx', '', -1);
+								obj.setCookie('roleName', '', -1);
 								// destroy api handoff cookies
 								obj.setCookie('kyte_pub', '', -1);
 								obj.setCookie('kyte_num', '', -1);
@@ -231,7 +234,8 @@ class Kyte {
 							} else {
 								obj.setCookie('txToken', obj.txToken, 60);
 								obj.setCookie('sessionToken', obj.sessionToken, 60);
-								obj.setCookie('sessionPermission', response.responseJSON.sessionPermission, 60);
+								obj.setCookie('roleIdx', response.role.id, 60);
+								obj.setCookie('roleName', response.role.name, 60);
 							}
 						}
 
@@ -373,11 +377,12 @@ class Kyte {
 		var obj = this;
 		this.post(sessionController, identity, null, [],
 			function (response) {
-				obj.txToken = response.data.txToken;
-				obj.sessionToken = response.data.sessionToken;
+				obj.txToken = response.token;
+				obj.sessionToken = response.session;
 				obj.setCookie('txToken', obj.txToken, 60);
 				obj.setCookie('sessionToken', obj.sessionToken, 60);
-				obj.setCookie('sessionPermission', response.data.User.role, 60);
+				obj.setCookie('roleIdx', response.role.id, 60);
+				obj.setCookie('roleName', response.role.name, 60);
 				// set api handoff cookies
 				obj.access_key = response.kyte_pub;
 				obj.identifier = response.kyte_iden;
@@ -385,6 +390,7 @@ class Kyte {
 				obj.setCookie('kyte_pub', obj.access_key, 60);
 				obj.setCookie('kyte_iden', obj.identifier, 60);
 				obj.setCookie('kyte_num', obj.account_number, 60);
+
 				if (typeof callback === "function") {
 					callback(response);
 				} else {
@@ -395,7 +401,8 @@ class Kyte {
 				// destroy session cookies
 				obj.setCookie('txToken', '', -1);
 				obj.setCookie('sessionToken', '', -1);
-				obj.setCookie('sessionPermission', '', -1);
+				obj.setCookie('roleIdx', '', -1);
+				obj.setCookie('roleName', '', -1);
 				// destroy api handoff cookies
 				obj.setCookie('kyte_pub', '', -1);
 				obj.setCookie('kyte_num', '', -1);
@@ -426,7 +433,6 @@ class Kyte {
 	checkSession() {
 		if (this.sessionToken == 0 || this.sessionToken == '0') {
 			this.setCookie('sessionToken', '', -1);
-			this.setCookie('sessionPermission', '', -1);
 			// destroy api handoff cookies
 			this.setCookie('kyte_pub', '', -1);
 			this.setCookie('kyte_num', '', -1);
@@ -438,7 +444,6 @@ class Kyte {
 		}
 		if (this.txToken == 0 || this.txToken == '0') {
 			this.setCookie('txToken', '', -1);
-			this.setCookie('sessionPermission', '', -1);
 			// destroy api handoff cookies
 			this.setCookie('kyte_pub', '', -1);
 			this.setCookie('kyte_num', '', -1);
@@ -451,7 +456,6 @@ class Kyte {
 		if (!this.sessionToken || !this.txToken) {
 			this.setCookie('txToken', '', -1);
 			this.setCookie('sessionToken', '', -1);
-			this.setCookie('sessionPermission', '', -1);
 			// destroy api handoff cookies
 			this.setCookie('kyte_pub', '', -1);
 			this.setCookie('kyte_num', '', -1);
@@ -475,9 +479,6 @@ class Kyte {
 
 		return  this.checkSession();
 	}
-	isAdmin() {
-		return this.getCookie("sessionPermission") == this.adminRole;
-	}
 	/*
 	 * Request backend to destroy session
 	 *
@@ -492,7 +493,8 @@ class Kyte {
 			function (response) {
 				obj.setCookie('txToken', '', -1);
 				obj.setCookie('sessionToken', '', -1);
-				obj.setCookie('sessionPermission', '', -1);
+				obj.setCookie('roleIdx', '', -1);
+				obj.setCookie('roleName', '', -1);
 				// destroy api handoff cookies
 				obj.setCookie('kyte_pub', '', -1);
 				obj.setCookie('kyte_num', '', -1);
@@ -511,7 +513,8 @@ class Kyte {
 			function (response) {
 				obj.setCookie('txToken', '', -1);
 				obj.setCookie('sessionToken', '', -1);
-				obj.setCookie('sessionPermission', '', -1);
+				obj.setCookie('roleIdx', '', -1);
+				obj.setCookie('roleName', '', -1);
 				// destroy api handoff cookies
 				obj.setCookie('kyte_pub', '', -1);
 				obj.setCookie('kyte_num', '', -1);
