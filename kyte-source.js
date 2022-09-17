@@ -169,6 +169,7 @@ class Kyte {
 						if (!response.token && !response.session) {
 							obj.setCookie('txToken', '', -1);
 							obj.setCookie('sessionToken', '', -1);
+							obj.setCookie('accountIdx', '', -1);
 							obj.setCookie('roleIdx', '', -1);
 							obj.setCookie('roleName', '', -1);
 							// destroy api handoff cookies
@@ -182,6 +183,7 @@ class Kyte {
 						} else {
 							obj.setCookie('txToken', obj.txToken, 60);
 							obj.setCookie('sessionToken', obj.sessionToken, 60);
+							obj.setCookie('accountIdx', response.account_id, 60);
 							obj.setCookie('roleIdx', response.role.id, 60);
 							obj.setCookie('roleName', response.role.name, 60);
 						}
@@ -196,6 +198,7 @@ class Kyte {
 						if (response.status == 403) {
 							obj.setCookie('txToken', '', -1);
 							obj.setCookie('sessionToken', '', -1);
+							obj.setCookie('accountIdx', '', -1);
 							obj.setCookie('roleIdx', '', -1);
 							obj.setCookie('roleName', '', -1);
 						} else {
@@ -221,6 +224,7 @@ class Kyte {
 							if (!response.responseJSON.token && !response.responseJSON.session) {
 								obj.setCookie('txToken', '', -1);
 								obj.setCookie('sessionToken', '', -1);
+								obj.setCookie('accountIdx', '', -1);
 								obj.setCookie('roleIdx', '', -1);
 								obj.setCookie('roleName', '', -1);
 								// destroy api handoff cookies
@@ -234,6 +238,7 @@ class Kyte {
 							} else {
 								obj.setCookie('txToken', obj.txToken, 60);
 								obj.setCookie('sessionToken', obj.sessionToken, 60);
+								obj.setCookie('accountIdx', response.account_id, 60);
 								obj.setCookie('roleIdx', response.role.id, 60);
 								obj.setCookie('roleName', response.role.name, 60);
 							}
@@ -381,6 +386,7 @@ class Kyte {
 				obj.sessionToken = response.session;
 				obj.setCookie('txToken', obj.txToken, 60);
 				obj.setCookie('sessionToken', obj.sessionToken, 60);
+				obj.setCookie('accountIdx', response.account_id, 60);
 				obj.setCookie('roleIdx', response.role.id, 60);
 				obj.setCookie('roleName', response.role.name, 60);
 				// set api handoff cookies
@@ -401,6 +407,7 @@ class Kyte {
 				// destroy session cookies
 				obj.setCookie('txToken', '', -1);
 				obj.setCookie('sessionToken', '', -1);
+				obj.setCookie('accountIdx', '', -1);
 				obj.setCookie('roleIdx', '', -1);
 				obj.setCookie('roleName', '', -1);
 				// destroy api handoff cookies
@@ -493,6 +500,7 @@ class Kyte {
 			function (response) {
 				obj.setCookie('txToken', '', -1);
 				obj.setCookie('sessionToken', '', -1);
+				obj.setCookie('accountIdx', '', -1);
 				obj.setCookie('roleIdx', '', -1);
 				obj.setCookie('roleName', '', -1);
 				// destroy api handoff cookies
@@ -513,6 +521,7 @@ class Kyte {
 			function (response) {
 				obj.setCookie('txToken', '', -1);
 				obj.setCookie('sessionToken', '', -1);
+				obj.setCookie('accountIdx', '', -1);
 				obj.setCookie('roleIdx', '', -1);
 				obj.setCookie('roleName', '', -1);
 				// destroy api handoff cookies
