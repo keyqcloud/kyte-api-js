@@ -752,7 +752,7 @@ class KyteTable {
 								// html for dropdown menu items
 								let actionHTML = ''
 
-								returnString += '<div class="dropdown d-inline-block"><button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dataTableDropdown'+dropdownIdx+'" data-bs-toggle="dropdown" aria-expanded="false"><i class="far fa-caret-square-down"></i></button><ul class="dropdown-menu" aria-labelledby="dataTableDropdown'+dropdownIdx+'">';
+								returnString += '<div class="dropdown d-inline-block"><button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dataTableDropdown'+dropdownIdx+'" data-bs-toggle="dropdown" aria-expanded="false"></button><ul class="dropdown-menu" aria-labelledby="dataTableDropdown'+dropdownIdx+'">';
 								
 								// TODO MAKE CUSTOM ACTION BUTTON
 								// if (typeof self.customAction === "function") {
