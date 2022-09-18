@@ -184,8 +184,8 @@ class Kyte {
 							obj.setCookie('txToken', obj.txToken, 60);
 							obj.setCookie('sessionToken', obj.sessionToken, 60);
 							obj.setCookie('accountIdx', response.account_id, 60);
-							obj.setCookie('roleIdx', response.role.id, 60);
-							obj.setCookie('roleName', response.role.name, 60);
+							obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60);
+							obj.setCookie('roleName', response.role ? response.role.name : null, 60);
 						}
 
 						if (typeof callback === "function") {
@@ -239,8 +239,8 @@ class Kyte {
 								obj.setCookie('txToken', obj.txToken, 60);
 								obj.setCookie('sessionToken', obj.sessionToken, 60);
 								obj.setCookie('accountIdx', response.account_id, 60);
-								obj.setCookie('roleIdx', response.role.id, 60);
-								obj.setCookie('roleName', response.role.name, 60);
+								obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60);
+								obj.setCookie('roleName', response.role ? response.role.name : null, 60);
 							}
 						}
 
@@ -387,8 +387,8 @@ class Kyte {
 				obj.setCookie('txToken', obj.txToken, 60);
 				obj.setCookie('sessionToken', obj.sessionToken, 60);
 				obj.setCookie('accountIdx', response.account_id, 60);
-				obj.setCookie('roleIdx', response.role.id, 60);
-				obj.setCookie('roleName', response.role.name, 60);
+				obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60);
+				obj.setCookie('roleName', response.role ? response.role.name : null, 60);
 				// set api handoff cookies
 				obj.access_key = response.kyte_pub;
 				obj.identifier = response.kyte_iden;
@@ -431,6 +431,7 @@ class Kyte {
 		// check if the selector exists
 		if ( $(selector).length ) {
 			$('body').on('click', selector, function() {
+				console.log("LOG ME THE FUCK OUT");
 				self.sessionDestroy(function () {
 					location.href = "/";
 				});
