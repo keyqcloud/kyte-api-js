@@ -428,15 +428,12 @@ class Kyte {
 	}
 	addLogoutHandler(selector) {
 		self = this;
-		// check if the selector exists
-		if ( $(selector).length ) {
-			$('body').on('click', selector, function() {
-				console.log("LOG ME THE FUCK OUT");
-				self.sessionDestroy(function () {
-					location.href = "/";
-				});
-			});
-		}
+        $('body').on('click', selector, function() {
+            console.log("LOG ME THE FUCK OUT");
+            self.sessionDestroy(function () {
+                location.href = "/";
+            });
+        });
 	}
 	checkSession() {
 		if (this.sessionToken == 0 || this.sessionToken == '0') {
