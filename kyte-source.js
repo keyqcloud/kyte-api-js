@@ -611,6 +611,114 @@ class Kyte {
 	}
 }
 
+class KyteNav {
+	constructor(selector, nav_struct, logo = null, title = null, active = null, link = "/app/") {
+		this.selector = selector;
+		this.nav_struct = nav_struct;
+		this.logo = logo;
+		this.title = title;
+		this.active = active;
+		this.link = link;
+	}
+
+	// create nav bar
+	create() {
+		let html = '\
+		<div class="container-fluid">\
+			<a href="'+this.link+'" class="navbar-brand">' + (this.logo ? '<img src="'+this.logo+'" style="height: 45px;" class="me-2 rounded">' : '') + (this.title ? this.title : '') + '</a>\
+			<button data-bs-toggle="collapse" class="navbar-toggler" type="button" data-bs-target="#navcol-1" aria-controls="#navcol-1" aria-expanded="false" aria-label="Toggle navigation">\
+				<span class="navbar-toggler-icon"></span>\
+			</button>\
+			<div class="collapse navbar-collapse" id="navcol-1">';
+	
+		let i = 0;
+		this.nav_struct.forEach(menu => {
+			html += i == 0 ? '<ul class="navbar-nav mx-auto">' : '<ul class="navbar-nav">';
+			i++;
+			menu.forEach(item => {
+				if (item.dropdown) {
+					html += '<li class="nav-item dropdown">';
+					html += '<a class="nav-link dropdown-toggle '+ item.class +'" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">'+ (item.faicon ? '<i class="'+ item.faicon +' me-2"></i>' : '') + '<span>'+ item.label +'</span></a>';
+					html += '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">';
+	
+					// iterate through dropdown items
+					item.items.forEach( sub => {
+						html += '<li><a class="dropdown-item '+ sub.class +'" '+ (sub.logout ? 'id="logout" ' : '') + (sub.href ? 'href="'+ sub.href +'"' : 'href="#"') + '>'+ (sub.faicon ? '<i class="'+ sub.faicon +' me-2"></i>' : '') + '<span>'+ sub.label +'</span></a></li>';
+					});
+	
+					html += '</ul>';
+					html += '</li>';
+				} else {
+					html += '<li class="nav-item"><a '+ (item.logout ? 'id="logout" ' : '') +'class="nav-link'+(item.label == this.active ? ' active' : '')+' '+ item.class +'" '+ (item.href ? 'href="'+ item.href+'"' : 'href="#"') + '>'+ (item.faicon ? '<i class="'+ item.faicon +' me-2"></i>' : '') + '<span>'+ item.label +'</span></a></li>';
+				}
+			});
+			html += '</ul>';
+		});
+	
+		html += '\
+			</div>\
+		</div>';
+	
+		$(this.selector).html(html);
+	}
+}
+
+class KyteSidenav {
+	constructor(selector, nav_struct, default_page_selector) {
+		this.selector = selector;
+		this.nav_struct = nav_struct;
+		this.default_page_selector = default_page_selector;
+	}
+
+	// create sub nav
+	create() {
+		if ($(this.selector).length) {
+			let html = '<ul class="nav nav-pills flex-column mb-auto" id="sidebar-nav">';
+			this.nav_struct.forEach(item => {
+				if ($(item.selector).length) {
+					html += '<li class="nav-item">';
+					html += '<a id="'+item.selector.replace('#', '')+'-nav-link" href="'+item.selector+'" class="nav-link text-dark me-2"><i class="'+ item.faicon +' me-2"></i><span>'+item.label+'</span></a>';
+					html += '</li>';
+				}
+			});
+			html += '</ul>';
+			$(this.selector).html(html);
+		}
+	}
+	
+	bind(onclick = null) {
+		let self = this;
+		// get current hash
+		let hash = location.hash;
+		hash = hash == "" ? this.default_page_selector : hash;
+		$(hash).removeClass('d-none');
+		$(hash+'-nav-link').addClass('active');
+	
+		this.nav_struct.forEach(item => {
+			$(item.selector+"-nav-link").click(function(e) {
+				history.pushState({}, '', this.href);
+	
+				e.preventDefault();
+				e.stopPropagation();
+	
+				$(item.selector+'-nav-link').addClass('active');
+				$(item.selector).removeClass('d-none');
+	
+				if (typeof onclick === "function") {
+					onclick(item);
+				}
+	
+				// hide others
+				self.nav_struct.forEach(o => {
+					if (o.selector == item.selector) return;
+					$(o.selector+'-nav-link').removeClass('active');
+					$(o.selector).addClass('d-none');
+				});
+			});
+		});
+	}
+}
+
 
 /*
  * Class Definition for Kyte Table
