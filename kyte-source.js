@@ -761,6 +761,9 @@ class KyteTable {
 		this.rowCallBack = rowCallBack;
 		this.initComplete = initComplete;
 
+		this.processing = true;
+		this.serverside = true;
+
 		// array of object with following structure
 		// [
 		// 	{
@@ -928,8 +931,8 @@ class KyteTable {
 				self.selector.append(content);
 				self.table = self.selector.DataTable({
 					// searching: self.searching,
-					processing: true,
-					serverSide: true,
+					processing: self.processing,
+					serverSide: self.serverside,
 					responsive: true,
 					language: { "url": self.lang },
 					// data: response.data,
@@ -941,20 +944,21 @@ class KyteTable {
 							fields.push(o.data);
 						});
 						
-						let headers = [
-							{'name':'x-kyte-draw','value':data.draw},
-							{'name':'x-kyte-page-size','value':data.length},
-							{'name':'x-kyte-page-idx','value':Math.ceil((data.start+1)/data.length)},
-							{'name':'x-kyte-page-search-value','value':data.search.value ? data.search.value : ""},
-							{'name':'x-kyte-page-search-fields','value':fields.join().replace(/,\s*$/, "")},
-						]
+						let headers = [];
+						if (self.serverside && self.processing) {
+							headers.push({'name':'x-kyte-draw','value':data.draw});
+							headers.push({'name':'x-kyte-page-size','value':data.length});
+							headers.push({'name':'x-kyte-page-idx','value':Math.ceil((data.start+1)/data.length)});
+							headers.push({'name':'x-kyte-page-search-value','value':data.search.value ? data.search.value : ""});
+							headers.push({'name':'x-kyte-page-search-fields','value':fields.join().replace(/,\s*$/, "")});
 
-						if (data.order.length > 0) {
-							let column = fields[data.order[0].column];
-							let dir = data.order[0].dir;
+							if (data.order.length > 0) {
+								let column = fields[data.order[0].column];
+								let dir = data.order[0].dir;
 
-							headers.push({'name':'x-kyte-page-order-col','value':column ? column : ""});
-							headers.push({'name':'x-kyte-page-order-dir','value':dir ? dir : ""});
+								headers.push({'name':'x-kyte-page-order-col','value':column ? column : ""});
+								headers.push({'name':'x-kyte-page-order-dir','value':dir ? dir : ""});
+							}
 						}
 
 						self.api.get(self.model.name, self.model.field, self.model.value, headers, function (response) {
