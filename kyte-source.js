@@ -54,9 +54,6 @@ class Kyte {
 			}
 		});
 	}
-	warm() {
-		this.get('Warm');
-	}
 	/* API Signature Request
 	 *
 	 * Pass identifying information and public key to backend
