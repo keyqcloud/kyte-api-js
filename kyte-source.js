@@ -952,6 +952,7 @@ class KyteForm {
 		this.fileUploadField = null;
 
 		this.itemized = false;
+		this.externalChildData = false;
 
 		this.success = successCallBack;
 		this.fail = failureCallBack;
@@ -1127,16 +1128,6 @@ class KyteForm {
 			this.selector.append(content);
 
 			this.reloadAjax();
-
-			// initialize datepicker
-			this.elements.forEach(function (row) {
-				row.forEach(function (column) {
-					if (column.date) {
-						$('#form_' + obj.model + '_' + obj.id + '_' + column.field).datepicker();
-						$('#form_' + obj.model + '_' + obj.id + '_' + column.field).datepicker("option", "dateFormat", obj.api.dateFormat);
-					}
-				});
-			});
 
 			// bind submit listener
 			$('#form_' + this.model + '_' + this.id).submit(function (e) {
@@ -1456,10 +1447,98 @@ class KyteForm {
 					if (typeof response.data[0][column.field] === 'object' && response.data[0][column.field] !== null) {
 						$('#form_' + obj.model + '_' + obj.id + '_' + column.field).val(response.data[0][column.field].id).change();
 					} else {
-						$('#form_' + obj.model + '_' + obj.id + '_' + column.field).val(response.data[0][column.field]).change();
+						if (column.type === 'date') {
+							// get date and change slashes to dashes
+							var dt = (response.data[0][column.field]).replace(/\//g, '-')
+							$('#form_' + obj.model + '_' + obj.id + '_' + column.field).val(dt)
+						} else {
+							$('#form_' + obj.model + '_' + obj.id + '_' + column.field).val(response.data[0][column.field])
+						}
+						$('#form_' + obj.model + '_' + obj.id + '_' + column.field).change();
 					}
 				});
 			});
+
+			// if itemized is specified, populate with itemized information
+			if (obj.itemized) {
+				var lineItems = response.data[0].ExternalTables.LineItem
+				var i = 0;
+				lineItems.forEach(function(item) {
+					var uniqueId = obj.makeID(8); // ID used to track newly created selects to populate if Ajax is set to true
+
+					let itemizedHTML = '<div class="row itemized-row my-3">'; // init html string
+
+					obj.itemized.fields.forEach(function (field) {
+						var fieldVal = item[field.name] === undefined ? '' : item[field.name]
+						itemizedHTML += '<div class="col"><div class="form-group">';
+						if (field.type == 'select') {
+							itemizedHTML += '<select id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '[' + i + ']" class="form-control" name="' + field.name + '" value="' + fieldVal + '"';
+							itemizedHTML += field.required ? 'required="required"' : '';
+							itemizedHTML += '>';
+							// if not ajax, then populate with data - ajax will populate after appending html
+							if (!field.option.ajax) {
+								for (var key in field.option.data) {
+									if (field.option.data.hasOwnProperty(key)) {
+										itemizedHTML += '<option value="' + key + '">' + field.option.data[key] + '</option>';
+									}
+								}
+							}
+							// close select
+							itemizedHTML += '</select>';
+						} else if (field.type == 'textarea') {
+							itemizedHTML += '<textarea style="width:100%" id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '[' + i + ']" name="' + field.name  + '" value="' + fieldVal + '"';
+							itemizedHTML += field.required ? 'required="required"' : '';
+							if (field.placeholder) {
+								itemizedHTML += ' placeholder="' + field.placeholder + '"';
+							}
+							itemizedHTML += '></textarea>';
+						} else {
+							// Check for date and replace slashes with dashes
+							fieldVal = field.date ? fieldVal.replace(/\//g, '-') : fieldVal
+							itemizedHTML += '<input type="' + field.type + '" id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '[' + i + ']" class="form-control' + (field.date ? ' form-datepicker' : '') + '" name="' + field.name  + '" value="' + fieldVal + '"';
+							itemizedHTML += field.required ? 'required="required"' : '';
+							if (field.placeholder) {
+								itemizedHTML += ' placeholder="' + field.placeholder + '"';
+							}
+							itemizedHTML += (field.readonly ? 'readonly ' : '') + '>';
+						}
+						itemizedHTML += '</div></div>';
+					});
+					itemizedHTML += '<div class="col-2 text-right"><a href="#" class="itemized-delete-item btn btn-small btn-outline-danger">remove</a></div></div>';
+					// append fields
+					$('#itemized_' + obj.model + '_' + obj.id).append(itemizedHTML);
+
+					// run ajax for any selects
+					obj.itemized.fields.forEach(function (field) {
+						if (field.type == 'select') {
+							if (field.option.ajax) {
+								obj.api.get(field.option.data_model_name, field.option.data_model_field, field.option.data_model_value, [], function (response) {
+									response.data.forEach(function (item) {
+										let label = '';
+										field.option.data_model_attributes.forEach(function (attribute) {
+											if (item[attribute]) {
+												label += item[attribute] + ' ';
+											} else {
+												// attempt to split by dot notation
+												let c = attribute.split('.');
+												if (c.length >= 2) {
+													label += item[c[0]][c[1]] + ' ';
+												} else {
+													label += attribute + ' ';
+												}
+											}
+										});
+										$('#' + field.option.data_model_name + '_' + field.option.data_model_value + '_' + uniqueId).append('<option value="' + item[field.option.data_model_value] + '">' + label + '</option>');
+									});
+								});
+							}
+						}
+					});
+
+					// increment itemized row counter
+					i++
+				})
+			}
 
 			if (typeof success === "function") {
 				success();
