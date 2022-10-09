@@ -1,5 +1,5 @@
 class Kyte {
-	constructor(url, accessKey, identifier, account_number, applicationId = null, adminRoleID = 1) {
+	constructor(url, accessKey, identifier, account_number, applicationId = null) {
 		this.url = url;
 		this.access_key = accessKey;
 		this.identifier = identifier;
@@ -12,7 +12,6 @@ class Kyte {
 
 		this.txToken;
 		this.sessionToken;
-		this.adminRole = adminRoleID;
 		this.dateFormat = 'mm/dd/yy';
 	}
 	init() {
@@ -54,9 +53,6 @@ class Kyte {
 				}
 			}
 		});
-	}
-	warm() {
-		this.get('Warm');
 	}
 	/* API Signature Request
 	 *
@@ -148,6 +144,10 @@ class Kyte {
 					},
 					data: encdata,
 					success: function (response) {
+						if (response.syntax_error) {
+							//
+							obj.syntaxErrorBanner(response.syntax_error);
+						}
 						obj.txToken = response.token;
 						obj.sessionToken = response.session;
 						if (response.kyte_pub && response.kyte_iden && response.kyte_num) {
@@ -170,7 +170,9 @@ class Kyte {
 						if (!response.token && !response.session) {
 							obj.setCookie('txToken', '', -1);
 							obj.setCookie('sessionToken', '', -1);
-							obj.setCookie('sessionPermission', '', -1);
+							obj.setCookie('accountIdx', '', -1);
+							obj.setCookie('roleIdx', '', -1);
+							obj.setCookie('roleName', '', -1);
 							// destroy api handoff cookies
 							obj.setCookie('kyte_pub', '', -1);
 							obj.setCookie('kyte_num', '', -1);
@@ -182,7 +184,9 @@ class Kyte {
 						} else {
 							obj.setCookie('txToken', obj.txToken, 60);
 							obj.setCookie('sessionToken', obj.sessionToken, 60);
-							obj.setCookie('sessionPermission', response.sessionPermission, 60);
+							obj.setCookie('accountIdx', response.account_id, 60);
+							obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60);
+							obj.setCookie('roleName', response.role ? response.role.name : null, 60);
 						}
 
 						if (typeof callback === "function") {
@@ -192,10 +196,17 @@ class Kyte {
 						}
 					},
 					error: function (response) {
+						if (response.syntax_error) {
+							//
+							obj.syntaxErrorBanner(response.syntax_error);
+						}
+
 						if (response.status == 403) {
 							obj.setCookie('txToken', '', -1);
 							obj.setCookie('sessionToken', '', -1);
-							obj.setCookie('sessionPermission', '', -1);
+							obj.setCookie('accountIdx', '', -1);
+							obj.setCookie('roleIdx', '', -1);
+							obj.setCookie('roleName', '', -1);
 						} else {
 							obj.txToken = response.responseJSON.token;
 							obj.sessionToken = response.responseJSON.session;
@@ -219,7 +230,9 @@ class Kyte {
 							if (!response.responseJSON.token && !response.responseJSON.session) {
 								obj.setCookie('txToken', '', -1);
 								obj.setCookie('sessionToken', '', -1);
-								obj.setCookie('sessionPermission', '', -1);
+								obj.setCookie('accountIdx', '', -1);
+								obj.setCookie('roleIdx', '', -1);
+								obj.setCookie('roleName', '', -1);
 								// destroy api handoff cookies
 								obj.setCookie('kyte_pub', '', -1);
 								obj.setCookie('kyte_num', '', -1);
@@ -231,7 +244,9 @@ class Kyte {
 							} else {
 								obj.setCookie('txToken', obj.txToken, 60);
 								obj.setCookie('sessionToken', obj.sessionToken, 60);
-								obj.setCookie('sessionPermission', response.responseJSON.sessionPermission, 60);
+								obj.setCookie('accountIdx', response.account_id, 60);
+								obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60);
+								obj.setCookie('roleName', response.role ? response.role.name : null, 60);
 							}
 						}
 
@@ -373,11 +388,13 @@ class Kyte {
 		var obj = this;
 		this.post(sessionController, identity, null, [],
 			function (response) {
-				obj.txToken = response.data.txToken;
-				obj.sessionToken = response.data.sessionToken;
+				obj.txToken = response.token;
+				obj.sessionToken = response.session;
 				obj.setCookie('txToken', obj.txToken, 60);
 				obj.setCookie('sessionToken', obj.sessionToken, 60);
-				obj.setCookie('sessionPermission', response.data.User.role, 60);
+				obj.setCookie('accountIdx', response.account_id, 60);
+				obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60);
+				obj.setCookie('roleName', response.role ? response.role.name : null, 60);
 				// set api handoff cookies
 				obj.access_key = response.kyte_pub;
 				obj.identifier = response.kyte_iden;
@@ -385,6 +402,7 @@ class Kyte {
 				obj.setCookie('kyte_pub', obj.access_key, 60);
 				obj.setCookie('kyte_iden', obj.identifier, 60);
 				obj.setCookie('kyte_num', obj.account_number, 60);
+
 				if (typeof callback === "function") {
 					callback(response);
 				} else {
@@ -395,7 +413,9 @@ class Kyte {
 				// destroy session cookies
 				obj.setCookie('txToken', '', -1);
 				obj.setCookie('sessionToken', '', -1);
-				obj.setCookie('sessionPermission', '', -1);
+				obj.setCookie('accountIdx', '', -1);
+				obj.setCookie('roleIdx', '', -1);
+				obj.setCookie('roleName', '', -1);
 				// destroy api handoff cookies
 				obj.setCookie('kyte_pub', '', -1);
 				obj.setCookie('kyte_num', '', -1);
@@ -414,19 +434,16 @@ class Kyte {
 	}
 	addLogoutHandler(selector) {
 		self = this;
-		// check if the selector exists
-		if ( $(selector).length ) {
-			$('body').on('click', selector, function() {
-				self.sessionDestroy(function () {
-					location.href = "/";
-				});
-			});
-		}
+        $('body').on('click', selector, function() {
+            console.log("LOG ME THE FUCK OUT");
+            self.sessionDestroy(function () {
+                location.href = "/";
+            });
+        });
 	}
 	checkSession() {
 		if (this.sessionToken == 0 || this.sessionToken == '0') {
 			this.setCookie('sessionToken', '', -1);
-			this.setCookie('sessionPermission', '', -1);
 			// destroy api handoff cookies
 			this.setCookie('kyte_pub', '', -1);
 			this.setCookie('kyte_num', '', -1);
@@ -438,7 +455,6 @@ class Kyte {
 		}
 		if (this.txToken == 0 || this.txToken == '0') {
 			this.setCookie('txToken', '', -1);
-			this.setCookie('sessionPermission', '', -1);
 			// destroy api handoff cookies
 			this.setCookie('kyte_pub', '', -1);
 			this.setCookie('kyte_num', '', -1);
@@ -451,7 +467,6 @@ class Kyte {
 		if (!this.sessionToken || !this.txToken) {
 			this.setCookie('txToken', '', -1);
 			this.setCookie('sessionToken', '', -1);
-			this.setCookie('sessionPermission', '', -1);
 			// destroy api handoff cookies
 			this.setCookie('kyte_pub', '', -1);
 			this.setCookie('kyte_num', '', -1);
@@ -475,9 +490,6 @@ class Kyte {
 
 		return  this.checkSession();
 	}
-	isAdmin() {
-		return this.getCookie("sessionPermission") == this.adminRole;
-	}
 	/*
 	 * Request backend to destroy session
 	 *
@@ -492,7 +504,9 @@ class Kyte {
 			function (response) {
 				obj.setCookie('txToken', '', -1);
 				obj.setCookie('sessionToken', '', -1);
-				obj.setCookie('sessionPermission', '', -1);
+				obj.setCookie('accountIdx', '', -1);
+				obj.setCookie('roleIdx', '', -1);
+				obj.setCookie('roleName', '', -1);
 				// destroy api handoff cookies
 				obj.setCookie('kyte_pub', '', -1);
 				obj.setCookie('kyte_num', '', -1);
@@ -511,7 +525,9 @@ class Kyte {
 			function (response) {
 				obj.setCookie('txToken', '', -1);
 				obj.setCookie('sessionToken', '', -1);
-				obj.setCookie('sessionPermission', '', -1);
+				obj.setCookie('accountIdx', '', -1);
+				obj.setCookie('roleIdx', '', -1);
+				obj.setCookie('roleName', '', -1);
 				// destroy api handoff cookies
 				obj.setCookie('kyte_pub', '', -1);
 				obj.setCookie('kyte_num', '', -1);
@@ -599,6 +615,118 @@ class Kyte {
 		});
 		return valid;
 	}
+
+	syntaxErrorBanner(filepath) {
+		$("body").prepend('<div class="card text-white bg-danger m-3"><div class="card-header">Syntax Error</div><div class="card-body"><p class="card-text">'+filepath+'</p></div></div>');
+	}
+}
+
+class KyteNav {
+	constructor(selector, nav_struct, logo = null, title = null, active = null, link = "/app/") {
+		this.selector = selector;
+		this.nav_struct = nav_struct;
+		this.logo = logo;
+		this.title = title;
+		this.active = active;
+		this.link = link;
+	}
+
+	// create nav bar
+	create() {
+		let html = '\
+		<div class="container-fluid">\
+			<a href="'+this.link+'" class="navbar-brand">' + (this.logo ? '<img src="'+this.logo+'" style="height: 45px;" class="me-2 rounded">' : '') + (this.title ? this.title : '') + '</a>\
+			<button data-bs-toggle="collapse" class="navbar-toggler" type="button" data-bs-target="#navcol-1" aria-controls="#navcol-1" aria-expanded="false" aria-label="Toggle navigation">\
+				<span class="navbar-toggler-icon"></span>\
+			</button>\
+			<div class="collapse navbar-collapse" id="navcol-1">';
+	
+		let i = 0;
+		this.nav_struct.forEach(menu => {
+			html += i == 0 ? '<ul class="navbar-nav mx-auto">' : '<ul class="navbar-nav">';
+			i++;
+			menu.forEach(item => {
+				if (item.dropdown) {
+					html += '<li class="nav-item dropdown">';
+					html += '<a class="nav-link dropdown-toggle '+ item.class +'" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">'+ (item.faicon ? '<i class="'+ item.faicon +' me-2"></i>' : '') + '<span>'+ item.label +'</span></a>';
+					html += '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">';
+	
+					// iterate through dropdown items
+					item.items.forEach( sub => {
+						html += '<li><a class="dropdown-item '+ sub.class +'" '+ (sub.logout ? 'id="logout" ' : '') + (sub.href ? 'href="'+ sub.href +'"' : 'href="#"') + '>'+ (sub.faicon ? '<i class="'+ sub.faicon +' me-2"></i>' : '') + '<span>'+ sub.label +'</span></a></li>';
+					});
+	
+					html += '</ul>';
+					html += '</li>';
+				} else {
+					html += '<li class="nav-item"><a '+ (item.logout ? 'id="logout" ' : '') +'class="nav-link'+(item.label == this.active ? ' active' : '')+' '+ item.class +'" '+ (item.href ? 'href="'+ item.href+'"' : 'href="#"') + '>'+ (item.faicon ? '<i class="'+ item.faicon +' me-2"></i>' : '') + '<span>'+ item.label +'</span></a></li>';
+				}
+			});
+			html += '</ul>';
+		});
+	
+		html += '\
+			</div>\
+		</div>';
+	
+		$(this.selector).html(html);
+	}
+}
+
+class KyteSidenav {
+	constructor(selector, nav_struct, default_page_selector) {
+		this.selector = selector;
+		this.nav_struct = nav_struct;
+		this.default_page_selector = default_page_selector;
+	}
+
+	// create sub nav
+	create() {
+		if ($(this.selector).length) {
+			let html = '<ul class="nav nav-pills flex-column mb-auto" id="sidebar-nav">';
+			this.nav_struct.forEach(item => {
+				if ($(item.selector).length) {
+					html += '<li class="nav-item">';
+					html += '<a id="'+item.selector.replace('#', '')+'-nav-link" href="'+item.selector+'" class="nav-link text-dark me-2"><i class="'+ item.faicon +' me-2"></i><span>'+item.label+'</span></a>';
+					html += '</li>';
+				}
+			});
+			html += '</ul>';
+			$(this.selector).html(html);
+		}
+	}
+	
+	bind(onclick = null) {
+		let self = this;
+		// get current hash
+		let hash = location.hash;
+		hash = hash == "" ? this.default_page_selector : hash;
+		$(hash).removeClass('d-none');
+		$(hash+'-nav-link').addClass('active');
+	
+		this.nav_struct.forEach(item => {
+			$(item.selector+"-nav-link").click(function(e) {
+				history.pushState({}, '', this.href);
+	
+				e.preventDefault();
+				e.stopPropagation();
+	
+				$(item.selector+'-nav-link').addClass('active');
+				$(item.selector).removeClass('d-none');
+	
+				if (typeof onclick === "function") {
+					onclick(item);
+				}
+	
+				// hide others
+				self.nav_struct.forEach(o => {
+					if (o.selector == item.selector) return;
+					$(o.selector+'-nav-link').removeClass('active');
+					$(o.selector).addClass('d-none');
+				});
+			});
+		});
+	}
 }
 
 
@@ -642,6 +770,9 @@ class KyteTable {
 		this.viewTarget = viewTarget;
 		this.rowCallBack = rowCallBack;
 		this.initComplete = initComplete;
+
+		this.processing = true;
+		this.serverside = true;
 
 		// array of object with following structure
 		// [
@@ -810,8 +941,8 @@ class KyteTable {
 				self.selector.append(content);
 				self.table = self.selector.DataTable({
 					// searching: self.searching,
-					processing: true,
-					serverSide: true,
+					processing: self.processing,
+					serverSide: self.serverside,
 					responsive: true,
 					language: { "url": self.lang },
 					// data: response.data,
@@ -823,20 +954,21 @@ class KyteTable {
 							fields.push(o.data);
 						});
 						
-						let headers = [
-							{'name':'x-kyte-draw','value':data.draw},
-							{'name':'x-kyte-page-size','value':data.length},
-							{'name':'x-kyte-page-idx','value':Math.ceil((data.start+1)/data.length)},
-							{'name':'x-kyte-page-search-value','value':data.search.value ? data.search.value : ""},
-							{'name':'x-kyte-page-search-fields','value':fields.join().replace(/,\s*$/, "")},
-						]
+						let headers = [];
+						if (self.serverside && self.processing) {
+							headers.push({'name':'x-kyte-draw','value':data.draw});
+							headers.push({'name':'x-kyte-page-size','value':data.length});
+							headers.push({'name':'x-kyte-page-idx','value':Math.ceil((data.start+1)/data.length)});
+							headers.push({'name':'x-kyte-page-search-value','value':data.search.value ? data.search.value : ""});
+							headers.push({'name':'x-kyte-page-search-fields','value':fields.join().replace(/,\s*$/, "")});
 
-						if (data.order.length > 0) {
-							let column = fields[data.order[0].column];
-							let dir = data.order[0].dir;
+							if (data.order.length > 0) {
+								let column = fields[data.order[0].column];
+								let dir = data.order[0].dir;
 
-							headers.push({'name':'x-kyte-page-order-col','value':column ? column : ""});
-							headers.push({'name':'x-kyte-page-order-dir','value':dir ? dir : ""});
+								headers.push({'name':'x-kyte-page-order-col','value':column ? column : ""});
+								headers.push({'name':'x-kyte-page-order-dir','value':dir ? dir : ""});
+							}
 						}
 
 						self.api.get(self.model.name, self.model.field, self.model.value, headers, function (response) {
