@@ -973,7 +973,7 @@ class KyteTable {
 							headers.push({'name':'x-kyte-draw','value':data.draw});
 							headers.push({'name':'x-kyte-page-size','value':data.length});
 							headers.push({'name':'x-kyte-page-idx','value':Math.ceil((data.start+1)/data.length)});
-							headers.push({'name':'x-kyte-page-search-value','value':data.search.value ? atob(data.search.value) : ""});
+							headers.push({'name':'x-kyte-page-search-value','value':data.search.value ? btoa(encodeURIComponent(data.search.value)) : ""});
 							headers.push({'name':'x-kyte-page-search-fields','value':fields.join().replace(/,\s*$/, "")});
 
 							if (data.order.length > 0) {
