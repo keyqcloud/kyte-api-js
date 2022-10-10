@@ -1831,7 +1831,7 @@ class KytePasswordRequirement {
 
 		// check password length
 		if (this.reqLength) {
-			if (pswd.length <= 8) {
+			if (pswd.length < 8) {
 				this.passwordField.removeClass('is-valid').addClass('is-invalid');
 				$('ul li.validate-length i').removeClass('fa-circle');
 				$('ul li.validate-length i').removeClass('fa-check-circle').addClass('fa-times-circle');
