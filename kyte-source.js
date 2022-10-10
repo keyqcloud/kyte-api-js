@@ -208,45 +208,53 @@ class Kyte {
 							obj.setCookie('roleIdx', '', -1);
 							obj.setCookie('roleName', '', -1);
 						} else {
-							obj.txToken = response.responseJSON.token;
-							obj.sessionToken = response.responseJSON.session;
-							if (response.kyte_pub && response.kyte_iden && response.kyte_num) {
-								obj.access_key = response.kyte_pub;
-								obj.identifier = response.kyte_iden;
-								obj.account_number = response.kyte_num;
-								obj.setCookie('kyte_pub', obj.access_key, 60);
-								obj.setCookie('kyte_iden', obj.identifier, 60);
-								obj.setCookie('kyte_num', obj.account_number, 60);
-							} else {
-								// destroy api handoff cookies
-								obj.setCookie('kyte_pub', '', -1);
-								obj.setCookie('kyte_num', '', -1);
-								obj.setCookie('kyte_iden', '', -1);
-								// reset to defaults
-								obj.access_key = obj.initial_access_key;
-								obj.identifier = obj.initial_identifier;
-								obj.account_number = obj.initial_account_number;
-							}
-							if (!response.responseJSON.token && !response.responseJSON.session) {
+							if (response.responseJSON == null) {
 								obj.setCookie('txToken', '', -1);
 								obj.setCookie('sessionToken', '', -1);
 								obj.setCookie('accountIdx', '', -1);
 								obj.setCookie('roleIdx', '', -1);
 								obj.setCookie('roleName', '', -1);
-								// destroy api handoff cookies
-								obj.setCookie('kyte_pub', '', -1);
-								obj.setCookie('kyte_num', '', -1);
-								obj.setCookie('kyte_iden', '', -1);
-								// reset to defaults
-								obj.access_key = obj.initial_access_key;
-								obj.identifier = obj.initial_identifier;
-								obj.account_number = obj.initial_account_number;
 							} else {
-								obj.setCookie('txToken', obj.txToken, 60);
-								obj.setCookie('sessionToken', obj.sessionToken, 60);
-								obj.setCookie('accountIdx', response.account_id, 60);
-								obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60);
-								obj.setCookie('roleName', response.role ? response.role.name : null, 60);
+								obj.txToken = response.responseJSON.token;
+								obj.sessionToken = response.responseJSON.session;
+								if (response.kyte_pub && response.kyte_iden && response.kyte_num) {
+									obj.access_key = response.kyte_pub;
+									obj.identifier = response.kyte_iden;
+									obj.account_number = response.kyte_num;
+									obj.setCookie('kyte_pub', obj.access_key, 60);
+									obj.setCookie('kyte_iden', obj.identifier, 60);
+									obj.setCookie('kyte_num', obj.account_number, 60);
+								} else {
+									// destroy api handoff cookies
+									obj.setCookie('kyte_pub', '', -1);
+									obj.setCookie('kyte_num', '', -1);
+									obj.setCookie('kyte_iden', '', -1);
+									// reset to defaults
+									obj.access_key = obj.initial_access_key;
+									obj.identifier = obj.initial_identifier;
+									obj.account_number = obj.initial_account_number;
+								}
+								if (!response.responseJSON.token && !response.responseJSON.session) {
+									obj.setCookie('txToken', '', -1);
+									obj.setCookie('sessionToken', '', -1);
+									obj.setCookie('accountIdx', '', -1);
+									obj.setCookie('roleIdx', '', -1);
+									obj.setCookie('roleName', '', -1);
+									// destroy api handoff cookies
+									obj.setCookie('kyte_pub', '', -1);
+									obj.setCookie('kyte_num', '', -1);
+									obj.setCookie('kyte_iden', '', -1);
+									// reset to defaults
+									obj.access_key = obj.initial_access_key;
+									obj.identifier = obj.initial_identifier;
+									obj.account_number = obj.initial_account_number;
+								} else {
+									obj.setCookie('txToken', obj.txToken, 60);
+									obj.setCookie('sessionToken', obj.sessionToken, 60);
+									obj.setCookie('accountIdx', response.account_id, 60);
+									obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60);
+									obj.setCookie('roleName', response.role ? response.role.name : null, 60);
+								}
 							}
 						}
 
@@ -260,11 +268,14 @@ class Kyte {
 				});
 			},
 			function (response) {
-				if (typeof error === "function") {
-					error(response);
-				} else {
+				if (response.responseJSON == null) {
 					console.log(response);
-					alert(response);
+				} else {
+					if (typeof error === "function") {
+						error(response);
+					} else {
+						console.log(response);
+					}
 				}
 			});
 	}
