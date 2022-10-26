@@ -54,9 +54,6 @@ class Kyte {
 			}
 		});
 	}
-	warm() {
-		this.get('Warm');
-	}
 	/* API Signature Request
 	 *
 	 * Pass identifying information and public key to backend
@@ -147,6 +144,10 @@ class Kyte {
 					},
 					data: encdata,
 					success: function (response) {
+						if (response.syntax_error) {
+							//
+							obj.syntaxErrorBanner(response.syntax_error);
+						}
 						obj.txToken = response.token;
 						obj.sessionToken = response.session;
 						if (response.kyte_pub && response.kyte_iden && response.kyte_num) {
@@ -195,6 +196,11 @@ class Kyte {
 						}
 					},
 					error: function (response) {
+						if (response.syntax_error) {
+							//
+							obj.syntaxErrorBanner(response.syntax_error);
+						}
+
 						if (response.status == 403) {
 							obj.setCookie('txToken', '', -1);
 							obj.setCookie('sessionToken', '', -1);
@@ -608,6 +614,10 @@ class Kyte {
 			}
 		});
 		return valid;
+	}
+
+	syntaxErrorBanner(filepath) {
+		$("body").prepend('<div class="card text-white bg-danger m-3"><div class="card-header">Syntax Error</div><div class="card-body"><p class="card-text">'+filepath+'</p></div></div>');
 	}
 }
 
