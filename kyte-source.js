@@ -938,6 +938,7 @@ class KyteTable {
 					// data: response.data,
 					columnDefs: self.columnDefs,
 					order: self.order,
+					pageLength: self.pageLength,
 					ajax: function(data, callback, settings) {
 						let fields = [];
 						self.columnDefs.forEach( o => {
@@ -973,7 +974,6 @@ class KyteTable {
 							alert("Unable to load data");
 						});
 					},
-					// pageLength: self.pageLength,
 					rowCallback: self.rowCallBack,
 					initComplete: self.initComplete
 				});
