@@ -208,63 +208,77 @@ class Kyte {
 							obj.setCookie('roleIdx', '', -1);
 							obj.setCookie('roleName', '', -1);
 						} else {
-							obj.txToken = response.responseJSON.token;
-							obj.sessionToken = response.responseJSON.session;
-							if (response.kyte_pub && response.kyte_iden && response.kyte_num) {
-								obj.access_key = response.kyte_pub;
-								obj.identifier = response.kyte_iden;
-								obj.account_number = response.kyte_num;
-								obj.setCookie('kyte_pub', obj.access_key, 60);
-								obj.setCookie('kyte_iden', obj.identifier, 60);
-								obj.setCookie('kyte_num', obj.account_number, 60);
-							} else {
-								// destroy api handoff cookies
-								obj.setCookie('kyte_pub', '', -1);
-								obj.setCookie('kyte_num', '', -1);
-								obj.setCookie('kyte_iden', '', -1);
-								// reset to defaults
-								obj.access_key = obj.initial_access_key;
-								obj.identifier = obj.initial_identifier;
-								obj.account_number = obj.initial_account_number;
-							}
-							if (!response.responseJSON.token && !response.responseJSON.session) {
+							if (response.responseJSON == null) {
 								obj.setCookie('txToken', '', -1);
 								obj.setCookie('sessionToken', '', -1);
 								obj.setCookie('accountIdx', '', -1);
 								obj.setCookie('roleIdx', '', -1);
 								obj.setCookie('roleName', '', -1);
-								// destroy api handoff cookies
-								obj.setCookie('kyte_pub', '', -1);
-								obj.setCookie('kyte_num', '', -1);
-								obj.setCookie('kyte_iden', '', -1);
-								// reset to defaults
-								obj.access_key = obj.initial_access_key;
-								obj.identifier = obj.initial_identifier;
-								obj.account_number = obj.initial_account_number;
 							} else {
-								obj.setCookie('txToken', obj.txToken, 60);
-								obj.setCookie('sessionToken', obj.sessionToken, 60);
-								obj.setCookie('accountIdx', response.account_id, 60);
-								obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60);
-								obj.setCookie('roleName', response.role ? response.role.name : null, 60);
+								obj.txToken = response.responseJSON.token;
+								obj.sessionToken = response.responseJSON.session;
+								if (response.kyte_pub && response.kyte_iden && response.kyte_num) {
+									obj.access_key = response.kyte_pub;
+									obj.identifier = response.kyte_iden;
+									obj.account_number = response.kyte_num;
+									obj.setCookie('kyte_pub', obj.access_key, 60);
+									obj.setCookie('kyte_iden', obj.identifier, 60);
+									obj.setCookie('kyte_num', obj.account_number, 60);
+								} else {
+									// destroy api handoff cookies
+									obj.setCookie('kyte_pub', '', -1);
+									obj.setCookie('kyte_num', '', -1);
+									obj.setCookie('kyte_iden', '', -1);
+									// reset to defaults
+									obj.access_key = obj.initial_access_key;
+									obj.identifier = obj.initial_identifier;
+									obj.account_number = obj.initial_account_number;
+								}
+								if (!response.responseJSON.token && !response.responseJSON.session) {
+									obj.setCookie('txToken', '', -1);
+									obj.setCookie('sessionToken', '', -1);
+									obj.setCookie('accountIdx', '', -1);
+									obj.setCookie('roleIdx', '', -1);
+									obj.setCookie('roleName', '', -1);
+									// destroy api handoff cookies
+									obj.setCookie('kyte_pub', '', -1);
+									obj.setCookie('kyte_num', '', -1);
+									obj.setCookie('kyte_iden', '', -1);
+									// reset to defaults
+									obj.access_key = obj.initial_access_key;
+									obj.identifier = obj.initial_identifier;
+									obj.account_number = obj.initial_account_number;
+								} else {
+									obj.setCookie('txToken', obj.txToken, 60);
+									obj.setCookie('sessionToken', obj.sessionToken, 60);
+									obj.setCookie('accountIdx', response.account_id, 60);
+									obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60);
+									obj.setCookie('roleName', response.role ? response.role.name : null, 60);
+								}
 							}
 						}
 
-						if (typeof error === "function") {
-							error(response.responseJSON.error);
+						if (response.responseJSON == null) {
+							console.log(response);
 						} else {
-							console.log(response.responseJSON.error);
-							alert(response.responseJSON.error);
+							if (typeof error === "function") {
+								error(response.responseJSON.error);
+							} else {
+								console.log(response.responseJSON.error);
+							}
 						}
 					}
 				});
 			},
 			function (response) {
-				if (typeof error === "function") {
-					error(response);
-				} else {
+				if (response.responseJSON == null) {
 					console.log(response);
-					alert(response);
+				} else {
+					if (typeof error === "function") {
+						error(response);
+					} else {
+						console.log(response);
+					}
 				}
 			});
 	}
@@ -960,7 +974,7 @@ class KyteTable {
 							headers.push({'name':'x-kyte-draw','value':data.draw});
 							headers.push({'name':'x-kyte-page-size','value':data.length});
 							headers.push({'name':'x-kyte-page-idx','value':Math.ceil((data.start+1)/data.length)});
-							headers.push({'name':'x-kyte-page-search-value','value':data.search.value ? data.search.value : ""});
+							headers.push({'name':'x-kyte-page-search-value','value':data.search.value ? btoa(encodeURIComponent(data.search.value)) : ""});
 							headers.push({'name':'x-kyte-page-search-fields','value':fields.join().replace(/,\s*$/, "")});
 
 							if (data.order.length > 0) {
@@ -1084,6 +1098,7 @@ class KyteForm {
 		this.fileUploadField = null;
 
 		this.itemized = false;
+		this.externalChildData = false;
 
 		this.success = successCallBack;
 		this.fail = failureCallBack;
@@ -1259,16 +1274,6 @@ class KyteForm {
 			this.selector.append(content);
 
 			this.reloadAjax();
-
-			// initialize datepicker
-			this.elements.forEach(function (row) {
-				row.forEach(function (column) {
-					if (column.date) {
-						$('#form_' + obj.model + '_' + obj.id + '_' + column.field).datepicker();
-						$('#form_' + obj.model + '_' + obj.id + '_' + column.field).datepicker("option", "dateFormat", obj.api.dateFormat);
-					}
-				});
-			});
 
 			// bind submit listener
 			$('#form_' + this.model + '_' + this.id).submit(function (e) {
@@ -1574,7 +1579,12 @@ class KyteForm {
 	}
 	loadFormData(idx, success = null, fail = null) {
 		var obj = this;
-		obj.api.get(obj.model, 'id', idx, [], function (response) {
+
+		// Check if model has external data and set variable accordinly
+		var externalData = (obj.externalChildData ? [{'name':'x-kyte-get-externaltables', 'value':'true'}] : [])
+
+		obj.api.get(obj.model, 'id', idx, externalData, function (response) {
+    
 			// populate form
 			// do not populate hidden fields as return data is object....
 			// if (obj.hiddenFields) {
@@ -1588,10 +1598,98 @@ class KyteForm {
 					if (typeof response.data[0][column.field] === 'object' && response.data[0][column.field] !== null) {
 						$('#form_' + obj.model + '_' + obj.id + '_' + column.field).val(response.data[0][column.field].id).change();
 					} else {
-						$('#form_' + obj.model + '_' + obj.id + '_' + column.field).val(response.data[0][column.field]).change();
+						if (column.type === 'date') {
+							// get date and change slashes to dashes
+							var dt = (response.data[0][column.field]).replace(/\//g, '-')
+							$('#form_' + obj.model + '_' + obj.id + '_' + column.field).val(dt)
+						} else {
+							$('#form_' + obj.model + '_' + obj.id + '_' + column.field).val(response.data[0][column.field])
+						}
+						$('#form_' + obj.model + '_' + obj.id + '_' + column.field).change();
 					}
 				});
 			});
+
+			// if itemized is specified, populate with itemized information
+			if (obj.itemized) {
+				var lineItems = response.data[0].ExternalTables.LineItem
+				var i = 0;
+				lineItems.forEach(function(item) {
+					var uniqueId = obj.makeID(8); // ID used to track newly created selects to populate if Ajax is set to true
+
+					let itemizedHTML = '<div class="row itemized-row my-3">'; // init html string
+
+					obj.itemized.fields.forEach(function (field) {
+						var fieldVal = item[field.name] === undefined ? '' : item[field.name]
+						itemizedHTML += '<div class="col"><div class="form-group">';
+						if (field.type == 'select') {
+							itemizedHTML += '<select id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '[' + i + ']" class="form-control" name="' + field.name + '" value="' + fieldVal + '"';
+							itemizedHTML += field.required ? 'required="required"' : '';
+							itemizedHTML += '>';
+							// if not ajax, then populate with data - ajax will populate after appending html
+							if (!field.option.ajax) {
+								for (var key in field.option.data) {
+									if (field.option.data.hasOwnProperty(key)) {
+										itemizedHTML += '<option value="' + key + '">' + field.option.data[key] + '</option>';
+									}
+								}
+							}
+							// close select
+							itemizedHTML += '</select>';
+						} else if (field.type == 'textarea') {
+							itemizedHTML += '<textarea style="width:100%" id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '[' + i + ']" name="' + field.name  + '" value="' + fieldVal + '"';
+							itemizedHTML += field.required ? 'required="required"' : '';
+							if (field.placeholder) {
+								itemizedHTML += ' placeholder="' + field.placeholder + '"';
+							}
+							itemizedHTML += '></textarea>';
+						} else {
+							// Check for date and replace slashes with dashes
+							fieldVal = field.date ? fieldVal.replace(/\//g, '-') : fieldVal
+							itemizedHTML += '<input type="' + field.type + '" id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '[' + i + ']" class="form-control' + (field.date ? ' form-datepicker' : '') + '" name="' + field.name  + '" value="' + fieldVal + '"';
+							itemizedHTML += field.required ? 'required="required"' : '';
+							if (field.placeholder) {
+								itemizedHTML += ' placeholder="' + field.placeholder + '"';
+							}
+							itemizedHTML += (field.readonly ? 'readonly ' : '') + '>';
+						}
+						itemizedHTML += '</div></div>';
+					});
+					itemizedHTML += '<div class="col-2 text-right"><a href="#" class="itemized-delete-item btn btn-small btn-outline-danger">remove</a></div></div>';
+					// append fields
+					$('#itemized_' + obj.model + '_' + obj.id).append(itemizedHTML);
+
+					// run ajax for any selects
+					obj.itemized.fields.forEach(function (field) {
+						if (field.type == 'select') {
+							if (field.option.ajax) {
+								obj.api.get(field.option.data_model_name, field.option.data_model_field, field.option.data_model_value, [], function (response) {
+									response.data.forEach(function (item) {
+										let label = '';
+										field.option.data_model_attributes.forEach(function (attribute) {
+											if (item[attribute]) {
+												label += item[attribute] + ' ';
+											} else {
+												// attempt to split by dot notation
+												let c = attribute.split('.');
+												if (c.length >= 2) {
+													label += item[c[0]][c[1]] + ' ';
+												} else {
+													label += attribute + ' ';
+												}
+											}
+										});
+										$('#' + field.option.data_model_name + '_' + field.option.data_model_value + '_' + uniqueId).append('<option value="' + item[field.option.data_model_value] + '">' + label + '</option>');
+									});
+								});
+							}
+						}
+					});
+
+					// increment itemized row counter
+					i++
+				})
+			}
 
 			if (typeof success === "function") {
 				success();
