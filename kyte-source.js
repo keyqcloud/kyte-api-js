@@ -1579,7 +1579,12 @@ class KyteForm {
 	}
 	loadFormData(idx, success = null, fail = null) {
 		var obj = this;
-		obj.api.get(obj.model, 'id', idx, [{'name':'x-kyte-get-externaltables', 'value':'true'}], function (response) {
+
+		// Check if model has external data and set variable accordinly
+		var externalData = (obj.externalChildData ? [{'name':'x-kyte-get-externaltables', 'value':'true'}] : [])
+
+		obj.api.get(obj.model, 'id', idx, externalData, function (response) {
+    
 			// populate form
 			// do not populate hidden fields as return data is object....
 			// if (obj.hiddenFields) {
