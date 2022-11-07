@@ -1,14 +1,5 @@
-# Elastic Beanstalk Files
-.elasticbeanstalk/*
-!.elasticbeanstalk/*.cfg.yml
-!.elasticbeanstalk/*.global.yml
 .DS_Store
-sendgrid.env
 *.swp
 Thumbs.db
-analytics.php
-settings.php
-# schema.sql
-/vendor
-config.php
-kyte.framework.js
+# exclude obfuscated code from repo
+kyte.js
