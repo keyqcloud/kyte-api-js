@@ -133,7 +133,7 @@ class Kyte {
 						xhr.setRequestHeader('x-kyte-identity', identity);
 						// if application ID is supplied, pass those - this is for provisioned containers
 						if (obj.applicationId) {
-							xhr.setRequestHeader('x-kyte-application-id', obj.applicationId);
+							xhr.setRequestHeader('x-kyte-appid', obj.applicationId);
 						}
 						// if custom headers are specified, add them
 						if (headers.length > 0) {
@@ -701,7 +701,7 @@ class KyteSidenav {
 			this.nav_struct.forEach(item => {
 				if ($(item.selector).length) {
 					html += '<li class="nav-item">';
-					html += '<a id="'+item.selector.replace('#', '')+'-nav-link" href="'+item.selector+'" class="nav-link text-dark me-2"><i class="'+ item.faicon +' me-2"></i><span>'+item.label+'</span></a>';
+					html += '<a id="'+item.selector.replace('#', '')+'-nav-link" href="'+(item.href ? item.href : item.selector)+'" class="nav-link text-dark me-2"><i class="'+ item.faicon +' me-2"></i><span>'+item.label+'</span></a>';
 					html += '</li>';
 				}
 			});
