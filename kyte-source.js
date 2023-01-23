@@ -699,7 +699,7 @@ class KyteSidenav {
 		if ($(this.selector).length) {
 			let html = '<ul class="nav nav-pills flex-column mb-auto" id="sidebar-nav">';
 			this.nav_struct.forEach(item => {
-				if ($(item.selector).length) {
+				if ($(item.selector).length || item.href) {
 					html += '<li class="nav-item">';
 					html += '<a id="'+item.selector.replace('#', '')+'-nav-link" href="'+(item.href ? item.href : item.selector)+'" class="nav-link text-dark me-2"><i class="'+ item.faicon +' me-2"></i><span>'+item.label+'</span></a>';
 					html += '</li>';
@@ -1467,7 +1467,7 @@ class KyteForm {
 				$('#modal_' + this.model + '_' + this.id).on('shown.bs.modal', function (e) {
 					if (e.target.id == 'modal_' + obj.model + '_' + obj.id) {
 						var form = $('#form_' + obj.model + '_' + obj.id);
-						let idx = form.data('idx');
+						let idx = obj.editOnlyMode ? obj.editOnlyMode : form.data('idx');
 						// check if idx is set and retrieve information
 						if (idx) {
 							$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('show');
@@ -1550,7 +1550,7 @@ class KyteForm {
 												}
 											}
 										});
-										$('#' + field.option.data_model_name + '_' + field.option.data_model_value + '_' + uniqueId).append('<option value="' + item[field.option.data_model_value] + '">' + label + '</option>');
+										$('#' + field.option.data_model_name + '_' + field.option.data_model_value + '_' + uniqueId).append('<option value="' + item['id'] + '">' + label + '</option>');
 									});
 								});
 							}
