@@ -1176,7 +1176,7 @@ class KyteForm {
 
 					if (column.type == 'select') {
 						content += '\
-								<select id="form_' + obj.model + '_' + obj.id + '_' + column.field + '" class="form-control" name="' + column.field + '"';
+								<select id="form_' + obj.model + '_' + obj.id + '_' + column.field + '" class="form-select" name="' + column.field + '"';
 						content += column.required ? 'required="required"' : '';
 						content += '>';
 						if (column.placeholder) {
@@ -1496,7 +1496,7 @@ class KyteForm {
 					obj.itemized.fields.forEach(function (field) {
 						itemizedHTML += '<div class="col"><div class="form-group">';
 						if (field.type == 'select') {
-							itemizedHTML += '<select id="' + field.option.data_model_name + '_' + field.option.data_model_value + '_' + uniqueId + '" id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '" class="form-control" name="' + field.name + '"';
+							itemizedHTML += '<select id="' + field.option.data_model_name + '_' + field.option.data_model_value + '_' + uniqueId + '" id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '" class="form-select" name="' + field.name + '"';
 							itemizedHTML += field.required ? 'required="required"' : '';
 							itemizedHTML += '>';
 							// if not ajax, then populate with data - ajax will populate after appending html
@@ -1623,7 +1623,7 @@ class KyteForm {
 						var fieldVal = item[field.name] === undefined ? '' : item[field.name]
 						itemizedHTML += '<div class="col"><div class="form-group">';
 						if (field.type == 'select') {
-							itemizedHTML += '<select id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '[' + i + ']" class="form-control" name="' + field.name + '" value="' + fieldVal + '"';
+							itemizedHTML += '<select id="itemized_' + obj.model + '_' + obj.id + '_' + field.name + '[' + i + ']" class="form-select" name="' + field.name + '" value="' + fieldVal + '"';
 							itemizedHTML += field.required ? 'required="required"' : '';
 							itemizedHTML += '>';
 							// if not ajax, then populate with data - ajax will populate after appending html
