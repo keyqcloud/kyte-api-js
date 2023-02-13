@@ -782,6 +782,7 @@ class KyteTable {
 		this.actionDelete = actionDelete;
 		this.actionView = actionView;
 		this.viewTarget = viewTarget;
+		this.targetBlank = false;
 		this.rowCallBack = rowCallBack;
 		this.initComplete = initComplete;
 
@@ -944,7 +945,11 @@ class KyteTable {
 						if (self.viewTarget) {
 							let obj = { 'model': self.model.name, 'idx': data[self.actionView] };
 							let encoded = encodeURIComponent(btoa(JSON.stringify(obj)));
-							location.href = self.viewTarget + "?request=" + encoded;
+							if (self.targetBlank) {
+								window.open(self.viewTarget + "?request=" + encoded, '_blank').focus();
+							} else {
+								location.href = self.viewTarget + "?request=" + encoded;
+							}
 						}
 					});
 					self.selector.on('click', 'tbody td.row-actions', function (e) {
