@@ -700,7 +700,7 @@ class KyteSidenav {
 			this.nav_struct.forEach(item => {
 				if ($(item.selector).length || item.href) {
 					html += '<li class="nav-item">';
-					html += '<a id="'+item.selector.replace('#', '')+'-nav-link" href="'+(item.href ? item.href : item.selector)+'" class="nav-link text-dark me-2"><i class="'+ item.faicon +' me-2"></i><span>'+item.label+'</span></a>';
+					html += '<a '+($(item.selector).length ? 'id="'+item.selector.replace('#', '')+'-nav-link" ' : '')+'href="'+(item.href ? item.href : item.selector)+'" class="nav-link text-dark me-2"><i class="'+ item.faicon +' me-2"></i><span>'+item.label+'</span></a>';
 					html += '</li>';
 				}
 			});
