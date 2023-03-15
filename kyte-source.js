@@ -264,7 +264,7 @@ class Kyte {
 							if (typeof error === "function") {
 								error(response.responseJSON.error);
 							} else {
-								console.log(response.responseJSON.error);
+								console.error(response.responseJSON.error);
 							}
 						}
 					}
@@ -272,12 +272,12 @@ class Kyte {
 			},
 			function (response) {
 				if (response.responseJSON == null) {
-					console.log(response);
+					console.error(response);
 				} else {
 					if (typeof error === "function") {
 						error(response);
 					} else {
-						console.log(response);
+						console.error(response);
 					}
 				}
 			});
@@ -441,7 +441,7 @@ class Kyte {
 				if (typeof error === "function") {
 					error(response);
 				} else {
-					console.log(response);
+					console.error(response);
 					alert(response);
 				}
 			});
@@ -449,7 +449,6 @@ class Kyte {
 	addLogoutHandler(selector) {
 		self = this;
         $('body').on('click', selector, function() {
-            console.log("LOG ME THE FUCK OUT");
             self.sessionDestroy(function () {
                 location.href = "/";
             });
@@ -532,7 +531,7 @@ class Kyte {
 				if (typeof error === "function") {
 					error(response);
 				} else {
-					console.log(response);
+					console.error(response);
 					alert(response);
 				}
 			},
@@ -553,7 +552,7 @@ class Kyte {
 				if (typeof error === "function") {
 					error(response);
 				} else {
-					console.log(response);
+					console.error(response);
 					alert(response);
 				}
 			});
@@ -1757,6 +1756,247 @@ class KyteForm {
 		}
 		return result;
 	}
+}
+
+class KyteCalendar {
+    constructor(selector) {
+        this.selector = selector;
+        this.Days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+        this.Months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        this.selectedDate = null; // if selection type is range, this is start date
+        this.selectedEndDate = null;
+        this.callback = null;
+        this.date = new Date();
+        this.rowMonths = 1;
+		this.colMonths = 0;
+		this.selectedActiveClass = 'calendar-date-active';
+		this.selectedEndActiveClass = 'calendar-date-active';
+    }
+
+    init() {
+        let self = this;
+        let html = '<div class="kyte-calendar">';
+        this.colMonths = $(this.selector).data('colMonths');
+		this.rowMonths = $(this.selector).data('rowMonths');
+        
+        // begin controls
+        html += '<div class="d-flex justify-content-between mb-2"><a href="#" class="calendar-back"><i class="fas fa-arrow-alt-circle-left fa-3x"></i></a><a href="#" class="calendar-forward"><i class="fas fa-arrow-alt-circle-right fa-3x"></i></a></div>';
+
+        // begin calendar widget
+        html += '<div class="row kyte-calendar-row">';
+
+        html += this.generateRow(function(col, row) { return (col == 0 && row == 0 ? 0 : 1); });
+        html += '</div></div>';
+
+        // create calendar widget
+        $(this.selector).html(html);
+
+        $(".kyte-calendar").on('click', '.calendar-forward', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            // move month over double before decrementing...we're working backwards here
+            self.date.setMonth(self.date.getMonth() + (self.colMonths * self.rowMonths * 2));
+
+            // update calendar widget
+            $(".kyte-calendar-row").html(self.generateRow());
+        });
+
+        $(".kyte-calendar").on('click', '.calendar-back', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            // update calendar widget
+            $(".kyte-calendar-row").html(self.generateRow());
+        });
+
+        // date click handler
+        $(".kyte-calendar").on('click', '.calendar-date-content', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            let year = $(this).data('calendarYear');
+            let month = $(this).data('calendarMonth');
+            let date = $(this).data('calendarDate');
+
+            $('.calendar-date-content').removeClass(self.selectedActiveClass);
+			$('.calendar-date-content').removeClass(self.selectedEndActiveClass);
+
+            let selection = new Date(year, month, date);
+
+            if ($(self.selector).data('selectionType') == 'range') {
+                if (self.selectedDate == null) {
+                    self.selectedDate = selection;
+                } else if (self.selectedDate > selection) {
+                    self.selectedDate = selection;
+                    self.selectedEndDate = null;
+                } else if (self.selectedEndDate == null) {
+                    self.selectedEndDate = selection;
+                } else {
+                    self.selectedDate = selection;
+                    self.selectedEndDate = null;
+                }
+            } else {
+                self.selectedDate = new Date(year, month, date);
+            }
+			if (self.selectedEndDate != null) {
+				$('.calendar-element-'+self.selectedEndDate.getFullYear()+'-'+self.selectedEndDate.getMonth()+'-'+self.selectedEndDate.getDate()).addClass(self.selectedEndActiveClass);
+			}
+            $('.calendar-element-'+self.selectedDate.getFullYear()+'-'+self.selectedDate.getMonth()+'-'+self.selectedDate.getDate()).addClass(self.selectedActiveClass);
+
+            if (typeof self.callback === "function") {
+                self.callback(self.selectedDate, self.selectedEndDate);
+            }
+        });
+    }
+
+    updateSelectedDate(dateString) {
+		if (dateString == null || dateString == '') {
+			this.selectedDate = null;
+		} else {
+			let newDate = new Date(dateString);
+			this.selectedDate = new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate());
+			if (this.selectedDate > this.selectedEndDate) {
+				this.selectedEndDate = null;
+			}
+		}
+        this.redraw();
+    }
+
+    updateSelectedEndDate(dateString) {
+		if (dateString == null || dateString == '') {
+			this.selectedEndDate = null;
+		} else {
+			let newDate = new Date(dateString);
+			this.selectedEndDate = new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate());
+			if (this.selectedEndDate < this.selectedDate) {
+				this.selectedDate = null;
+			}
+		}
+        this.redraw();
+    }
+
+    redraw() {
+        // move month over double before decrementing...we're working backwards here
+        this.date.setMonth(this.date.getMonth() + (this.colMonths * this.rowMonths));
+
+        // update calendar widget
+        $(".kyte-calendar-row").html(this.generateRow());
+    }
+
+	generateRow(modifier) {
+		// check that row months is within range
+        if (this.rowMonths < 1 || this.rowMonths > 3) {
+            console.error('Invalid option for number of rows to display. Please pick between 1 and 3.');
+            return;
+        }
+
+        // check that col months is within range
+        if (this.colMonths < 1 || this.colMonths > 3) {
+            console.error('Invalid option for number of months to display per col. Please pick between 1 and 3.');
+            return;
+        }
+
+		// check is modifier is a funtion & returns correctly
+		if (typeof modifier === "function") {
+			let testReturn = modifier(1);
+			if (!Number.isInteger(testReturn)) {
+				console.error("Modifier does not return an integer. Must return an integer.");
+				return;
+			}
+		} else {
+			modifier = function(idx) { return 1; };
+		}
+
+		let rowHTML = '';
+		if (this.rowMonths > 1) {
+			rowHTML += '<div class="col">';
+		}
+		let calRow = [];
+		for (let r = 0; r < this.rowMonths; r++) {
+			let calRowHTHML = '';
+			if (this.rowMonths > 1) {
+				calRowHTHML += '<div class="row mb-2">';
+			}
+			let calendars = [];
+			for (let i = 0; i < this.colMonths; i++) {
+				this.date.setMonth(this.date.getMonth() - modifier(i, r));
+				let calendarHtml = this.generateCalendar(this.date);
+				calendars.push('<div class="col-lg-'+(12/this.colMonths)+' mb-2 mb-lg-0 px-1">'+calendarHtml+'</div>');
+			}
+			calRowHTHML += calendars.reverse().join('');
+			if (this.rowMonths > 1) {
+				calRowHTHML += '</div>';
+			}
+			calRow.push(calRowHTHML);
+		}
+		rowHTML += calRow.reverse().join('');
+		if (this.rowMonths > 1) {
+			rowHTML += '</div>';
+		}
+        
+        return rowHTML;
+	}
+
+    generateCalendar(date) {
+        // let isLeap = new Date(year, month-1, 29).getMonth() == 1;
+        let totalDays = new Date(date.getFullYear(), date.getMonth()+1, 0).getDate();
+        let calDate = new Date(date.getFullYear(), date.getMonth(), 1);
+        let row = [];
+        let col = [];
+        let i = 0;
+
+        // month label
+        row.push('<div class="row"><div class="col"><div class="calendar-month-label">'+this.Months[date.getMonth()]+' '+date.getFullYear()+'</div></div></div>');
+
+        // day of week labels
+        for (i; i < 7; i++) {
+            col.push('<div class="col"><div class="calendar-day-of-week">'+this.Days[i]+'</div></div>')
+        }
+        row.push('<div class="row">'+col.join('')+'</div>');
+        col = [];
+        i = 0;
+
+        let startDayOfWeek = calDate.getDay();
+        for (i; i < startDayOfWeek; i++) {
+            col.push('<div class="col"><div class="calendar-date-square"></div></div>');
+        }
+
+        for (let d = 1; d <= totalDays; d++) {
+            calDate.setDate(d);
+
+            let startActive = false;
+            let endActive = false;
+
+            if (this.selectedDate) {
+                if (this.selectedDate.getTime() === calDate.getTime()) {
+                    startActive = true;
+                }
+            }
+
+            if (this.selectedEndDate) {
+                if (this.selectedEndDate.getTime() === calDate.getTime()) {
+                    endActive = true;
+                }
+            }
+            
+            if (i % 7 == 0) {
+                row.push('<div class="row">'+col.join('')+'</div>');
+                col = [];
+                i = 0;
+            }
+
+            col.push('<div class="col"><div class="calendar-date-square"><a href="#" data-calendar-month="'+date.getMonth()+'" data-calendar-year="'+date.getFullYear()+'" data-calendar-date="'+d+'" data-calendar-day="'+this.Days[i]+'" class="'+(startActive ? this.selectedActiveClass+' ' : '')+(endActive ? this.selectedEndActiveClass+' ' : '')+'calendar-date-content calendar-element-'+date.getFullYear()+'-'+date.getMonth()+'-'+d+' align-items-center justify-content-center d-flex"><span class="d-flex-column">'+d+'</span></a></div></div>');
+            i++;
+        }
+
+        for (i; i < 7; i++) {
+            col.push('<div class="col"><div class="calendar-date-square"></div></div>');
+        }
+        row.push('<div class="row">'+col.join('')+'</div>');
+
+        return '<div class="kyte-calendar-wrapper">'+row.join('')+'</div>';
+    }
 }
 
 class KytePasswordRequirement {
