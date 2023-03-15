@@ -599,20 +599,24 @@ class Kyte {
 				autoOpen: true,
 				width: 'auto',
 				resizeable: false,
-				buttons: {
-					Yes: function () {
+				buttons: [{
+					class:'btn btn-danger btn-delete-confirm-yes',
+					text:'Yes',
+					click: function () {
 						if (typeof callback === "function") {
 							callback();
 						}
 						$(this).dialog('close');
 					},
-					No: function () {
+					class:'btn btn-secondary btn-delete-confirm-no',
+					text:'No',
+					click: function () {
 						if (typeof cancel === "function") {
 							cancel();
 						}
 						$(this).dialog('close');
 					}
-				},
+				}],
 				close: function (e, ui) {
 					$(this).remove();
 				}
