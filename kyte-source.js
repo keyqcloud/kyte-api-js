@@ -1779,6 +1779,7 @@ class KyteCalendar {
 		this.colMonths = 0;
 		this.selectedActiveClass = 'calendar-date-active';
 		this.selectedEndActiveClass = 'calendar-date-active';
+		this.fieldInFocus = null;
     }
 
     init() {
@@ -1833,24 +1834,43 @@ class KyteCalendar {
             let selection = new Date(year, month, date);
 
             if ($(self.selector).data('selectionType') == 'range') {
-                if (self.selectedDate == null) {
-                    self.selectedDate = selection;
-                } else if (self.selectedDate > selection) {
-                    self.selectedDate = selection;
-                    self.selectedEndDate = null;
-                } else if (self.selectedEndDate == null) {
-                    self.selectedEndDate = selection;
-                } else {
-                    self.selectedDate = selection;
-                    self.selectedEndDate = null;
-                }
+				if (self.fieldInFocus) {
+					console.log("test");
+					console.log(self.fieldInFocus.data('date-target'));
+					if (self.fieldInFocus.data('date-target') == 'start') {
+						self.selectedDate = selection;
+						if (self.selectedDate > self.selectedEndDate) {
+							self.selectedEndDate = null;
+						}
+					} else {
+						self.selectedEndDate = selection;
+						if (self.selectedDate > self.selectedEndDate) {
+							self.selectedDate = null;
+						}
+					}
+					self.fieldInFocus = null;
+				} else {
+					if (self.selectedDate == null) {
+						self.selectedDate = selection;
+					} else if (self.selectedDate > selection) {
+						self.selectedDate = selection;
+						self.selectedEndDate = null;
+					} else if (self.selectedEndDate == null) {
+						self.selectedEndDate = selection;
+					} else {
+						self.selectedDate = selection;
+						self.selectedEndDate = null;
+					}
+				}
             } else {
                 self.selectedDate = new Date(year, month, date);
             }
 			if (self.selectedEndDate != null) {
 				$('.calendar-element-'+self.selectedEndDate.getFullYear()+'-'+self.selectedEndDate.getMonth()+'-'+self.selectedEndDate.getDate()).addClass(self.selectedEndActiveClass);
 			}
-            $('.calendar-element-'+self.selectedDate.getFullYear()+'-'+self.selectedDate.getMonth()+'-'+self.selectedDate.getDate()).addClass(self.selectedActiveClass);
+			if (self.selectedDate != null) {
+				$('.calendar-element-'+self.selectedDate.getFullYear()+'-'+self.selectedDate.getMonth()+'-'+self.selectedDate.getDate()).addClass(self.selectedActiveClass);
+			}
 
             if (typeof self.callback === "function") {
                 self.callback(self.selectedDate, self.selectedEndDate);
@@ -1868,6 +1888,7 @@ class KyteCalendar {
 				this.selectedEndDate = null;
 			}
 		}
+		this.fieldInFocus = null;
         this.redraw();
     }
 
@@ -1881,6 +1902,7 @@ class KyteCalendar {
 				this.selectedDate = null;
 			}
 		}
+		this.fieldInFocus = null;
         this.redraw();
     }
 
