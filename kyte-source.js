@@ -1283,6 +1283,10 @@ class KyteForm {
 	</div>\
 </div>';
 			}
+			if (typeof this.selector === 'string') {
+				$('body').append('<div id="'+this.selector+'"></div>');
+				this.selector = $(this.selector);
+			}
 			this.selector.append(content);
 
 			this.reloadAjax();
