@@ -48,8 +48,7 @@ class Kyte {
 				if (typeof error === "function") {
 					error(response.responseJSON.error);
 				} else {
-					console.log(response.responseJSON.error);
-					alert(response.responseJSON.error);
+					console.error(response.responseJSON.error);
 				}
 			}
 		});
@@ -81,8 +80,7 @@ class Kyte {
 				if (typeof error === "function") {
 					error(response);
 				} else {
-					console.log(response);
-					alert(response);
+					console.error(response);
 				}
 			}
 		});
@@ -442,7 +440,6 @@ class Kyte {
 					error(response);
 				} else {
 					console.error(response);
-					alert(response);
 				}
 			});
 	}
@@ -532,7 +529,6 @@ class Kyte {
 					error(response);
 				} else {
 					console.error(response);
-					alert(response);
 				}
 			},
 			function (response) {
@@ -553,7 +549,6 @@ class Kyte {
 					error(response);
 				} else {
 					console.error(response);
-					alert(response);
 				}
 			});
 	}
@@ -1493,7 +1488,7 @@ class KyteForm {
 							}, function () {
 								$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
 								obj.hideModal();
-								alert('Unable to load form. Please try again later');
+								console.error('Unable to load form. Please try again later');
 							});
 						}
 					}
