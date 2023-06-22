@@ -962,7 +962,7 @@ class KyteTable {
 				self.selector.append(content);
 				// handle dark mode
 				if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					self.table.addClass('table-dark');
+					self.selector.addClass('table-dark');
 				}
 				self.table = self.selector.DataTable({
 					// searching: self.searching,
