@@ -223,13 +223,7 @@ class Kyte {
 							obj.setCookie('roleIdx', '', -1);
 							obj.setCookie('roleName', '', -1);
 						} else {
-							if (response.responseJSON == null) {
-								obj.setCookie('txToken', '', -1);
-								obj.setCookie('sessionToken', '', -1);
-								obj.setCookie('accountIdx', '', -1);
-								obj.setCookie('roleIdx', '', -1);
-								obj.setCookie('roleName', '', -1);
-							} else {
+							if (response.responseJSON != null) {
 								obj.txToken = response.responseJSON.token;
 								obj.sessionToken = response.responseJSON.session;
 								if (response.kyte_pub && response.kyte_iden && response.kyte_num) {
@@ -295,7 +289,8 @@ class Kyte {
 						console.error(response);
 					}
 				}
-			});
+			}
+        );
 	}
 	/* Post
 	 *
