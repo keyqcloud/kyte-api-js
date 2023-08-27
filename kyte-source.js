@@ -331,11 +331,14 @@ class Kyte {
 	/*
 	 * Set browser cookie
 	 */
-	setCookie(cname, cvalue, minutes) {
-		var d = new Date();
-		d.setTime(d.getTime() + (minutes * 60 * 1000));
-		var expires = "expires=" + d.toUTCString();
-		document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;" + (location.protocol === 'https:' ? 'secure;' : '');
+	setCookie(cname, cvalue, minutes = null) {
+		var expires = "";
+		if (minutes) {
+			var d = new Date();
+			d.setTime(d.getTime() + (minutes * 60 * 1000));
+			expires = ";expires=" + d.toUTCString();
+		}
+		document.cookie = cname + "=" + cvalue + expires + ";path=/;" + (location.protocol === 'https:' ? 'secure;' : '');
 	}
 	/*
 	 * Get browser cookie
