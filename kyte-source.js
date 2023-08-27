@@ -1,3 +1,20 @@
+/**
+ * Copyright 2020-2023 KeyQ, Inc.
+ * 
+ * This source file is free software,
+ * available under the following license:
+ * MIT license
+ * 
+ * This source file is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the license files for details.
+ * 
+ * For details please refer to: http://www.keyq.cloud
+ * KyteJS
+ * ©2010-2023 KeyQ, Inc.
+ **/
 class Kyte {
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
 		this.url = url;
