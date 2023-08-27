@@ -1,3 +1,20 @@
+/**
+ * Copyright 2020-2023 KeyQ, Inc.
+ * 
+ * This source file is free software,
+ * available under the following license:
+ * MIT license
+ * 
+ * This source file is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the license files for details.
+ * 
+ * For details please refer to: http://www.keyq.cloud
+ * KyteJS
+ * ©2020-2023 KeyQ, Inc.
+ **/
 class Kyte {
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
 		this.url = url;
@@ -48,8 +65,7 @@ class Kyte {
 				if (typeof error === "function") {
 					error(response.responseJSON.error);
 				} else {
-					console.log(response.responseJSON.error);
-					alert(response.responseJSON.error);
+					console.error(response.responseJSON.error);
 				}
 			}
 		});
@@ -81,8 +97,7 @@ class Kyte {
 				if (typeof error === "function") {
 					error(response);
 				} else {
-					console.log(response);
-					alert(response);
+					console.error(response);
 				}
 			}
 		});
@@ -133,7 +148,7 @@ class Kyte {
 						xhr.setRequestHeader('x-kyte-identity', identity);
 						// if application ID is supplied, pass those - this is for provisioned containers
 						if (obj.applicationId) {
-							xhr.setRequestHeader('x-kyte-application-id', obj.applicationId);
+							xhr.setRequestHeader('x-kyte-appid', obj.applicationId);
 						}
 						// if custom headers are specified, add them
 						if (headers.length > 0) {
@@ -208,13 +223,7 @@ class Kyte {
 							obj.setCookie('roleIdx', '', -1);
 							obj.setCookie('roleName', '', -1);
 						} else {
-							if (response.responseJSON == null) {
-								obj.setCookie('txToken', '', -1);
-								obj.setCookie('sessionToken', '', -1);
-								obj.setCookie('accountIdx', '', -1);
-								obj.setCookie('roleIdx', '', -1);
-								obj.setCookie('roleName', '', -1);
-							} else {
+							if (response.responseJSON != null) {
 								obj.txToken = response.responseJSON.token;
 								obj.sessionToken = response.responseJSON.session;
 								if (response.kyte_pub && response.kyte_iden && response.kyte_num) {
@@ -264,7 +273,7 @@ class Kyte {
 							if (typeof error === "function") {
 								error(response.responseJSON.error);
 							} else {
-								console.log(response.responseJSON.error);
+								console.error(response.responseJSON.error);
 							}
 						}
 					}
@@ -272,15 +281,16 @@ class Kyte {
 			},
 			function (response) {
 				if (response.responseJSON == null) {
-					console.log(response);
+					console.error(response);
 				} else {
 					if (typeof error === "function") {
 						error(response);
 					} else {
-						console.log(response);
+						console.error(response);
 					}
 				}
-			});
+			}
+        );
 	}
 	/* Post
 	 *
@@ -441,15 +451,13 @@ class Kyte {
 				if (typeof error === "function") {
 					error(response);
 				} else {
-					console.log(response);
-					alert(response);
+					console.error(response);
 				}
 			});
 	}
 	addLogoutHandler(selector) {
 		self = this;
         $('body').on('click', selector, function() {
-            console.log("LOG ME THE FUCK OUT");
             self.sessionDestroy(function () {
                 location.href = "/";
             });
@@ -532,8 +540,7 @@ class Kyte {
 				if (typeof error === "function") {
 					error(response);
 				} else {
-					console.log(response);
-					alert(response);
+					console.error(response);
 				}
 			},
 			function (response) {
@@ -553,8 +560,7 @@ class Kyte {
 				if (typeof error === "function") {
 					error(response);
 				} else {
-					console.log(response);
-					alert(response);
+					console.error(response);
 				}
 			});
 	}
@@ -600,20 +606,28 @@ class Kyte {
 				autoOpen: true,
 				width: 'auto',
 				resizeable: false,
-				buttons: {
-					Yes: function () {
-						if (typeof callback === "function") {
-							callback();
-						}
-						$(this).dialog('close');
+				buttons: [
+					{
+						class:'btn btn-danger btn-delete-confirm-yes',
+						text:'Yes',
+						click: function () {
+							if (typeof callback === "function") {
+								callback();
+							}
+							$(this).dialog('close');
+						},
 					},
-					No: function () {
-						if (typeof cancel === "function") {
-							cancel();
+					{
+						class:'btn btn-secondary btn-delete-confirm-no',
+						text:'No',
+						click: function () {
+							if (typeof cancel === "function") {
+								cancel();
+							}
+							$(this).dialog('close');
 						}
-						$(this).dialog('close');
 					}
-				},
+				],
 				close: function (e, ui) {
 					$(this).remove();
 				}
@@ -699,9 +713,9 @@ class KyteSidenav {
 		if ($(this.selector).length) {
 			let html = '<ul class="nav nav-pills flex-column mb-auto" id="sidebar-nav">';
 			this.nav_struct.forEach(item => {
-				if ($(item.selector).length) {
+				if ($(item.selector).length || item.href) {
 					html += '<li class="nav-item">';
-					html += '<a id="'+item.selector.replace('#', '')+'-nav-link" href="'+item.selector+'" class="nav-link text-dark me-2"><i class="'+ item.faicon +' me-2"></i><span>'+item.label+'</span></a>';
+					html += '<a '+($(item.selector).length ? 'id="'+item.selector.replace('#', '')+'-nav-link" ' : '')+'href="'+(item.href ? item.href : item.selector)+'" class="nav-link text-dark me-2"><i class="'+ item.faicon +' me-2"></i><span>'+item.label+'</span></a>';
 					html += '</li>';
 				}
 			});
@@ -782,6 +796,7 @@ class KyteTable {
 		this.actionDelete = actionDelete;
 		this.actionView = actionView;
 		this.viewTarget = viewTarget;
+		this.targetBlank = false;
 		this.rowCallBack = rowCallBack;
 		this.initComplete = initComplete;
 
@@ -944,7 +959,11 @@ class KyteTable {
 						if (self.viewTarget) {
 							let obj = { 'model': self.model.name, 'idx': data[self.actionView] };
 							let encoded = encodeURIComponent(btoa(JSON.stringify(obj)));
-							location.href = self.viewTarget + "?request=" + encoded;
+							if (self.targetBlank) {
+								window.open(self.viewTarget + "?request=" + encoded, '_blank').focus();
+							} else {
+								location.href = self.viewTarget + "?request=" + encoded;
+							}
 						}
 					});
 					self.selector.on('click', 'tbody td.row-actions', function (e) {
@@ -953,6 +972,10 @@ class KyteTable {
 				}
 				content += '</tr></thead><tbody></tbody>';
 				self.selector.append(content);
+				// handle dark mode
+				if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					self.selector.addClass('table-dark');
+				}
 				self.table = self.selector.DataTable({
 					// searching: self.searching,
 					processing: self.processing,
@@ -1471,7 +1494,7 @@ class KyteForm {
 				$('#modal_' + this.model + '_' + this.id).on('shown.bs.modal', function (e) {
 					if (e.target.id == 'modal_' + obj.model + '_' + obj.id) {
 						var form = $('#form_' + obj.model + '_' + obj.id);
-						let idx = form.data('idx');
+						let idx = obj.editOnlyMode ? obj.editOnlyMode : form.data('idx');
 						// check if idx is set and retrieve information
 						if (idx) {
 							$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('show');
@@ -1481,7 +1504,7 @@ class KyteForm {
 							}, function () {
 								$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
 								obj.hideModal();
-								alert('Unable to load form. Please try again later');
+								console.error('Unable to load form. Please try again later');
 							});
 						}
 					}
@@ -1554,7 +1577,7 @@ class KyteForm {
 												}
 											}
 										});
-										$('#' + field.option.data_model_name + '_' + field.option.data_model_value + '_' + uniqueId).append('<option value="' + item[field.option.data_model_value] + '">' + label + '</option>');
+										$('#' + field.option.data_model_name + '_' + field.option.data_model_value + '_' + uniqueId).append('<option value="' + item['id'] + '">' + label + '</option>');
 									});
 								});
 							}
@@ -1756,6 +1779,269 @@ class KyteForm {
 		}
 		return result;
 	}
+}
+
+class KyteCalendar {
+    constructor(selector) {
+        this.selector = selector;
+        this.Days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+        this.Months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        this.selectedDate = null; // if selection type is range, this is start date
+        this.selectedEndDate = null;
+        this.callback = null;
+        this.date = new Date();
+        this.rowMonths = 1;
+		this.colMonths = 0;
+		this.selectedActiveClass = 'calendar-date-active';
+		this.selectedEndActiveClass = 'calendar-date-active';
+		this.fieldInFocus = null;
+    }
+
+    init() {
+        let self = this;
+        let html = '<div class="kyte-calendar">';
+        this.colMonths = $(this.selector).data('colMonths');
+		this.rowMonths = $(this.selector).data('rowMonths');
+        
+        // begin controls
+        html += '<div class="d-flex justify-content-between mb-2"><a href="#" class="calendar-back"><i class="fas fa-arrow-alt-circle-left fa-3x"></i></a><a href="#" class="calendar-forward"><i class="fas fa-arrow-alt-circle-right fa-3x"></i></a></div>';
+
+        // begin calendar widget
+        html += '<div class="row kyte-calendar-row">';
+
+        html += this.generateRow(function(col, row) { return (col == 0 && row == 0 ? 0 : 1); });
+        html += '</div></div>';
+
+        // create calendar widget
+        $(this.selector).html(html);
+
+        $(".kyte-calendar").on('click', '.calendar-forward', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            // move month over double before decrementing...we're working backwards here
+            self.date.setMonth(self.date.getMonth() + (self.colMonths * self.rowMonths * 2));
+
+            // update calendar widget
+            $(".kyte-calendar-row").html(self.generateRow());
+        });
+
+        $(".kyte-calendar").on('click', '.calendar-back', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            // update calendar widget
+            $(".kyte-calendar-row").html(self.generateRow());
+        });
+
+        // date click handler
+        $(".kyte-calendar").on('click', '.calendar-date-content', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            let year = $(this).data('calendarYear');
+            let month = $(this).data('calendarMonth');
+            let date = $(this).data('calendarDate');
+
+            $('.calendar-date-content').removeClass(self.selectedActiveClass);
+			$('.calendar-date-content').removeClass(self.selectedEndActiveClass);
+
+            let selection = new Date(year, month, date);
+
+            if ($(self.selector).data('selectionType') == 'range') {
+				if (self.fieldInFocus) {
+					console.log("test");
+					console.log(self.fieldInFocus.data('date-target'));
+					if (self.fieldInFocus.data('date-target') == 'start') {
+						self.selectedDate = selection;
+						if (self.selectedDate > self.selectedEndDate) {
+							self.selectedEndDate = null;
+						}
+					} else {
+						self.selectedEndDate = selection;
+						if (self.selectedDate > self.selectedEndDate) {
+							self.selectedDate = null;
+						}
+					}
+					self.fieldInFocus = null;
+				} else {
+					if (self.selectedDate == null) {
+						self.selectedDate = selection;
+					} else if (self.selectedDate > selection) {
+						self.selectedDate = selection;
+						self.selectedEndDate = null;
+					} else if (self.selectedEndDate == null) {
+						self.selectedEndDate = selection;
+					} else {
+						self.selectedDate = selection;
+						self.selectedEndDate = null;
+					}
+				}
+            } else {
+                self.selectedDate = new Date(year, month, date);
+            }
+			if (self.selectedEndDate != null) {
+				$('.calendar-element-'+self.selectedEndDate.getFullYear()+'-'+self.selectedEndDate.getMonth()+'-'+self.selectedEndDate.getDate()).addClass(self.selectedEndActiveClass);
+			}
+			if (self.selectedDate != null) {
+				$('.calendar-element-'+self.selectedDate.getFullYear()+'-'+self.selectedDate.getMonth()+'-'+self.selectedDate.getDate()).addClass(self.selectedActiveClass);
+			}
+
+            if (typeof self.callback === "function") {
+                self.callback(self.selectedDate, self.selectedEndDate);
+            }
+        });
+    }
+
+    updateSelectedDate(dateString) {
+		if (dateString == null || dateString == '') {
+			this.selectedDate = null;
+		} else {
+			let newDate = new Date(dateString);
+			this.selectedDate = new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate());
+			if (this.selectedDate > this.selectedEndDate) {
+				this.selectedEndDate = null;
+			}
+		}
+		this.fieldInFocus = null;
+        this.redraw();
+    }
+
+    updateSelectedEndDate(dateString) {
+		if (dateString == null || dateString == '') {
+			this.selectedEndDate = null;
+		} else {
+			let newDate = new Date(dateString);
+			this.selectedEndDate = new Date(newDate.getUTCFullYear(), newDate.getUTCMonth(), newDate.getUTCDate());
+			if (this.selectedEndDate < this.selectedDate) {
+				this.selectedDate = null;
+			}
+		}
+		this.fieldInFocus = null;
+        this.redraw();
+    }
+
+    redraw() {
+        // move month over double before decrementing...we're working backwards here
+        this.date.setMonth(this.date.getMonth() + (this.colMonths * this.rowMonths));
+
+        // update calendar widget
+        $(".kyte-calendar-row").html(this.generateRow());
+    }
+
+	generateRow(modifier) {
+		// check that row months is within range
+        if (this.rowMonths < 1 || this.rowMonths > 3) {
+            console.error('Invalid option for number of rows to display. Please pick between 1 and 3.');
+            return;
+        }
+
+        // check that col months is within range
+        if (this.colMonths < 1 || this.colMonths > 3) {
+            console.error('Invalid option for number of months to display per col. Please pick between 1 and 3.');
+            return;
+        }
+
+		// check is modifier is a funtion & returns correctly
+		if (typeof modifier === "function") {
+			let testReturn = modifier(1);
+			if (!Number.isInteger(testReturn)) {
+				console.error("Modifier does not return an integer. Must return an integer.");
+				return;
+			}
+		} else {
+			modifier = function(idx) { return 1; };
+		}
+
+		let rowHTML = '';
+		if (this.rowMonths > 1) {
+			rowHTML += '<div class="col">';
+		}
+		let calRow = [];
+		for (let r = 0; r < this.rowMonths; r++) {
+			let calRowHTHML = '';
+			if (this.rowMonths > 1) {
+				calRowHTHML += '<div class="row mb-2">';
+			}
+			let calendars = [];
+			for (let i = 0; i < this.colMonths; i++) {
+				this.date.setMonth(this.date.getMonth() - modifier(i, r));
+				let calendarHtml = this.generateCalendar(this.date);
+				calendars.push('<div class="col-lg-'+(12/this.colMonths)+' mb-2 mb-lg-0 px-1">'+calendarHtml+'</div>');
+			}
+			calRowHTHML += calendars.reverse().join('');
+			if (this.rowMonths > 1) {
+				calRowHTHML += '</div>';
+			}
+			calRow.push(calRowHTHML);
+		}
+		rowHTML += calRow.reverse().join('');
+		if (this.rowMonths > 1) {
+			rowHTML += '</div>';
+		}
+        
+        return rowHTML;
+	}
+
+    generateCalendar(date) {
+        // let isLeap = new Date(year, month-1, 29).getMonth() == 1;
+        let totalDays = new Date(date.getFullYear(), date.getMonth()+1, 0).getDate();
+        let calDate = new Date(date.getFullYear(), date.getMonth(), 1);
+        let row = [];
+        let col = [];
+        let i = 0;
+
+        // month label
+        row.push('<div class="row"><div class="col"><div class="calendar-month-label">'+this.Months[date.getMonth()]+' '+date.getFullYear()+'</div></div></div>');
+
+        // day of week labels
+        for (i; i < 7; i++) {
+            col.push('<div class="col"><div class="calendar-day-of-week">'+this.Days[i]+'</div></div>')
+        }
+        row.push('<div class="row">'+col.join('')+'</div>');
+        col = [];
+        i = 0;
+
+        let startDayOfWeek = calDate.getDay();
+        for (i; i < startDayOfWeek; i++) {
+            col.push('<div class="col"><div class="calendar-date-square"></div></div>');
+        }
+
+        for (let d = 1; d <= totalDays; d++) {
+            calDate.setDate(d);
+
+            let startActive = false;
+            let endActive = false;
+
+            if (this.selectedDate) {
+                if (this.selectedDate.getTime() === calDate.getTime()) {
+                    startActive = true;
+                }
+            }
+
+            if (this.selectedEndDate) {
+                if (this.selectedEndDate.getTime() === calDate.getTime()) {
+                    endActive = true;
+                }
+            }
+            
+            if (i % 7 == 0) {
+                row.push('<div class="row">'+col.join('')+'</div>');
+                col = [];
+                i = 0;
+            }
+
+            col.push('<div class="col"><div class="calendar-date-square"><a href="#" data-calendar-month="'+date.getMonth()+'" data-calendar-year="'+date.getFullYear()+'" data-calendar-date="'+d+'" data-calendar-day="'+this.Days[i]+'" class="'+(startActive ? this.selectedActiveClass+' ' : '')+(endActive ? this.selectedEndActiveClass+' ' : '')+'calendar-date-content calendar-element-'+date.getFullYear()+'-'+date.getMonth()+'-'+d+' align-items-center justify-content-center d-flex"><span class="d-flex-column">'+d+'</span></a></div></div>');
+            i++;
+        }
+
+        for (i; i < 7; i++) {
+            col.push('<div class="col"><div class="calendar-date-square"></div></div>');
+        }
+        row.push('<div class="row">'+col.join('')+'</div>');
+
+        return '<div class="kyte-calendar-wrapper">'+row.join('')+'</div>';
+    }
 }
 
 class KytePasswordRequirement {

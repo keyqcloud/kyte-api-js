@@ -9,3 +9,6 @@ https://github.com/javascript-obfuscator/javascript-obfuscator
 https://github.com/javascript-obfuscator/javascript-obfuscator#cli-options
 
 ** Alwasy obfuscate code before using in production
+
+* Install uglify-js
+https://www.npmjs.com/package/uglify-js

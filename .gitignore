@@ -3,3 +3,5 @@
 Thumbs.db
 # exclude obfuscated code from repo
 kyte.js
+kyte.min.js
+/playground
