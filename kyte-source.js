@@ -13,7 +13,7 @@
  * 
  * For details please refer to: http://www.keyq.cloud
  * KyteJS
- * ©2010-2023 KeyQ, Inc.
+ * ©2020-2023 KeyQ, Inc.
  **/
 class Kyte {
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
