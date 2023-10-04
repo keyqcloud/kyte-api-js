@@ -1,3 +1,7 @@
+## 1.0.3
+
+* Send device information (user agent) via headers
+
 ## 1.0.2
 
 * refrac: return null if cookie doesn't exist

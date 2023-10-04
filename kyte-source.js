@@ -150,6 +150,8 @@ class Kyte {
 						if (obj.applicationId) {
 							xhr.setRequestHeader('x-kyte-appid', obj.applicationId);
 						}
+						// set client viewer info
+						xhr.setRequestHeader('x-kyte-device', window.navigator.userAgent);
 						// if custom headers are specified, add them
 						if (headers.length > 0) {
 							for (const header of headers) {
