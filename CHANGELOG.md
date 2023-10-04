@@ -1,3 +1,7 @@
+## 1.0.4
+
+* Add domain to cookie so subdomains can also access cookie
+
 ## 1.0.3
 
 * Send device information (user agent) via headers

@@ -340,7 +340,15 @@ class Kyte {
 			d.setTime(d.getTime() + (minutes * 60 * 1000));
 			expires = ";expires=" + d.toUTCString();
 		}
-		document.cookie = cname + "=" + cvalue + expires + ";path=/;" + (location.protocol === 'https:' ? 'secure;' : '');
+		// add root domain to cookie so subdomains can access it
+		let hostname_parts = window.location.hostname.split('.');
+		let domain = '';
+		if (hostname_parts.length > 2) {
+			domain = 'domain='+hostname_parts.slice(1).join('.')+';';
+		} else if (hostname_parts.length == 2) {
+			domain = 'domain='+hostname_parts.joing('.')+';';
+		}
+		document.cookie = cname + "=" + cvalue + expires + ";path=/;" + domain + (location.protocol === 'https:' ? 'secure;' : '');
 	}
 	/*
 	 * Get browser cookie
