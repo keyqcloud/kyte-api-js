@@ -1,3 +1,8 @@
+## 1.0.5
+
+* Add version number constant
+* rename function version() to apiVersion() for retrieving endpoint version
+
 ## 1.0.4
 
 * Add domain to cookie so subdomains can also access cookie

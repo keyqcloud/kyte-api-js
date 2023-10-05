@@ -16,6 +16,10 @@
  * ©2020-2023 KeyQ, Inc.
  **/
 class Kyte {
+	/** KyteJS Version # */
+	static VERSION = '1.0.5';
+	/** **************** */
+
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
 		this.url = url;
 		this.access_key = accessKey;
@@ -46,7 +50,7 @@ class Kyte {
 	 * send serialized form data accompanied with signature data
 	 *
 	 */
-	version(callback, error = null) {
+	apiVersion(callback, error = null) {
 		var obj = this;
 
 		$.ajax({
