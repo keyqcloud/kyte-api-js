@@ -1,3 +1,7 @@
+## 1.0.6
+
+* Ability to toggle whether cookie should have domain
+
 ## 1.0.5
 
 * Add version number constant
