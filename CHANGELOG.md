@@ -1,3 +1,8 @@
+## 1.0.7
+
+* fix typo with object class name
+
+
 ## 1.0.6
 
 * Ability to toggle whether cookie should have domain

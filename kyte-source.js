@@ -179,7 +179,7 @@ class Kyte {
 							obj.account_number = response.kyte_num;
 							obj.setCookie('kyte_pub', obj.access_key, 60, obj.sessionCrossDomain);
 							obj.setCookie('kyte_iden', obj.identifier, 60, obj.sessionCrossDomain);
-							obj.setCookie('kyte_num', obj.account_number, 60, objthis.sessionCrossDomain);
+							obj.setCookie('kyte_num', obj.account_number, 60, obj.sessionCrossDomain);
 						} else {
 							// destroy api handoff cookies
 							obj.setCookie('kyte_pub', '', -1);
