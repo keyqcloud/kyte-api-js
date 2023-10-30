@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.5';
+	static VERSION = '1.0.8';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -798,15 +798,16 @@ class KyteSidenav {
  * initComplete : optional function() {}
  */
 class KyteTable {
-	constructor(api, selector, model, columnDefs, searching = true, order = [], actionEdit = false, actionDelete = false, actionView = false, viewTarget = null, rowCallBack = null, initComplete = null, lang = "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/English.json") {
+	constructor(api, selector, model, columnDefs, searching = true, order = [], actionEdit = false, actionDelete = false, actionView = false, viewTarget = null, rowCallBack = null, initComplete = null) {
 		this.api = api;
 		this.model = model;
+		this.httpHeaders = [];
 
 		this.loaded = false;
 		this.table = null;
 
 		this.selector = selector;
-		this.lang = lang;
+		this.lang = "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/English.json";
 		this.searching = searching;
 
 		this.columnDefs = columnDefs;
@@ -1013,24 +1014,23 @@ class KyteTable {
 							fields.push(o.data);
 						});
 						
-						let headers = [];
 						if (self.serverside && self.processing) {
-							headers.push({'name':'x-kyte-draw','value':data.draw});
-							headers.push({'name':'x-kyte-page-size','value':data.length});
-							headers.push({'name':'x-kyte-page-idx','value':Math.ceil((data.start+1)/data.length)});
-							headers.push({'name':'x-kyte-page-search-value','value':data.search.value ? btoa(encodeURIComponent(data.search.value)) : ""});
-							headers.push({'name':'x-kyte-page-search-fields','value':fields.join().replace(/,\s*$/, "")});
+							self.httpHeaders.push({'name':'x-kyte-draw','value':data.draw});
+							self.httpHeaders.push({'name':'x-kyte-page-size','value':data.length});
+							self.httpHeaders.push({'name':'x-kyte-page-idx','value':Math.ceil((data.start+1)/data.length)});
+							self.httpHeaders.push({'name':'x-kyte-page-search-value','value':data.search.value ? btoa(encodeURIComponent(data.search.value)) : ""});
+							self.httpHeaders.push({'name':'x-kyte-page-search-fields','value':fields.join().replace(/,\s*$/, "")});
 
 							if (data.order.length > 0) {
 								let column = fields[data.order[0].column];
 								let dir = data.order[0].dir;
 
-								headers.push({'name':'x-kyte-page-order-col','value':column ? column : ""});
-								headers.push({'name':'x-kyte-page-order-dir','value':dir ? dir : ""});
+								self.httpHeaders.push({'name':'x-kyte-page-order-col','value':column ? column : ""});
+								self.httpHeaders.push({'name':'x-kyte-page-order-dir','value':dir ? dir : ""});
 							}
 						}
 
-						self.api.get(self.model.name, self.model.field, self.model.value, headers, function (response) {
+						self.api.get(self.model.name, self.model.field, self.model.value, self.httpHeaders, function (response) {
 							let data = {
 								draw: parseInt(response.draw),
 								recordsTotal: parseInt(response.total_count),
