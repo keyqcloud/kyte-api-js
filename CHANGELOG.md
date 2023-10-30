@@ -1,7 +1,12 @@
+## 1.0.8
+
+* Option to pass custom headers to table
+* Refactor KyteTable initializer
+* Update utility scripts
+
 ## 1.0.7
 
 * fix typo with object class name
-
 
 ## 1.0.6
 
