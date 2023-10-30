@@ -59,21 +59,33 @@ if [ "$#" -eq 1 ]; then
     # prepare for release
     echo "Creating tag for release version $1"
 
+    git add .
+    git commit -m "release $1"
+    git push
+
+    if [ $? -eq 0 ]; then
+        echo "Committed and push $1 to git"
+    else
+        print_error "Git push failed."
+        exit 1
+    fi
+
     git tag "v$1"
 
     if [ $? -eq 0 ]; then
         echo "Git tag created successfully for v$1."
-        # Push the tag to the origin
-        git push origin --tags
-
-        if [ $? -eq 0 ]; then
-            echo "Git push successful. New release v$1 is available"
-        else
-            print_error "Git push failed."
-            exit 1
-        fi
     else
         print_error "Git tag creation failed."
+        exit 1
+    fi
+
+    # Push the tag to the origin
+    git push origin --tags
+
+    if [ $? -eq 0 ]; then
+        echo "Git push successful. New release v$1 is available"
+    else
+        print_error "Git push failed."
         exit 1
     fi
 fi
