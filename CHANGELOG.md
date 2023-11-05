@@ -3,6 +3,7 @@
 * Clean up KyteForm code base
 * Add support for custom field IDs for form fields
 * Add support for formatting col sizes for form fields
+* Add unit tests
 
 ## 1.0.8
 
