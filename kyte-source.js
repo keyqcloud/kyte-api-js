@@ -1114,7 +1114,9 @@ class KyteTable {
  * 		'data_model_name' : '<model_name>',
  * 		'data_model_field' : <null/field_name>,
  * 		'data_model_value' : <null/value>,
- * 		'data_model_attributes' : <attribute_name>
+ * 		'data_model_attributes' : <attribute_name>,
+ * 		'data_model_default_field' : <attribute_name>, ## optional field to preselect a particular option
+ * 		'data_model_default_value' : <value>, ## optional field to preselect a particular option
  * 	}
  * 
  * 	## For using predefined values:
