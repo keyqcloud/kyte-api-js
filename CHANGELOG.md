@@ -1,3 +1,9 @@
+## 1.0.9
+
+* Clean up KyteForm code base
+* Add support for custom field IDs for form fields
+* Add support for formatting col sizes for form fields
+
 ## 1.0.8
 
 * Option to pass custom headers to table
