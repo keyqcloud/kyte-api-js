@@ -1206,7 +1206,7 @@ class KyteForm {
 			// append hidden fields
 			if (this.hiddenFields) {
 				this.hiddenFields.forEach(function (field) {
-					let fieldId = column.id !== undefined ? column.id : `form_${obj.model}_${obj.id}_${field.name}`;
+					let fieldId = field.id !== undefined ? field.id : `form_${obj.model}_${obj.id}_${field.name}`;
 					content += `<input type="hidden" id="${fieldId}" name="${field.name}" value="${field.value}">`;
 				});
 			}

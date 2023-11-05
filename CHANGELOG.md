@@ -1,3 +1,7 @@
+## 1.0.10
+
+* Fix bug where field id was not generating correctly for hidden fields
+
 ## 1.0.9
 
 * Clean up KyteForm code base
