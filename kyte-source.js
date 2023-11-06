@@ -758,7 +758,7 @@ class KyteSidenav {
 				history.pushState({}, '', this.href);
 	
 				e.preventDefault();
-				e.stopPropagation();
+				// e.stopPropagation();
 	
 				$(item.selector+'-nav-link').addClass('active');
 				$(item.selector).removeClass('d-none');
@@ -1583,12 +1583,12 @@ class KyteForm {
 	}
 	showModal() {
 		if (this.modal) {
-			$(`#form_${this.model}_${this.id}`).modal('show');
+			$(`#modal_${this.model}_${this.id}`).modal('show');
 		}
 	}
 	hideModal() {
 		if (this.modal) {
-			$(`#form_${this.model}_${this.id}`).modal('hide');
+			$(`#modal_${this.model}_${this.id}`).modal('hide');
 		}
 	}
 	loadFormData(idx, success = null, fail = null) {

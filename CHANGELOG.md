@@ -1,3 +1,7 @@
+## 1.0.11
+
+* Fix bug where modal would not open for edit or be dismissed
+
 ## 1.0.10
 
 * Fix bug where field id was not generating correctly for hidden fields
