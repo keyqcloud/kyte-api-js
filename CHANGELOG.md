@@ -1,3 +1,7 @@
+## 1.0.15
+
+* Wrap DT search with form with autocomplete off to prevent chrome from autofilling
+
 ## 1.0.14
 
 * Check if callback is a function before calling it

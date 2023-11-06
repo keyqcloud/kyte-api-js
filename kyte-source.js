@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.14';
+	static VERSION = '1.0.15';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -1044,7 +1044,7 @@ class KyteTable {
 					},
 					rowCallback: self.rowCallBack,
 					initComplete: function() {
-						$('div.dataTables_filter input').attr('autocomplete', 'off');
+						$(this.api().table().container()).find('input[type="search"]').parent().wrap('<form>').parent().attr('autocomplete','off');
 						if (typeof self.initComplete === "function") {
 							self.initComplete();
 						}
