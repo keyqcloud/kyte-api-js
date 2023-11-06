@@ -1,3 +1,7 @@
+## 1.0.14
+
+* Check if callback is a function before calling it
+
 ## 1.0.13
 
 * Add autocomplete off for DataTables to prevent chrome from attempting to autocomplete

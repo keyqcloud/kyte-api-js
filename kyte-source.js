@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.13';
+	static VERSION = '1.0.14';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -1045,7 +1045,9 @@ class KyteTable {
 					rowCallback: self.rowCallBack,
 					initComplete: function() {
 						$('div.dataTables_filter input').attr('autocomplete', 'off');
-						self.initComplete();
+						if (typeof self.initComplete === "function") {
+							self.initComplete();
+						}
 					}
 				});
 				self.loaded = true;
