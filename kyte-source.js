@@ -1043,7 +1043,10 @@ class KyteTable {
 						});
 					},
 					rowCallback: self.rowCallBack,
-					initComplete: self.initComplete
+					initComplete: function() {
+						$('div.dataTables_filter input').attr('autocomplete', 'off');
+						self.initComplete();
+					}
 				});
 				self.loaded = true;
 				// initialize hand pointer if frow is clickable

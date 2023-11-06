@@ -1,3 +1,7 @@
+## 1.0.13
+
+* Add autocomplete off for DataTables to prevent chrome from attempting to autocomplete
+
 ## 1.0.12
 
 * Update form element callback to include selector
