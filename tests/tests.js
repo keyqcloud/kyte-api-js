@@ -17,6 +17,9 @@ $(document).ready(function() {
                 'label':'App Name',
                 'required':true,
                 'col':8,
+                'change': function(selector, e) {
+                    console.log(selector.val());
+                }
             },
             {
                 'field':'obfuscate_kyte_connect',
