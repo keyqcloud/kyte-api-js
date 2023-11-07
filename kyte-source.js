@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.15';
+	static VERSION = '1.0.16';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -1135,8 +1135,8 @@ class KyteTable {
  * 	}
  * }
  * 
- * successCallBack : optional function() {}
- * failureCallBack : option function() {}
+ * successCallBack : optional function(obj, selector, e) {}
+ * failureCallBack : option function(obj, selector, e) {}
  */
 class KyteForm {
 	constructor(api, selector, modelName, hiddenFields, elements, title = 'Form', table = null, modal = false, modalButton = null, successCallBack = null, failureCallBack = null) {
@@ -1256,13 +1256,13 @@ class KyteForm {
 					// add event listeners
 					if (typeof column.click === "function") {
 						$('body').on('click', `#${fieldId}`, function(e) {
-							column.click($(`#${fieldId}`), e);
+							column.click(obj, $(`#${fieldId}`), e);
 						});
 					}
 
 					if (typeof column.change === "function") {
 						$('body').on('change', `#${fieldId}`, function(e) {
-							column.change($(`#${fieldId}`), e);
+							column.change(obj, $(`#${fieldId}`), e);
 						});
 					}
 

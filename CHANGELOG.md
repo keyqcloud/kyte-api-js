@@ -1,3 +1,7 @@
+## 1.0.16
+
+* Expose form object to click/change callback
+
 ## 1.0.15
 
 * Wrap DT search with form with autocomplete off to prevent chrome from autofilling
