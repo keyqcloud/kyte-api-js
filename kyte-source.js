@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.16';
+	static VERSION = '1.0.17';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -1167,6 +1167,9 @@ class KyteForm {
 		this.selectedRow = null;
 
 		this.editOnlyMode = false;
+
+		this.isValid = true;
+		this.validate = null;
 	}
 	init() {
 		if (!this.loaded) {
@@ -1306,12 +1309,15 @@ class KyteForm {
 				e.preventDefault();
 
 				// validate and make sure required fields are filled
-				var valid = true;
-				form.find('input').each(function () { if ($(this).prop('required') && !$(this).val()) { valid = false; $(this).addClass('is-invalid'); $(this).removeClass('is-valid'); } else { $(this).addClass('is-valid'); $(this).removeClass('is-invalid'); } });
-				form.find('textarea').each(function () { if ($(this).prop('required') && !$(this).val()) { valid = false; $(this).addClass('is-invalid'); $(this).removeClass('is-valid'); } else { $(this).addClass('is-valid'); $(this).removeClass('is-invalid'); } });
+				obj.isValid = true;
+				form.find('input').each(function () { if ($(this).prop('required') && !$(this).val()) { obj.isValid = false; $(this).addClass('is-invalid'); $(this).removeClass('is-valid'); } else { $(this).addClass('is-valid'); $(this).removeClass('is-invalid'); } });
+				form.find('textarea').each(function () { if ($(this).prop('required') && !$(this).val()) { obj.isValid = false; $(this).addClass('is-invalid'); $(this).removeClass('is-valid'); } else { $(this).addClass('is-valid'); $(this).removeClass('is-invalid'); } });
+
+				// if custom validation function is provided, execute it
+				if (typeof obj.validate === "function") { obj.validate(obj); }
 
 				// if valid, prep to send data
-				if (valid) {
+				if (obj.isValid) {
 					// open model
 					$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('show');
 					// if an ID is set, then update entry

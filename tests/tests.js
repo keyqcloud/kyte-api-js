@@ -17,8 +17,13 @@ $(document).ready(function() {
                 'label':'App Name',
                 'required':true,
                 'col':8,
-                'change': function(selector, e) {
-                    console.log(selector.val());
+                'change': function(obj, selector, e) {
+                    // do some validation
+                    let isInvalid = false;
+                    if (isInvalid) {
+                        obj.appendErrorMessage("Validation failed because of missing...");
+                        selector.addClass('is-invalid');
+                    }
                 }
             },
             {

@@ -1,3 +1,7 @@
+## 1.0.17
+
+* Allow for custom validation function to be called before submiting form
+
 ## 1.0.16
 
 * Expose form object to click/change callback
