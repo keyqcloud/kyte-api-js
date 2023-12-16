@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.17';
+	static VERSION = '1.0.18';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {

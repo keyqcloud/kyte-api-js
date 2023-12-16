@@ -1,3 +1,7 @@
+## 1.0.18
+
+* Add support for maxlength for text input and text area
+
 ## 1.0.17
 
 * Allow for custom validation function to be called before submiting form
