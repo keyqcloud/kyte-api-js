@@ -1248,12 +1248,12 @@ class KyteForm {
 						// close select
 						content += '</select>';
 					} else if (column.type == 'textarea') {
-						content += `<textarea style="width:100%" id="${fieldId}" class="form-control" name="${column.field}"${column.required ? ' required="required"' : ''}${column.placeholder !== undefined ? ' placeholder="' + column.placeholder + '"' : '' }></textarea>`;
+						content += `<textarea style="width:100%" id="${fieldId}" class="form-control" name="${column.field}"${column.required ? ' required="required"' : ''}${column.placeholder !== undefined ? ' placeholder="' + column.placeholder + '"' : '' } ${column.maxlength !== undefined ? ' maxlength="' + column.maxlength + '"' : ''}></textarea>`;
 					} else if (column.type == 'file') {
 						content += `<input type="file" id="${fieldId}" name="${column.field}" class="form-control" data-max-file-size="2M" accept="image/*;capture=camera"${column.required ? ' required="required"' : ''} />`;
 						obj.fileUploadField = fieldId;
 					} else {
-						content += `<input type="${column.type}" id="${fieldId}" class="form-control" name="${column.field}"${column.required ? ' required="required"' : ''}${column.placeholder !== undefined ? ' placeholder="' + column.placeholder + '"' : ''}${column.value !== undefined ? ' value="' + column.value + '"' : ''}${column.readonly !== undefined ? ' readonly' : ''} />`;
+						content += `<input type="${column.type}" id="${fieldId}" class="form-control" name="${column.field}"${column.required ? ' required="required"' : ''}${column.placeholder !== undefined ? ' placeholder="' + column.placeholder + '"' : ''}${column.value !== undefined ? ' value="' + column.value + '"' : ''}${column.readonly !== undefined ? ' readonly' : ''} ${column.maxlength !== undefined ? ' maxlength="' + column.maxlength + '"' : ''}/>`;
 					}
 
 					// add event listeners
