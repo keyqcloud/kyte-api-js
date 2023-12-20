@@ -890,7 +890,7 @@ class KyteTable {
 								e.preventDefault();
 								let row = self.table.row($(this).parents('tr'));
 								let data = row.data();
-								a.callback(data, self.model.name);
+								a.callback(data, self.model.name, row);
 							});
 						});
 					}
@@ -901,7 +901,7 @@ class KyteTable {
 								e.preventDefault();
 								let row = self.table.row($(this).parents('tr'));
 								let data = row.data();
-								a.callback(data, self.model.name);
+								a.callback(data, self.model.name, row);
 							});
 						});
 					}
