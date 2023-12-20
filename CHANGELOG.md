@@ -1,6 +1,7 @@
 ## 1.0.19
 
 * Update to bs 5.x
+* Add selected row to callback param
 
 ## 1.0.18
 
