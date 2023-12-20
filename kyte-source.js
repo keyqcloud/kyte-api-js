@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.17';
+	static VERSION = '1.0.18';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -412,7 +412,7 @@ class Kyte {
 		return encoded;
 	}
 	initSpinner(selector) {
-		selector.append('<div id="pageLoaderModal" class="modal" style="background: white; opacity: 0.6;" data-backdrop="static" data-keyboard="false" tabindex="-1"><div class="modal-dialog modal-sm h-100 d-flex"><div class="mx-auto align-self-center" style="width: 48px"><div class="spinner-wrapper text-center fa-6x"><span class="fas fa-sync fa-spin"></span></div></div></div></div>');
+		selector.append('<div id="pageLoaderModal" class="modal" style="background: white; opacity: 0.6;" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"><div class="modal-dialog modal-sm h-100 d-flex"><div class="mx-auto align-self-center" style="width: 48px"><div class="spinner-wrapper text-center fa-6x"><span class="fas fa-sync fa-spin"></span></div></div></div></div>');
 	}
 	startSpinner() {
 		$('#pageLoaderModal').modal();
@@ -1248,12 +1248,12 @@ class KyteForm {
 						// close select
 						content += '</select>';
 					} else if (column.type == 'textarea') {
-						content += `<textarea style="width:100%" id="${fieldId}" class="form-control" name="${column.field}"${column.required ? ' required="required"' : ''}${column.placeholder !== undefined ? ' placeholder="' + column.placeholder + '"' : '' }></textarea>`;
+						content += `<textarea style="width:100%" id="${fieldId}" class="form-control" name="${column.field}"${column.required ? ' required="required"' : ''}${column.placeholder !== undefined ? ' placeholder="' + column.placeholder + '"' : '' } ${column.maxlength !== undefined ? ' maxlength="' + column.maxlength + '"' : ''}></textarea>`;
 					} else if (column.type == 'file') {
 						content += `<input type="file" id="${fieldId}" name="${column.field}" class="form-control" data-max-file-size="2M" accept="image/*;capture=camera"${column.required ? ' required="required"' : ''} />`;
 						obj.fileUploadField = fieldId;
 					} else {
-						content += `<input type="${column.type}" id="${fieldId}" class="form-control" name="${column.field}"${column.required ? ' required="required"' : ''}${column.placeholder !== undefined ? ' placeholder="' + column.placeholder + '"' : ''}${column.value !== undefined ? ' value="' + column.value + '"' : ''}${column.readonly !== undefined ? ' readonly' : ''} />`;
+						content += `<input type="${column.type}" id="${fieldId}" class="form-control" name="${column.field}"${column.required ? ' required="required"' : ''}${column.placeholder !== undefined ? ' placeholder="' + column.placeholder + '"' : ''}${column.value !== undefined ? ' value="' + column.value + '"' : ''}${column.readonly !== undefined ? ' readonly' : ''} ${column.maxlength !== undefined ? ' maxlength="' + column.maxlength + '"' : ''}/>`;
 					}
 
 					// add event listeners
