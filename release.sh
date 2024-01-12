@@ -53,8 +53,17 @@ if [ "$#" -eq 1 ]; then
     echo "$copyright_notice" | cat - kyte.js > temp && mv temp kyte.js
     echo "$copyright_notice" | cat - kyte.min.js > temp && mv temp kyte.min.js
 
-    # Display success message
-    echo "Copyright notice prepended to kyte.js file successfully!"
+    # Move kyte.js and kyte.min.js to releases/stable/
+    mkdir -p releases/stable
+    mv kyte.js releases/stable/
+    mv kyte.min.js releases/stable/
+
+    # Copy kyte.js to releases/archive/ with version
+    mkdir -p releases/archive
+    cp releases/stable/kyte.js releases/archive/kyte-$1.js
+
+    echo "kyte.js and kyte.min.js moved to releases/stable/"
+    echo "kyte-$1.js created in releases/archive/"
 
     # prepare for release
     echo "Creating tag for release version $1"
