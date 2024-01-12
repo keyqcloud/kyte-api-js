@@ -1,3 +1,9 @@
+## 1.0.20
+
+* Refactor: Convert class methods to arrow functions for consistent 'this' context
+* Update session timeout to display message and include redir in url param
+* Add dismiss flag to alert to toggle dismissable alerts.
+
 ## 1.0.19
 
 * Update to bs 5.x

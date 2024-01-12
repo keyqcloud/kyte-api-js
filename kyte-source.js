@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.19';
+	static VERSION = '1.0.20';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -37,7 +37,7 @@ class Kyte {
 
 		this.sessionCrossDomain = false;
 	}
-	init() {
+	init = () => {
 		this.access_key = (this.getCookie('kyte_pub') ? this.getCookie('kyte_pub') : this.access_key);
 		this.identifier = (this.getCookie('kyte_iden') ? this.getCookie('kyte_iden') : this.identifier);
 		this.account_number = (this.getCookie('kyte_num') ? this.getCookie('kyte_num') : this.account_number);
@@ -52,7 +52,7 @@ class Kyte {
 	 * send serialized form data accompanied with signature data
 	 *
 	 */
-	apiVersion(callback, error = null) {
+	apiVersion = (callback, error = null) => {
 		var obj = this;
 
 		$.ajax({
@@ -82,7 +82,7 @@ class Kyte {
 	 * requesting an authorization signature to transact
 	 *
 	 */
-	sign(callback, error = null) {
+	sign = (callback, error = null) => {
 		var d = new Date();
 		var obj = this;
 
@@ -114,7 +114,7 @@ class Kyte {
 	 * send data accompanied with signature data
 	 *
 	 */
-	sendData(method, model, field = null, value = null, data = null, formdata = null, headers = [], callback, error = null) {
+	sendData = (method, model, field = null, value = null, data = null, formdata = null, headers = [], callback, error = null) => {
 		var obj = this;
 		var token = (obj.getCookie('kyte-token') ? obj.getCookie('kyte-token') : '1');
 
@@ -306,7 +306,7 @@ class Kyte {
 	 * send data accompanied with signature data
 	 *
 	 */
-	post(model, data = null, formdata = null, headers = [], callback, error = null) {
+	post = (model, data = null, formdata = null, headers = [], callback, error = null) => {
 		this.sendData('POST', model, null, null, data, formdata, headers, callback, error);
 	}
 	/* Put
@@ -315,7 +315,7 @@ class Kyte {
 	 * send data accompanied with signature data
 	 *
 	 */
-	put(model, field = null, value = null, data = null, formdata = null, headers = [], callback, error = null) {
+	put = (model, field = null, value = null, data = null, formdata = null, headers = [], callback, error = null) => {
 		this.sendData('PUT', model, field, value, data, formdata, headers, callback, error);
 	}
 	/* Get
@@ -324,7 +324,7 @@ class Kyte {
 	 * send data accompanied with signature data
 	 *
 	 */
-	get(model, field = null, value = null, headers = [], callback, error = null) {
+	get = (model, field = null, value = null, headers = [], callback, error = null) => {
 		this.sendData('GET', model, field, value, null, null, headers, callback, error);
 	}
 	/* Delete
@@ -333,13 +333,13 @@ class Kyte {
 	 * send data accompanied with signature data
 	 *
 	 */
-	delete(model, field = null, value = null, headers = [], callback, error = null) {
+	delete = (model, field = null, value = null, headers = [], callback, error = null) => {
 		this.sendData('DELETE', model, field, value, null, null, headers, callback, error);
 	}
 	/*
 	 * Set browser cookie
 	 */
-	setCookie(cname, cvalue, minutes = null, crossDomain = false) {
+	setCookie = (cname, cvalue, minutes = null, crossDomain = false) => {
 		var expires = "";
 		if (minutes) {
 			var d = new Date();
@@ -361,7 +361,7 @@ class Kyte {
 	/*
 	 * Get browser cookie
 	 */
-	getCookie(cname) {
+	getCookie = (cname) => {
 		var name = cname + "=";
 		var ca = document.cookie.split(';');
 		for (var i = 0; i < ca.length; i++) {
@@ -375,13 +375,13 @@ class Kyte {
 		}
 		return null;
 	}
-	getUrlHash() {
+	getUrlHash = () => {
 		return location.hash;
 	}
 	/*
 	 * Get params from URL
 	 */
-	getUrlParameter(sParam) {
+	getUrlParameter = (sParam) => {
 		var sPageURL = window.location.search.substring(1), sURLVariables = sPageURL.split('&'), sParameterName, i;
 
 		for (i = 0; i < sURLVariables.length; i++) {
@@ -394,7 +394,7 @@ class Kyte {
 
 		return false;
 	}
-	getPageRequest() {
+	getPageRequest = () => {
 		let encoded = this.getUrlParameter('request');
 		if (encoded) {
 			let decoded = decodeURIComponent(atob(encoded));
@@ -405,19 +405,19 @@ class Kyte {
 		
 		return null;
 	}
-	setPageRequest(model, value) {
+	setPageRequest = (model, value) => {
 		let obj = {'model': model, 'value':value};
 		let encoded = encodeURIComponent(btoa(JSON.stringify(obj)));
 
 		return encoded;
 	}
-	initSpinner(selector) {
+	initSpinner = (selector) => {
 		selector.append('<div id="pageLoaderModal" class="modal" style="background: white; opacity: 0.6;" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"><div class="modal-dialog modal-sm h-100 d-flex"><div class="mx-auto align-self-center" style="width: 48px"><div class="spinner-wrapper text-center fa-6x"><span class="fas fa-sync fa-spin"></span></div></div></div></div>');
 	}
-	startSpinner() {
+	startSpinner = () => {
 		$('#pageLoaderModal').modal();
 	}
-	stopSpinner() {
+	stopSpinner = () => {
 		$('#pageLoaderModal').modal('hide');
 	}
 	/*
@@ -429,7 +429,7 @@ class Kyte {
 	 * redirect users to login page.
 	 *
 	 */
-	sessionCreate(identity, callback, error = null, sessionController = 'Session') {
+	sessionCreate = (identity, callback, error = null, sessionController = 'Session') => {
 		var obj = this;
 		this.post(sessionController, identity, null, [],
 			function (response) {
@@ -476,7 +476,7 @@ class Kyte {
 				}
 			});
 	}
-	addLogoutHandler(selector) {
+	addLogoutHandler = (selector) => {
 		self = this;
         $('body').on('click', selector, function() {
             self.sessionDestroy(function () {
@@ -484,7 +484,7 @@ class Kyte {
             });
         });
 	}
-	checkSession() {
+	checkSession = () => {
 		if (this.sessionToken == 0 || this.sessionToken == '0') {
 			this.setCookie('sessionToken', '', -1);
 			// destroy api handoff cookies
@@ -521,13 +521,19 @@ class Kyte {
 		}
 		return (this.getCookie('sessionToken') ? true : false);
 	}
-	isSession() {
+	isSession = () => {
 		let api = this;
 		let timer = setInterval(function () {
 			let session = api.checkSession();
 			// Check if cookie is present, 
 			if (!session) {
-				window.location.href="/";
+				api.alert("Session Expired", "Your session has expired. Please login again to continue.", function() {
+					// Get the current URL or the specific URL you want to redirect to
+					var currentUrl = window.location.href;
+
+					// Redirect to the login page with the current URL as the 'redir' parameter
+					window.location.href = "/login?redir=" + encodeURIComponent(currentUrl);
+				}, false);
 			}
 		}, 30000);
 
@@ -541,7 +547,7 @@ class Kyte {
 	 * If session token is valid then log user out.
 	 *
 	 */
-	sessionDestroy(error = null) {
+	sessionDestroy = (error = null) => {
 		var obj = this;
 		this.delete('Session', null, null, [],
 			function (response) {
@@ -585,7 +591,7 @@ class Kyte {
 				}
 			});
 	}
-	makeid(length) {
+	makeid = (length) => {
 		var result = '';
 		var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 		var charactersLength = characters.length;
@@ -594,7 +600,7 @@ class Kyte {
 		}
 		return result;
 	}
-	alert(title, message, callback = null) {
+	alert = (title, message, callback = null, dismiss = true) => {
 		let id = this.makeid(5);
 		$('<div></div>').appendTo('body').html('<div><h6>' + message + '</h6></div>')
 			.dialog({
@@ -603,7 +609,13 @@ class Kyte {
 				zIndex: 10000,
 				autoOpen: true,
 				width: 'auto',
-				resizeable: false,
+				resizable: false,
+				closeOnEscape: dismiss, // Disable closing the dialog with the ESC key if dismiss is false
+				open: function(event, ui) {
+					if (!dismiss) {
+						$(this).closest('.ui-dialog').find('.ui-dialog-titlebar-close').hide(); // Hide the close button if dismiss is false
+					}
+				},
 				buttons: {
 					OK: function () {
 						if (typeof callback === "function") {
@@ -616,8 +628,8 @@ class Kyte {
 					$(this).remove();
 				}
 			});
-	}
-	confirm(title, message, callback = null, cancel = null) {
+	}	
+	confirm = (title, message, callback = null, cancel = null) => {
 		let id = this.makeid(5);
 		$('<div></div>').appendTo('body').html('<div><h6>' + message + '</h6></div>')
 			.dialog({
@@ -655,7 +667,7 @@ class Kyte {
 			});
 	}
 
-	validateForm(form) {
+	validateForm = (form) => {
 		let valid = true;
 		form.find('input').each(function () {
 			if ($(this).prop('required') && !$(this).val()) {
@@ -665,7 +677,7 @@ class Kyte {
 		return valid;
 	}
 
-	syntaxErrorBanner(filepath) {
+	syntaxErrorBanner = (filepath) => {
 		$("body").prepend('<div class="card text-white bg-danger m-3"><div class="card-header">Syntax Error</div><div class="card-body"><p class="card-text">'+filepath+'</p></div></div>');
 	}
 }
@@ -681,7 +693,7 @@ class KyteNav {
 	}
 
 	// create nav bar
-	create() {
+	create = () => {
 		let html = '\
 		<div class="container-fluid">\
 			<a href="'+this.link+'" class="navbar-brand">' + (this.logo ? '<img src="'+this.logo+'" style="height: 45px;" class="me-2 rounded">' : '') + (this.title ? this.title : '') + '</a>\
@@ -730,7 +742,7 @@ class KyteSidenav {
 	}
 
 	// create sub nav
-	create() {
+	create = () => {
 		if ($(this.selector).length) {
 			let html = '<ul class="nav nav-pills flex-column mb-auto" id="sidebar-nav">';
 			this.nav_struct.forEach(item => {
@@ -745,7 +757,7 @@ class KyteSidenav {
 		}
 	}
 	
-	bind(onclick = null) {
+	bind = (onclick = null) => {
 		let self = this;
 		// get current hash
 		let hash = location.hash;
@@ -850,7 +862,7 @@ class KyteTable {
 
 		this.pageLength = 50;
 	}
-	init() {
+	init = () => {
 		let self = this;
 		if (!this.loaded) {
 			// this.api.get(this.model.name, this.model.field, this.model.value, [], function (response) {
@@ -1058,7 +1070,7 @@ class KyteTable {
 				}
 		}
 	}
-	bindEdit(editForm) {
+	bindEdit = (editForm) => {
 		var self = this;
 		self.editForm = editForm;
 		if (this.actionEdit) {
@@ -1171,7 +1183,7 @@ class KyteForm {
 		this.isValid = true;
 		this.validate = null;
 	}
-	init() {
+	init = () => {
 		if (!this.loaded) {
 			this.id = this.makeID(8);
 			let content = '';
@@ -1586,23 +1598,23 @@ class KyteForm {
 			this.loaded = true;
 		}
 	}
-	appendErrorMessage(message) {
+	appendErrorMessage = (message) => {
 		$(`#form_${this.model}_${this.id} .error-msg`).append(`<div class="alert alert-danger" role="alert">${message}</div>`);
 	}
-	clearErrorMessage() {
+	clearErrorMessage = () => {
 		$(`#form_${this.model}_${this.id} .error-msg`).html('');
 	}
-	showModal() {
+	showModal = () => {
 		if (this.modal) {
 			$(`#modal_${this.model}_${this.id}`).modal('show');
 		}
 	}
-	hideModal() {
+	hideModal = () => {
 		if (this.modal) {
 			$(`#modal_${this.model}_${this.id}`).modal('hide');
 		}
 	}
-	loadFormData(idx, success = null, fail = null) {
+	loadFormData = (idx, success = null, fail = null) => {
 		var obj = this;
 
 		// Check if model has external data and set variable accordinly
@@ -1708,7 +1720,7 @@ class KyteForm {
 			}
 		});
 	}
-	reloadAjax() {
+	reloadAjax = () => {
 		let obj = this;
 		// if ajax, then populate data
 		this.elements.forEach(function (row) {
@@ -1747,13 +1759,13 @@ class KyteForm {
 			});
 		});
 	}
-	setID(idx) {
+	setID = (idx) => {
 		$(`#form_${this.model}_${this.id}`).data('idx', idx);
 	}
-	getID() {
+	getID = () => {
 		return $(`#form_${this.model}_${this.id}`).data('idx');
 	}
-	makeID(length) {
+	makeID = (length) => {
 		var result = '';
 		var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 		var charactersLength = characters.length;
@@ -1780,7 +1792,7 @@ class KyteCalendar {
 		this.fieldInFocus = null;
     }
 
-    init() {
+    init = () => {
         let self = this;
         let html = '<div class="kyte-calendar">';
         this.colMonths = $(this.selector).data('colMonths');
@@ -1876,7 +1888,7 @@ class KyteCalendar {
         });
     }
 
-    updateSelectedDate(dateString) {
+    updateSelectedDate = (dateString) => {
 		if (dateString == null || dateString == '') {
 			this.selectedDate = null;
 		} else {
@@ -1890,7 +1902,7 @@ class KyteCalendar {
         this.redraw();
     }
 
-    updateSelectedEndDate(dateString) {
+    updateSelectedEndDate = (dateString) => {
 		if (dateString == null || dateString == '') {
 			this.selectedEndDate = null;
 		} else {
@@ -1904,7 +1916,7 @@ class KyteCalendar {
         this.redraw();
     }
 
-    redraw() {
+    redraw = () => {
         // move month over double before decrementing...we're working backwards here
         this.date.setMonth(this.date.getMonth() + (this.colMonths * this.rowMonths));
 
@@ -1912,7 +1924,7 @@ class KyteCalendar {
         $(".kyte-calendar-row").html(this.generateRow());
     }
 
-	generateRow(modifier) {
+	generateRow = (modifier) => {
 		// check that row months is within range
         if (this.rowMonths < 1 || this.rowMonths > 3) {
             console.error('Invalid option for number of rows to display. Please pick between 1 and 3.');
@@ -1966,7 +1978,7 @@ class KyteCalendar {
         return rowHTML;
 	}
 
-    generateCalendar(date) {
+    generateCalendar = (date) => {
         // let isLeap = new Date(year, month-1, 29).getMonth() == 1;
         let totalDays = new Date(date.getFullYear(), date.getMonth()+1, 0).getDate();
         let calDate = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -2049,7 +2061,7 @@ class KytePasswordRequirement {
 		this.valid = false;
 	}
 
-	init() {
+	init = () => {
 		let obj = this;
 		this.selector.html('');
 		let passreqhtml = '<ul class="fa-ul">';
@@ -2079,7 +2091,7 @@ class KytePasswordRequirement {
 	/*
 	 * Check password minimums and update UI
 	 */
-	validatePassword() {
+	validatePassword = () => {
 		var pswd = this.passwordField.val();
 		let result = true;
 
