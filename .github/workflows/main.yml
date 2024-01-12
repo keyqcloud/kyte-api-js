@@ -24,12 +24,10 @@ jobs:
       run: echo "TAG_NAME=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
     - name: Copy stable files to S3
-      run: |
-        aws s3 cp ./releases/stable/kyte.js s3://${{ secrets.S3_BUCKET }}/kyte/js/stable/kyte.js
+      run: aws s3 cp ./releases/stable/kyte.js s3://${{ secrets.S3_BUCKET }}/kyte/js/stable/kyte.js
     - name: Sync archive files to S3
-      run: |
-        aws s3 cp ./releases/archive/kyte-${{ env.TAG_NAME }}.js s3://${{ secrets.S3_BUCKET }}/kyte/js/archive/kyte-${{ env.TAG_NAME }}.js
-        
+      run: aws s3 cp ./releases/archive/kyte-${{ env.TAG_NAME }}.js s3://${{ secrets.S3_BUCKET }}/kyte/js/archive/kyte-${{ env.TAG_NAME }}.js
+
     - name: Invalidate CloudFront cache for latest files
       run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CF_DISTRIBUTION_ID }} --paths '/*'
 
