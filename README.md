@@ -1,5 +1,7 @@
 # Kyte JS Framework
 
+[![Deploy to CDN](https://github.com/keyqcloud/kyte-api-js/actions/workflows/main.yml/badge.svg)](https://github.com/keyqcloud/kyte-api-js/actions/workflows/main.yml)
+
 * Install javascript-obfuscator
 After installing Node.js, run the following in a terminal to install the javascript-obfuscator
 
