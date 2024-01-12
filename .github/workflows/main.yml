@@ -1,0 +1,35 @@
+name: Copy stable tag to S3
+
+on:  
+  push:
+    tags:
+      - '*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-stable
+
+    steps:
+    - name: Check out source code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Extract tag name
+      run: echo "TAG_NAME=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+    - name: Copy stable files to S3
+      run: |
+        aws s3 cp ./releases/stable/kyte.js s3://${{ secrets.S3_BUCKET }}/kyte/js/stable/kyte.js
+    - name: Sync archive files to S3
+      run: |
+        aws s3 cp ./releases/archive/kyte-${{ env.TAG_NAME }}.js s3://${{ secrets.S3_BUCKET }}/kyte/js/archive/kyte-${{ env.TAG_NAME }}.js
+        
+    - name: Invalidate CloudFront cache for latest files
+      run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CF_DISTRIBUTION_ID }} --paths '/*'
+
