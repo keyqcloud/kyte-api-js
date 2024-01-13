@@ -1,6 +1,6 @@
 # Kyte JS Framework
 
-[![Deploy to CDN](https://github.com/keyqcloud/kyte-api-js/actions/workflows/main.yml/badge.svg)](https://github.com/keyqcloud/kyte-api-js/actions/workflows/main.yml) [![CodeQL](https://github.com/keyqcloud/kyte-api-js/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/keyqcloud/kyte-api-js/actions/workflows/codeql-analysis.yml)
+[![Deploy to CDN](https://github.com/keyqcloud/kyte-api-js/actions/workflows/main.yml/badge.svg)](https://github.com/keyqcloud/kyte-api-js/actions/workflows/main.yml) [![CodeQL](https://github.com/keyqcloud/kyte-api-js/actions/workflows/codeql.yml/badge.svg)](https://github.com/keyqcloud/kyte-api-js/actions/workflows/codeql.yml)
 
 * Install javascript-obfuscator
 After installing Node.js, run the following in a terminal to install the javascript-obfuscator
