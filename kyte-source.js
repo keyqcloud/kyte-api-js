@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.22';
+	static VERSION = '1.0.23';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -523,6 +523,8 @@ class Kyte {
 		return (this.getCookie('sessionToken') ? true : false);
 	}
 	redirectToLogin = () => {
+		// dismiss any loaders that may be open
+		this.stopSpinner();
 		this.alert("Session Expired", "Your session has expired. Please login again to continue.", function() {
 			// Get the current URL or the specific URL you want to redirect to
 			var currentUrl = window.location.href;

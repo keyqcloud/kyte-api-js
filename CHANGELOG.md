@@ -1,3 +1,7 @@
+## 1.0.23
+
+* Dismiss any loaders that may be open when session expires prior to redirect
+
 ## 1.0.22
 
 * Fix issue with api not being defined for redirect
