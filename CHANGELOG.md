@@ -1,6 +1,9 @@
-## 1.0.21
+## 1.0.22
 
 * Fix issue with api not being defined for redirect
+
+## 1.0.21
+
 * Fix page redirect for expired session
 * Add page redirect for 403
 
