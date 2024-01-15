@@ -230,6 +230,7 @@ class Kyte {
 							obj.setCookie('accountIdx', '', -1);
 							obj.setCookie('roleIdx', '', -1);
 							obj.setCookie('roleName', '', -1);
+							obj.redirectToLogin();
 						} else {
 							if (response.responseJSON != null) {
 								obj.txToken = response.responseJSON.token;
@@ -521,19 +522,22 @@ class Kyte {
 		}
 		return (this.getCookie('sessionToken') ? true : false);
 	}
+	redirectToLogin = () => {
+		api.alert("Session Expired", "Your session has expired. Please login again to continue.", function() {
+			// Get the current URL or the specific URL you want to redirect to
+			var currentUrl = window.location.href;
+
+			// Redirect to the login page with the current URL as the 'redir' parameter
+			window.location.href = "/?redir=" + encodeURIComponent(currentUrl);
+		}, false);
+	}
 	isSession = () => {
 		let api = this;
 		let timer = setInterval(function () {
 			let session = api.checkSession();
 			// Check if cookie is present, 
 			if (!session) {
-				api.alert("Session Expired", "Your session has expired. Please login again to continue.", function() {
-					// Get the current URL or the specific URL you want to redirect to
-					var currentUrl = window.location.href;
-
-					// Redirect to the login page with the current URL as the 'redir' parameter
-					window.location.href = "/login?redir=" + encodeURIComponent(currentUrl);
-				}, false);
+				api.redirectToLogin();
 			}
 		}, 30000);
 

@@ -1,3 +1,8 @@
+## 1.0.21
+
+* Fix page redirect for expired session
+* Add page redirect for 403
+
 ## 1.0.20
 
 * Refactor: Convert class methods to arrow functions for consistent 'this' context
