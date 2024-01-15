@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.23';
+	static VERSION = '1.0.24';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -230,7 +230,7 @@ class Kyte {
 							obj.setCookie('accountIdx', '', -1);
 							obj.setCookie('roleIdx', '', -1);
 							obj.setCookie('roleName', '', -1);
-							obj.redirectToLogin();
+							// obj.redirectToLogin();
 						} else {
 							if (response.responseJSON != null) {
 								obj.txToken = response.responseJSON.token;
