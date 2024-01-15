@@ -523,7 +523,7 @@ class Kyte {
 		return (this.getCookie('sessionToken') ? true : false);
 	}
 	redirectToLogin = () => {
-		api.alert("Session Expired", "Your session has expired. Please login again to continue.", function() {
+		this.alert("Session Expired", "Your session has expired. Please login again to continue.", function() {
 			// Get the current URL or the specific URL you want to redirect to
 			var currentUrl = window.location.href;
 
