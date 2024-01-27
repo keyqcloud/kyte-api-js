@@ -525,7 +525,7 @@ class Kyte {
 	redirectToLogin = () => {
 		// dismiss any loaders that may be open
 		this.stopSpinner();
-		this.alert("Please sign in again", "You were signed out of your account.  Please press 'OK' to sign in to Kyte Shipyard Management Console.", function() {
+		this.alert("Please sign in again", "You were signed out of your account.  Please press 'OK' to sign in to your account again.", function() {
 			// Get the current URL or the specific URL you want to redirect to
 			var currentUrl = window.location.href;
 
