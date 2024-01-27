@@ -1,3 +1,7 @@
+## 1.0.25 (draft)
+
+* Update session expiration message
+
 ## 1.0.24
 
 * Display login redirect for 403 as it conflicts with callback
