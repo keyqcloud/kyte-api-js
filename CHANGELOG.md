@@ -1,6 +1,7 @@
 ## 1.0.25 (draft)
 
 * Update session expiration message
+* Fix issue where session expiration message keeps poping up every 30 min
 
 ## 1.0.24
 

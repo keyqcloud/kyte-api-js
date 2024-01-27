@@ -36,6 +36,8 @@ class Kyte {
 		this.dateFormat = 'mm/dd/yy';
 
 		this.sessionCrossDomain = false;
+
+		this.sessionTimer = null;
 	}
 	init = () => {
 		this.access_key = (this.getCookie('kyte_pub') ? this.getCookie('kyte_pub') : this.access_key);
@@ -535,10 +537,14 @@ class Kyte {
 	}
 	isSession = () => {
 		let api = this;
-		let timer = setInterval(function () {
+		this.sessionTimer = setInterval(function () {
 			let session = api.checkSession();
 			// Check if cookie is present, 
 			if (!session) {
+				// stop timer
+				clearInterval(api.sessionTimer);
+
+				// display message and prepare redirect
 				api.redirectToLogin();
 			}
 		}, 30000);
