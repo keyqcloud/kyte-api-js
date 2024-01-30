@@ -1,4 +1,4 @@
-## 1.0.25
+## 1.1.0
 
 * Updated the session expiration message for clarity and better user experience.
 * Fixed an issue where the session expiration message would incorrectly trigger every 30 minutes. Adjusted the session monitoring logic to prevent false positives and ensure timely notifications only upon actual session expiration.
