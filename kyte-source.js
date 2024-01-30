@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.0.24';
+	static VERSION = '1.0.25';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -1097,8 +1097,6 @@ class KyteTable {
 		}
 	}
 };
-
-
 
 /*
  * Class Definition for Kyte Form
