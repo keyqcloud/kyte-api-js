@@ -1,8 +1,8 @@
-## 1.0.25 (draft)
+## 1.0.25
 
-* Update session expiration message
-* Fix issue where session expiration message keeps poping up every 30 min
-* 
+* Updated the session expiration message for clarity and better user experience.
+* Fixed an issue where the session expiration message would incorrectly trigger every 30 minutes. Adjusted the session monitoring logic to prevent false positives and ensure timely notifications only upon actual session expiration.
+* Introduced the Kyte Web Component class, enhancing UI flexibility and interactivity. This feature allows dynamic binding of data to templates with support for custom mutator functions. It significantly streamlines the process of rendering data-driven components, such as product cards, by automatically replacing placeholders in HTML templates with actual data from JSON objects.
 
 ## 1.0.24
 

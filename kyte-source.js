@@ -2212,3 +2212,45 @@ class KytePasswordRequirement {
 		return result;
 	}
 }
+
+class KyteWebComponent {
+	constructor(components) {
+		if (typeof components !== 'object' || components === null) {
+            throw new Error('Components must be an object');
+        }
+		this.components = components;
+	}
+	bind = (selector, identifier, data, mutator = null) => {
+		const $element = $(selector);
+        if ($element.length === 0) {
+            console.warn(`No element found for selector: ${selector}`);
+            return;
+        }
+
+        if (!this.components.hasOwnProperty(identifier)) {
+            console.warn(`Template identifier "${identifier}" not found.`);
+            return;
+        }
+
+        if (!Array.isArray(data)) {
+            console.warn(`Data must be an array.`);
+            return;
+        }
+
+		let template = this.components[identifier];
+        $element.html('');
+
+		data.forEach(item => {
+			if (typeof mutator === "function") {
+				mutator(item);
+			}
+			let component = this.replacePlaceholders(template, item);
+            $element.append(component);
+		});
+	}
+	replacePlaceholders = (template, item) => {
+        return template.replace(/{{\s*(\w+)\s*}}/g, (match, key) => {
+            return item.hasOwnProperty(key) ? item[key] : "";
+        });
+    }
+};
