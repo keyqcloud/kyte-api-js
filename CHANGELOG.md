@@ -5,6 +5,7 @@
 * Add param to `isSession` for customizing interval for session timer
 * Remove JavaScript alerts for ajax errors and replace with console.error
 * Improve error messages for better clarity
+* Add session handling in ajax call if response is 403
 
 ## 1.1.0
 

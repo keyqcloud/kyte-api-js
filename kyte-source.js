@@ -38,6 +38,7 @@ class Kyte {
 		this.sessionCrossDomain = false;
 
 		this.sessionTimer = null;
+		this.redirectToLoginInitiated = false;
 	}
 	init = () => {
 		this.access_key = (this.getCookie('kyte_pub') ? this.getCookie('kyte_pub') : this.access_key);
@@ -232,7 +233,18 @@ class Kyte {
 							obj.setCookie('accountIdx', '', -1);
 							obj.setCookie('roleIdx', '', -1);
 							obj.setCookie('roleName', '', -1);
-							// obj.redirectToLogin();
+							
+							if (obj.checkSession) {
+								// display permission denied error
+								obj.alert("Access Denied", "You do not have sufficient privileges to access the requested resource.");
+							} else {
+								if (obj.sessionTimer) {
+									clearInterval(obj.sessionTimer);
+								}
+
+								// display message and prepare redirect
+								obj.redirectToLogin();
+							}
 						} else {
 							if (response.responseJSON != null) {
 								obj.txToken = response.responseJSON.token;
@@ -525,15 +537,19 @@ class Kyte {
 		return (this.getCookie('sessionToken') ? true : false);
 	}
 	redirectToLogin = () => {
-		// dismiss any loaders that may be open
-		this.stopSpinner();
-		this.alert("Please sign in again", "You were signed out of your account.  Please press 'OK' to sign in to your account again.", function() {
-			// Get the current URL or the specific URL you want to redirect to
-			var currentUrl = window.location.href;
+		if (!this.redirectToLoginInitiated) {
+			this.redirectToLoginInitiated = true;
+			// dismiss any loaders that may be open
+			this.stopSpinner();
+			this.alert("Please sign in again", "You were signed out of your account.  Please press 'OK' to sign in to your account again.", function() {
+				// Get the current URL or the specific URL you want to redirect to
+				var currentUrl = window.location.href;
 
-			// Redirect to the login page with the current URL as the 'redir' parameter
-			window.location.href = "/?redir=" + encodeURIComponent(currentUrl);
-		}, false);
+				this.redirectToLoginInitiated = false;
+				// Redirect to the login page with the current URL as the 'redir' parameter
+				window.location.href = "/?redir=" + encodeURIComponent(currentUrl);
+			}, false);
+		}
 	}
 	isSession = (periodic = true, redir = true, interval = 30000) => {
 		let api = this;
