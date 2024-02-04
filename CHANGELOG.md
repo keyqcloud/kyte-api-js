@@ -2,6 +2,7 @@
 
 * Add flag to `isSession` for disabling periodic session checks
 * Add flag to `isSession` for disabling redirect behavior
+* Add param to `isSession` for customizing interval for session timer
 
 ## 1.1.0
 

@@ -535,7 +535,7 @@ class Kyte {
 			window.location.href = "/?redir=" + encodeURIComponent(currentUrl);
 		}, false);
 	}
-	isSession = (periodic = true, redir = true) => {
+	isSession = (periodic = true, redir = true, interval = 30000) => {
 		let api = this;
 		if (periodic) {
 			this.sessionTimer = setInterval(function () {
@@ -550,7 +550,7 @@ class Kyte {
 						api.redirectToLogin();
 					}
 				}
-			}, 30000);
+			}, interval);
 		}
 
 		return  this.checkSession();
