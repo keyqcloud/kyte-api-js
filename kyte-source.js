@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.1.1';
+	static VERSION = '1.1.2';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -194,19 +194,7 @@ class Kyte {
 							obj.account_number = obj.initial_account_number;
 						}
 						if (!response.token && !response.session) {
-							obj.setCookie('txToken', '', -1);
-							obj.setCookie('sessionToken', '', -1);
-							obj.setCookie('accountIdx', '', -1);
-							obj.setCookie('roleIdx', '', -1);
-							obj.setCookie('roleName', '', -1);
-							// destroy api handoff cookies
-							obj.setCookie('kyte_pub', '', -1);
-							obj.setCookie('kyte_num', '', -1);
-							obj.setCookie('kyte_iden', '', -1);
-							// reset to defaults
-							obj.access_key = obj.initial_access_key;
-							obj.identifier = obj.initial_identifier;
-							obj.account_number = obj.initial_account_number;
+							obj.sessionDestroy();
 						} else {
 							obj.setCookie('txToken', obj.txToken, 60, obj.sessionCrossDomain);
 							obj.setCookie('sessionToken', obj.sessionToken, 60, obj.sessionCrossDomain);
@@ -228,23 +216,14 @@ class Kyte {
 						}
 
 						if (response.status == 403) {
-							obj.setCookie('txToken', '', -1);
-							obj.setCookie('sessionToken', '', -1);
-							obj.setCookie('accountIdx', '', -1);
-							obj.setCookie('roleIdx', '', -1);
-							obj.setCookie('roleName', '', -1);
+							obj.sessionDestroy();
 							
-							if (obj.checkSession) {
-								// display permission denied error
-								obj.alert("Access Denied", "You do not have sufficient privileges to access the requested resource.");
-							} else {
-								if (obj.sessionTimer) {
-									clearInterval(obj.sessionTimer);
-								}
-
-								// display message and prepare redirect
-								obj.redirectToLogin();
+							if (obj.sessionTimer) {
+								clearInterval(obj.sessionTimer);
 							}
+
+							// display message and prepare redirect
+							obj.redirectToLogin();
 						} else {
 							if (response.responseJSON != null) {
 								obj.txToken = response.responseJSON.token;
@@ -267,19 +246,7 @@ class Kyte {
 									obj.account_number = obj.initial_account_number;
 								}
 								if (!response.responseJSON.token && !response.responseJSON.session) {
-									obj.setCookie('txToken', '', -1);
-									obj.setCookie('sessionToken', '', -1);
-									obj.setCookie('accountIdx', '', -1);
-									obj.setCookie('roleIdx', '', -1);
-									obj.setCookie('roleName', '', -1);
-									// destroy api handoff cookies
-									obj.setCookie('kyte_pub', '', -1);
-									obj.setCookie('kyte_num', '', -1);
-									obj.setCookie('kyte_iden', '', -1);
-									// reset to defaults
-									obj.access_key = obj.initial_access_key;
-									obj.identifier = obj.initial_identifier;
-									obj.account_number = obj.initial_account_number;
+									obj.sessionDestroy();
 								} else {
 									obj.setCookie('txToken', obj.txToken, 60, obj.sessionCrossDomain);
 									obj.setCookie('sessionToken', obj.sessionToken, 60, obj.sessionCrossDomain);
@@ -446,50 +413,36 @@ class Kyte {
 	 */
 	sessionCreate = (identity, callback, error = null, sessionController = 'Session') => {
 		var obj = this;
-		this.post(sessionController, identity, null, [],
-			function (response) {
-				obj.txToken = response.token;
-				obj.sessionToken = response.session;
-				obj.setCookie('txToken', obj.txToken, 60, obj.sessionCrossDomain);
-				obj.setCookie('sessionToken', obj.sessionToken, 60, obj.sessionCrossDomain);
-				obj.setCookie('accountIdx', response.account_id, 60, obj.sessionCrossDomain);
-				obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60, obj.sessionCrossDomain);
-				obj.setCookie('roleName', response.role ? response.role.name : null, 60, obj.sessionCrossDomain);
-				// set api handoff cookies
-				obj.access_key = response.kyte_pub;
-				obj.identifier = response.kyte_iden;
-				obj.account_number = response.kyte_num;
-				obj.setCookie('kyte_pub', obj.access_key, 60, obj.sessionCrossDomain);
-				obj.setCookie('kyte_iden', obj.identifier, 60, obj.sessionCrossDomain);
-				obj.setCookie('kyte_num', obj.account_number, 60, obj.sessionCrossDomain);
+		this.post(sessionController, identity, null, [], function (response) {
+			obj.txToken = response.token;
+			obj.sessionToken = response.session;
+			obj.setCookie('txToken', obj.txToken, 60, obj.sessionCrossDomain);
+			obj.setCookie('sessionToken', obj.sessionToken, 60, obj.sessionCrossDomain);
+			obj.setCookie('accountIdx', response.account_id, 60, obj.sessionCrossDomain);
+			obj.setCookie('roleIdx', response.role ? response.role.id : 0, 60, obj.sessionCrossDomain);
+			obj.setCookie('roleName', response.role ? response.role.name : null, 60, obj.sessionCrossDomain);
+			// set api handoff cookies
+			obj.access_key = response.kyte_pub;
+			obj.identifier = response.kyte_iden;
+			obj.account_number = response.kyte_num;
+			obj.setCookie('kyte_pub', obj.access_key, 60, obj.sessionCrossDomain);
+			obj.setCookie('kyte_iden', obj.identifier, 60, obj.sessionCrossDomain);
+			obj.setCookie('kyte_num', obj.account_number, 60, obj.sessionCrossDomain);
 
-				if (typeof callback === "function") {
-					callback(response);
-				} else {
-					console.log(response);
-				}
-			},
-			function (response) {
-				// destroy session cookies
-				obj.setCookie('txToken', '', -1);
-				obj.setCookie('sessionToken', '', -1);
-				obj.setCookie('accountIdx', '', -1);
-				obj.setCookie('roleIdx', '', -1);
-				obj.setCookie('roleName', '', -1);
-				// destroy api handoff cookies
-				obj.setCookie('kyte_pub', '', -1);
-				obj.setCookie('kyte_num', '', -1);
-				obj.setCookie('kyte_iden', '', -1);
-				// reset to defaults
-				obj.access_key = obj.initial_access_key;
-				obj.identifier = obj.initial_identifier;
-				obj.account_number = obj.initial_account_number;
-				if (typeof error === "function") {
-					error(response);
-				} else {
-					console.error(response);
-				}
-			});
+			if (typeof callback === "function") {
+				callback(response);
+			} else {
+				console.log(response);
+			}
+		}, function (response) {
+			// destroy session cookies
+			obj.sessionDestroy();
+			if (typeof error === "function") {
+				error(response);
+			} else {
+				console.error(response);
+			}
+		});
 	}
 	addLogoutHandler = (selector) => {
 		self = this;
@@ -500,52 +453,24 @@ class Kyte {
         });
 	}
 	checkSession = () => {
-		if (this.sessionToken == 0 || this.sessionToken == '0') {
-			this.setCookie('sessionToken', '', -1);
-			// destroy api handoff cookies
-			this.setCookie('kyte_pub', '', -1);
-			this.setCookie('kyte_num', '', -1);
-			this.setCookie('kyte_iden', '', -1);
-			// reset to defaults
-			this.access_key = this.initial_access_key;
-			this.identifier = this.initial_identifier;
-			this.account_number = this.initial_account_number;
+		// Check if sessionToken or txToken are falsy values (including '0', 0, undefined, null, etc.)
+		if (!this.sessionToken || this.sessionToken === '0' || !this.txToken || this.txToken === '0') {
+			this.sessionDestroy();
 		}
-		if (this.txToken == 0 || this.txToken == '0') {
-			this.setCookie('txToken', '', -1);
-			// destroy api handoff cookies
-			this.setCookie('kyte_pub', '', -1);
-			this.setCookie('kyte_num', '', -1);
-			this.setCookie('kyte_iden', '', -1);
-			// reset to defaults
-			this.access_key = this.initial_access_key;
-			this.identifier = this.initial_identifier;
-			this.account_number = this.initial_account_number;
-		}
-		if (!this.sessionToken || !this.txToken) {
-			this.setCookie('txToken', '', -1);
-			this.setCookie('sessionToken', '', -1);
-			// destroy api handoff cookies
-			this.setCookie('kyte_pub', '', -1);
-			this.setCookie('kyte_num', '', -1);
-			this.setCookie('kyte_iden', '', -1);
-			// reset to defaults
-			this.access_key = this.initial_access_key;
-			this.identifier = this.initial_identifier;
-			this.account_number = this.initial_account_number;
-		}
-		return (this.getCookie('sessionToken') ? true : false);
-	}
+		// Return true if 'sessionToken' cookie exists and is truthy, otherwise false
+		return !!this.getCookie('sessionToken');
+	}	
 	redirectToLogin = () => {
 		if (!this.redirectToLoginInitiated) {
 			this.redirectToLoginInitiated = true;
 			// dismiss any loaders that may be open
 			this.stopSpinner();
+			let api = this;
 			this.alert("Please sign in again", "You were signed out of your account.  Please press 'OK' to sign in to your account again.", function() {
 				// Get the current URL or the specific URL you want to redirect to
 				var currentUrl = window.location.href;
 
-				this.redirectToLoginInitiated = false;
+				api.redirectToLoginInitiated = false;
 				// Redirect to the login page with the current URL as the 'redir' parameter
 				window.location.href = "/?redir=" + encodeURIComponent(currentUrl);
 			}, false);
@@ -553,7 +478,8 @@ class Kyte {
 	}
 	isSession = (periodic = true, redir = true, interval = 30000) => {
 		let api = this;
-		if (periodic) {
+		let hasSession = this.checkSession();
+		if (hasSession && periodic) {
 			this.sessionTimer = setInterval(function () {
 				let session = api.checkSession();
 				// Check if cookie is present,
@@ -569,7 +495,7 @@ class Kyte {
 			}, interval);
 		}
 
-		return  this.checkSession();
+		return hasSession;
 	}
 	/*
 	 * Request backend to destroy session
@@ -583,19 +509,6 @@ class Kyte {
 		var obj = this;
 		this.delete('Session', null, null, [],
 			function (response) {
-				obj.setCookie('txToken', '', -1);
-				obj.setCookie('sessionToken', '', -1);
-				obj.setCookie('accountIdx', '', -1);
-				obj.setCookie('roleIdx', '', -1);
-				obj.setCookie('roleName', '', -1);
-				// destroy api handoff cookies
-				obj.setCookie('kyte_pub', '', -1);
-				obj.setCookie('kyte_num', '', -1);
-				obj.setCookie('kyte_iden', '', -1);
-				// reset to defaults
-				obj.access_key = obj.initial_access_key;
-				obj.identifier = obj.initial_identifier;
-				obj.account_number = obj.initial_account_number;
 				if (typeof error === "function") {
 					error(response);
 				} else {
@@ -603,25 +516,27 @@ class Kyte {
 				}
 			},
 			function (response) {
-				obj.setCookie('txToken', '', -1);
-				obj.setCookie('sessionToken', '', -1);
-				obj.setCookie('accountIdx', '', -1);
-				obj.setCookie('roleIdx', '', -1);
-				obj.setCookie('roleName', '', -1);
-				// destroy api handoff cookies
-				obj.setCookie('kyte_pub', '', -1);
-				obj.setCookie('kyte_num', '', -1);
-				obj.setCookie('kyte_iden', '', -1);
-				// reset to defaults
-				obj.access_key = obj.initial_access_key;
-				obj.identifier = obj.initial_identifier;
-				obj.account_number = obj.initial_account_number;
 				if (typeof error === "function") {
 					error(response);
 				} else {
 					console.error(response);
 				}
 			});
+			obj.setCookie('txToken', '', -1);
+			obj.setCookie('sessionToken', '', -1);
+			obj.setCookie('accountIdx', '', -1);
+			obj.setCookie('roleIdx', '', -1);
+			obj.setCookie('roleName', '', -1);
+			// destroy api handoff cookies
+			obj.setCookie('kyte_pub', '', -1);
+			obj.setCookie('kyte_num', '', -1);
+			obj.setCookie('kyte_iden', '', -1);
+			// reset to defaults
+			obj.access_key = obj.initial_access_key;
+			obj.identifier = obj.initial_identifier;
+			obj.account_number = obj.initial_account_number;
+			obj.sessionToken = 0;
+			obj.txToken = 0;
 	}
 	makeid = (length) => {
 		var result = '';

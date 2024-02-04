@@ -1,3 +1,7 @@
+## 1.1.2
+
+* Clean up session validation and destroy code
+
 ## 1.1.1
 
 * Add flag to `isSession` for disabling periodic session checks
