@@ -904,7 +904,7 @@ class KyteTable {
 								self.api.delete(self.model.name, 'id', data['id'], [], function () {
 									row.remove().draw();
 								}, function () {
-									alert('Unable to delete. Please try again later.');
+									self.alert('Unable to delete. Please try again later.');
 								});
 							});
 						});
@@ -1067,7 +1067,7 @@ class KyteTable {
 							};
 							callback(data);
 						}, function () {
-							alert("Unable to load data");
+							console.error(`Unable to load table data for ${self.model.name}`);
 						});
 					},
 					rowCallback: self.rowCallBack,
@@ -1766,7 +1766,7 @@ class KyteForm {
 								$(`#${fieldId}`).append(`<option value="${item['id']}"${item[column.option.data_model_default_field] == column.option.data_model_default_value ? ' selected="selected"' : ''}>${label}</option>`);
 							});
 						}, function () {
-							alert("Unable to load data");
+							console.error(`Unable to load form dropdown data for ${column.option.data_model_name}`);
 						});
 					}
 				}

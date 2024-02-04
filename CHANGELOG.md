@@ -3,6 +3,8 @@
 * Add flag to `isSession` for disabling periodic session checks
 * Add flag to `isSession` for disabling redirect behavior
 * Add param to `isSession` for customizing interval for session timer
+* Remove JavaScript alerts for ajax errors and replace with console.error
+* Improve error messages for better clarity
 
 ## 1.1.0
 
