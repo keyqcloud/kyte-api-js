@@ -1,3 +1,8 @@
+## 1.1.1
+
+* Add flag to `isSession` for disabling periodic session checks
+* Add flag to `isSession` for disabling redirect behavior
+
 ## 1.1.0
 
 * Updated the session expiration message for clarity and better user experience.

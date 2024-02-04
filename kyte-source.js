@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.1.0';
+	static VERSION = '1.1.1';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -535,19 +535,23 @@ class Kyte {
 			window.location.href = "/?redir=" + encodeURIComponent(currentUrl);
 		}, false);
 	}
-	isSession = () => {
+	isSession = (periodic = true, redir = true) => {
 		let api = this;
-		this.sessionTimer = setInterval(function () {
-			let session = api.checkSession();
-			// Check if cookie is present, 
-			if (!session) {
-				// stop timer
-				clearInterval(api.sessionTimer);
+		if (periodic) {
+			this.sessionTimer = setInterval(function () {
+				let session = api.checkSession();
+				// Check if cookie is present,
+				if (!session) {
+					// stop timer
+					clearInterval(api.sessionTimer);
 
-				// display message and prepare redirect
-				api.redirectToLogin();
-			}
-		}, 30000);
+					if (redir) {
+						// display message and prepare redirect
+						api.redirectToLogin();
+					}
+				}
+			}, 30000);
+		}
 
 		return  this.checkSession();
 	}
