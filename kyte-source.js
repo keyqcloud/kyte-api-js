@@ -39,6 +39,8 @@ class Kyte {
 
 		this.sessionTimer = null;
 		this.redirectToLoginInitiated = false;
+
+		this.sessionController = 'Session';
 	}
 	init = () => {
 		this.access_key = (this.getCookie('kyte_pub') ? this.getCookie('kyte_pub') : this.access_key);
@@ -119,7 +121,6 @@ class Kyte {
 	 */
 	sendData = (method, model, field = null, value = null, data = null, formdata = null, headers = [], callback, error = null) => {
 		var obj = this;
-		var token = (obj.getCookie('kyte-token') ? obj.getCookie('kyte-token') : '1');
 
 		this.sign(
 			function (retval, time) {
@@ -222,8 +223,10 @@ class Kyte {
 								clearInterval(obj.sessionTimer);
 							}
 
-							// display message and prepare redirect
-							obj.redirectToLogin();
+							if (model != obj.sessionController) {
+								// display message and prepare redirect
+								obj.redirectToLogin();
+							}
 						} else {
 							if (response.responseJSON != null) {
 								obj.txToken = response.responseJSON.token;
@@ -411,9 +414,12 @@ class Kyte {
 	 * redirect users to login page.
 	 *
 	 */
-	sessionCreate = (identity, callback, error = null, sessionController = 'Session') => {
+	sessionCreate = (identity, callback, error = null, sessionController = null) => {
 		var obj = this;
-		this.post(sessionController, identity, null, [], function (response) {
+		if (sessionController !== null) {
+			obj.sessionController = sessionController;
+		}
+		this.post(obj.sessionController, identity, null, [], function (response) {
 			obj.txToken = response.token;
 			obj.sessionToken = response.session;
 			obj.setCookie('txToken', obj.txToken, 60, obj.sessionCrossDomain);
