@@ -1,4 +1,4 @@
-## 1.1.3
+## 1.2.0
 
 * Clean up unused variable
 * Add class variable to configure session controller name
