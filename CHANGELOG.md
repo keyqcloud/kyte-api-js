@@ -4,6 +4,7 @@
 * Add class variable to configure session controller name
 * Bypass login redirect if 403 response comes from session controller
 * Update to use classes for logout handler
+* Add ability to make side nav label centered and icon block
 
 ## 1.1.2
 

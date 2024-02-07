@@ -673,7 +673,7 @@ class KyteNav {
 					html += '</ul>';
 					html += '</li>';
 				} else {
-					html += `<li class="nav-item"><a class="nav-link${item.logout ? ' logout' : ''}${item.label == this.active ? ' active' : ''} ${item.class}" ${item.href ? 'href="'+ item.href+'"' : 'href="#"'}>${item.faicon ? '<i class="'+ item.faicon +' me-2"></i>' : ''}<span>${item.label}</span></a></li>`;
+					html += `<li class="nav-item"><a class="nav-link${item.logout ? ' logout' : ''}${item.labelCenterBlock ? ' text-center p-0 my-1 mx-0':''}${item.label == this.active ? ' active' : ''} ${item.class}" ${item.href ? 'href="'+ item.href+'"' : 'href="#"'}>${item.faicon ? '<i class="'+ item.faicon +(item.labelCenterBlock ? ' d-block':' me-2')+'"></i>' : ''}<span>${item.label}</span></a></li>`;
 				}
 			});
 			html += '</ul>';
