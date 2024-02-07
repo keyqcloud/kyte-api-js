@@ -1,3 +1,7 @@
+## 1.2.1
+
+* Add logic to render side nav item if item is a logout button
+
 ## 1.2.0
 
 * Clean up unused variable

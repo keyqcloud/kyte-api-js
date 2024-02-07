@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.2.0';
+	static VERSION = '1.2.1';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -699,7 +699,7 @@ class KyteSidenav {
 		if ($(this.selector).length) {
 			let html = '<ul class="nav nav-pills flex-column mb-auto" id="sidebar-nav">';
 			this.nav_struct.forEach(item => {
-				if ($(item.selector).length || item.href) {
+				if ($(item.selector).length || item.href || item.logout) {
 					html += '<li class="nav-item">';
 					html += `<a ${$(item.selector).length ? 'id="'+item.selector.replace('#', '')+'-nav-link" ' : ''} ${'href="'+(item.href ? item.href : item.selector)+'"'} class="nav-link text-dark me-2 ${item.logout ? 'logout' : ''}"><i class="${item.faicon} me-2"></i><span>${item.label}</span></a>`;
 					html += '</li>';
