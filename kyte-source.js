@@ -667,13 +667,13 @@ class KyteNav {
 	
 					// iterate through dropdown items
 					item.items.forEach( sub => {
-						html += '<li><a class="dropdown-item '+ sub.class +'" '+ (sub.logout ? 'id="logout" ' : '') + (sub.href ? 'href="'+ sub.href +'"' : 'href="#"') + '>'+ (sub.faicon ? '<i class="'+ sub.faicon +' me-2"></i>' : '') + '<span>'+ sub.label +'</span></a></li>';
+						html += `<li><a class="dropdown-item ${sub.class}${sub.logout ? ' logout' : ''}" ${sub.href ? 'href="'+ sub.href +'"' : 'href="#"'}>${sub.faicon ? '<i class="'+ sub.faicon +' me-2"></i>' : ''}<span>${sub.label}</span></a></li>`;
 					});
 	
 					html += '</ul>';
 					html += '</li>';
 				} else {
-					html += '<li class="nav-item"><a '+ (item.logout ? 'id="logout" ' : '') +'class="nav-link'+(item.label == this.active ? ' active' : '')+' '+ item.class +'" '+ (item.href ? 'href="'+ item.href+'"' : 'href="#"') + '>'+ (item.faicon ? '<i class="'+ item.faicon +' me-2"></i>' : '') + '<span>'+ item.label +'</span></a></li>';
+					html += `<li class="nav-item"><a class="nav-link${item.logout ? ' logout' : ''}${item.label == this.active ? ' active' : ''} ${item.class}" ${item.href ? 'href="'+ item.href+'"' : 'href="#"'}>${item.faicon ? '<i class="'+ item.faicon +' me-2"></i>' : ''}<span>${item.label}</span></a></li>`;
 				}
 			});
 			html += '</ul>';
@@ -701,7 +701,7 @@ class KyteSidenav {
 			this.nav_struct.forEach(item => {
 				if ($(item.selector).length || item.href) {
 					html += '<li class="nav-item">';
-					html += '<a '+($(item.selector).length ? 'id="'+item.selector.replace('#', '')+'-nav-link" ' : '')+'href="'+(item.href ? item.href : item.selector)+'" class="nav-link text-dark me-2"><i class="'+ item.faicon +' me-2"></i><span>'+item.label+'</span></a>';
+					html += `<a ${$(item.selector).length ? 'id="'+item.selector.replace('#', '')+'-nav-link" ' : ''} ${'href="'+(item.href ? item.href : item.selector)+'"'} class="nav-link text-dark me-2 ${item.logout ? 'logout' : ''}"><i class="${item.faicon} me-2"></i><span>${item.label}</span></a>`;
 					html += '</li>';
 				}
 			});

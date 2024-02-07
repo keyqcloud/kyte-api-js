@@ -3,6 +3,7 @@
 * Clean up unused variable
 * Add class variable to configure session controller name
 * Bypass login redirect if 403 response comes from session controller
+* Update to use classes for logout handler
 
 ## 1.1.2
 
