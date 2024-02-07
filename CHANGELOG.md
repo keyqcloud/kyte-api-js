@@ -1,3 +1,7 @@
+## 1.2.2
+
+* Fix issue where logout button in sidenav would navigate to 404 and logout
+
 ## 1.2.1
 
 * Add logic to render side nav item if item is a logout button
