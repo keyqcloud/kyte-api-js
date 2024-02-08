@@ -1,3 +1,7 @@
+## 1.2.3
+
+* Add logic to render nav items with different styles
+
 ## 1.2.2
 
 * Fix issue where logout button in sidenav would navigate to 404 and logout
