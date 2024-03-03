@@ -128,10 +128,10 @@ class Kyte {
 				let identity = encodeURIComponent(btoa(obj.access_key + '%' + obj.sessionToken + '%' + time.toUTCString() + '%' + obj.account_number));
 				var apiURL = obj.url + '/' + model;
 				if (field) {
-					apiURL += '/' + field;
+					apiURL += '/' + encodeURIComponent(field);
 				}
 				if (value) {
-					apiURL += '/' + value;
+					apiURL += '/' + encodeURIComponent(value);
 				}
 
 				var encdata = '';
