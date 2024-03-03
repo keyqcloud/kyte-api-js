@@ -1,3 +1,7 @@
+## 1.2.4 (draft)
+
+* Add `id` and `class` to nav and sidenav items
+
 ## 1.2.3
 
 * Add logic to render nav items with different styles

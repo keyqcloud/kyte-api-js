@@ -661,22 +661,22 @@ class KyteNav {
 			i++;
 			menu.forEach(item => {
 				if (item.dropdown) {
-					html += '<li class="nav-item dropdown">';
-					html += '<a class="nav-link dropdown-toggle '+ item.class +'" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">'+ (item.faicon ? '<i class="'+ item.faicon +' me-2"></i>' : '') + '<span>'+ item.label +'</span></a>';
-					html += '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">';
+					html += `
+					<li class="nav-item dropdown">
+						<a id="${item.id ? item.id : ''}" class="nav-link dropdown-toggle ${item.class}" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">${item.faicon ? '<i class="'+ item.faicon +' me-2"></i>' : ''}<span>${item.label}</span></a>
+						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">`;
 	
 					// iterate through dropdown items
 					item.items.forEach( sub => {
-						html += `<li><a class="dropdown-item ${sub.class}${sub.logout ? ' logout' : ''}" ${sub.href ? 'href="'+ sub.href +'"' : 'href="#"'}>${sub.faicon ? '<i class="'+ sub.faicon +' me-2"></i>' : ''}<span>${sub.label}</span></a></li>`;
+						html += `<li><a id="${sub.id ? sub.id : ''}" class="dropdown-item ${sub.class}${sub.logout ? ' logout' : ''}" ${sub.href ? 'href="'+ sub.href +'"' : 'href="#"'}>${sub.faicon ? '<i class="'+ sub.faicon +' me-2"></i>' : ''}<span>${sub.label}</span></a></li>`;
 					});
 	
-					html += '</ul>';
-					html += '</li>';
+					html += `</ul></li>`;
 				} else {
-					html += `<li class="nav-item"><a class="nav-link${item.logout ? ' logout' : ''}${item.labelCenterBlock ? ' text-center p-0 my-1 mx-0':''}${item.label == this.active ? ' active' : ''} ${item.class}" ${item.href ? 'href="'+ item.href+'"' : 'href="#"'}>${item.faicon ? '<i class="'+ item.faicon +(item.labelCenterBlock ? ' d-block':' me-2')+'"></i>' : ''}<span>${item.label}</span></a></li>`;
+					html += `<li class="nav-item"><a id="${item.id ? item.id : ''}" class="nav-link${item.logout ? ' logout' : ''}${item.labelCenterBlock ? ' text-center p-0 my-1 mx-0':''}${item.label == this.active ? ' active' : ''} ${item.class}" ${item.href ? 'href="'+ item.href+'"' : 'href="#"'}>${item.faicon ? '<i class="'+ item.faicon +(item.labelCenterBlock ? ' d-block':' me-2')+'"></i>' : ''}<span>${item.label}</span></a></li>`;
 				}
 			});
-			html += '</ul>';
+			html += `</ul>`;
 		});
 	
 		html += '\
@@ -701,7 +701,7 @@ class KyteSidenav {
 			this.nav_struct.forEach(item => {
 				if ($(item.selector).length || item.href || item.logout) {
 					html += '<li class="nav-item">';
-					html += `<a ${$(item.selector).length ? 'id="'+item.selector.replace('#', '')+'-nav-link" ' : ''} ${'href="'+(item.logout ? '#' : item.href ? item.href : item.selector)+'"'} class="nav-link ${item.labelCenterBlock ? ' text-center p-0 my-1 mx-0':''} ${item.logout ? 'logout' : ''}"><i class="${item.faicon}${item.labelCenterBlock ? ' d-block':' me-2'}"></i><span>${item.label}</span></a>`;
+					html += `<a ${$(item.selector).length ? 'id="'+item.selector.replace('#', '')+'-nav-link" ' : item.id ? item.id : ''} ${'href="'+(item.logout ? '#' : item.href ? item.href : item.selector)+'"'} class="nav-link ${item.class ? item.class : ''} ${item.labelCenterBlock ? ' text-center p-0 my-1 mx-0':''} ${item.logout ? 'logout' : ''}"><i class="${item.faicon}${item.labelCenterBlock ? ' d-block':' me-2'}"></i><span>${item.label}</span></a>`;
 					html += '</li>';
 				}
 			});
