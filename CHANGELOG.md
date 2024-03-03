@@ -1,4 +1,4 @@
-## 1.2.4 (draft)
+## 1.2.4
 
 * Add `id` and `class` to nav and sidenav items
 * URL encode field name and value in URL paths for API request
