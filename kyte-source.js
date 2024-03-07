@@ -701,7 +701,7 @@ class KyteSidenav {
 			this.nav_struct.forEach(item => {
 				if ($(item.selector).length || item.href || item.logout) {
 					html += '<li class="nav-item">';
-					html += `<a ${$(item.selector).length ? 'id="'+item.selector.replace('#', '')+'-nav-link" ' : item.id ? item.id : ''} ${'href="'+(item.logout ? '#' : item.href ? item.href : item.selector)+'"'} class="nav-link ${item.class ? item.class : ''} ${item.labelCenterBlock ? ' text-center p-0 my-1 mx-0':''} ${item.logout ? 'logout' : ''}"><i class="${item.faicon}${item.labelCenterBlock ? ' d-block':' me-2'}"></i><span>${item.label}</span></a>`;
+					html += `<a ${$(item.selector).length ? 'id="'+item.selector.replace('#', '')+'-nav-link" ' : item.id ? 'id="'+item.id+'"' : ''} ${'href="'+(item.logout ? '#' : item.href ? item.href : item.selector)+'"'} class="nav-link ${item.class ? item.class : ''} ${item.labelCenterBlock ? ' text-center p-0 my-1 mx-0':''} ${item.logout ? 'logout' : ''}"><i class="${item.faicon}${item.labelCenterBlock ? ' d-block':' me-2'}"></i><span>${item.label}</span></a>`;
 					html += '</li>';
 				}
 			});
