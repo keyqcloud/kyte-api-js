@@ -1,3 +1,7 @@
+## 1.2.5
+
+* Fixes bug where `id` value was being added as an attribute and not a value of `id`
+
 ## 1.2.4
 
 * Add `id` and `class` to nav and sidenav items
