@@ -838,7 +838,7 @@ class KyteTable {
 							let row = self.table.row($(this).parents('tr'));
 							let data = row.data();
 							self.api.confirm('Delete', 'Are you sure you wish to delete?', function () {
-								self.api.delete(self.model.name, 'id', data['id'], [], function () {
+								self.api.delete(self.model.name, 'id', data['id'], self.httpHeaders, function () {
 									row.remove().draw();
 								}, function () {
 									self.alert('Unable to delete. Please try again later.');
@@ -1570,7 +1570,9 @@ class KyteForm {
 		var obj = this;
 
 		// Check if model has external data and set variable accordinly
-		var externalData = (obj.externalChildData ? [{'name':'x-kyte-get-externaltables', 'value':'true'}] : [])
+		if (obj.externalChildData) {
+			obj.httpHeaders.push({'name':'x-kyte-get-externaltables', 'value':'true'});
+		}
 
 		obj.api.get(obj.model, 'id', idx, externalData, function (response) {
     
