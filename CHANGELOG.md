@@ -1,3 +1,7 @@
+## 1.2.6
+
+* Add support for custom headers for KyteForm
+
 ## 1.2.5
 
 * Fixes bug where `id` value was being added as an attribute and not a value of `id`
