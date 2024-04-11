@@ -1,3 +1,8 @@
+## 1.2.7
+
+* Fix bug where custom headers were not sent for deletion from KyteTable
+* Fix bug where custom headers were not sent when loading form data for updates.
+
 ## 1.2.6
 
 * Add support for custom headers for KyteForm
