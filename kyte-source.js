@@ -1113,6 +1113,7 @@ class KyteForm {
 		this.elements = elements;
 		this.id;
 		this.submitButton = 'Submit';
+		this.httpHeaders = [];
 
 		// file upload
 		this.fileUploadField = null;
@@ -1286,7 +1287,7 @@ class KyteForm {
 					// if an ID is set, then update entry
 					let idx = obj.editOnlyMode ? obj.editOnlyMode : form.data('idx');
 					if (idx > 0) {
-						obj.api.put(obj.model, 'id', idx, null, form.serialize(), [],
+						obj.api.put(obj.model, 'id', idx, null, form.serialize(), obj.httpHeaders,
 							function (response) {
 								$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
 
@@ -1324,7 +1325,7 @@ class KyteForm {
 								form.append(`<input id="filename" type="hidden" name="filename" value="${f.name}" />`);
 							}
 						}
-						obj.api.post(obj.model, null, form.serialize(), [],
+						obj.api.post(obj.model, null, form.serialize(), obj.httpHeaders,
 							function (response) {
 								if (obj.KyteTable) {
 									response.data.forEach(function (item) {
