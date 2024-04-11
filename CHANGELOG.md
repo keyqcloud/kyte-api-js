@@ -1,3 +1,7 @@
+## 1.2.8
+
+* Fix bug where externalData wasn't defined
+
 ## 1.2.7
 
 * Fix bug where custom headers were not sent for deletion from KyteTable

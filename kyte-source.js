@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.2.7';
+	static VERSION = '1.2.8';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -1574,7 +1574,7 @@ class KyteForm {
 			obj.httpHeaders.push({'name':'x-kyte-get-externaltables', 'value':'true'});
 		}
 
-		obj.api.get(obj.model, 'id', idx, externalData, function (response) {
+		obj.api.get(obj.model, 'id', idx, obj.httpHeaders, function (response) {
     
 			// populate form
 			obj.elements.forEach(function (row) {
