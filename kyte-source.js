@@ -1570,7 +1570,9 @@ class KyteForm {
 		var obj = this;
 
 		// Check if model has external data and set variable accordinly
-		var externalData = (obj.externalChildData ? [{'name':'x-kyte-get-externaltables', 'value':'true'}] : [])
+		if (obj.externalChildData) {
+			obj.httpHeaders.push({'name':'x-kyte-get-externaltables', 'value':'true'});
+		}
 
 		obj.api.get(obj.model, 'id', idx, externalData, function (response) {
     
