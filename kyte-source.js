@@ -31,8 +31,8 @@ class Kyte {
 		this.initial_identifier = identifier;
 		this.initial_account_number = account_number;
 
-		this.txToken;
-		this.sessionToken;
+		this.txToken = 0;
+		this.sessionToken = 0;
 		this.dateFormat = 'mm/dd/yy';
 
 		this.sessionCrossDomain = false;
@@ -41,6 +41,10 @@ class Kyte {
 		this.redirectToLoginInitiated = false;
 
 		this.sessionController = 'Session';
+
+		// store tables
+		this.kyteTableSelector = '.kyte-data-table';
+		this.tables = [];
 	}
 	init = () => {
 		this.access_key = (this.getCookie('kyte_pub') ? this.getCookie('kyte_pub') : this.access_key);
@@ -50,6 +54,9 @@ class Kyte {
 		// get txToken and session tokens from cookie if they exist (i.e. user session exists)
 		this.txToken = (this.getCookie('txToken') ? this.getCookie('txToken') : 0);
 		this.sessionToken = (this.getCookie('sessionToken') ? this.getCookie('sessionToken') : 0);
+
+		// generate tables
+		this.createKyteTable(this.kyteTableSelector);
 	}
 	/* API Version
 	 *
@@ -632,6 +639,46 @@ class Kyte {
 
 	syntaxErrorBanner = (filepath) => {
 		$("body").prepend('<div class="card text-white bg-danger m-3"><div class="card-header">Syntax Error</div><div class="card-body"><p class="card-text">'+filepath+'</p></div></div>');
+	}
+
+	/**
+	 * Generates a KyteTable based on tag attributes on load
+	 */
+	createKyteTable = (kyteTableSelector) => {
+		if ($(kyteTableSelector).length > 0) {
+			$(kyteTableSelector).each(function() {
+				let table = $(this);
+
+				// grab attributes for table
+				let tableName = table.attr('kyte-dt-name');
+				let model = table.attr('kyte-dt-model');
+				let columnNames = table.attr('kyte-dt-columns').split(',');
+				let columnLabels = table.attr('kyte-dt-column-labels') ? table.attr('kyte-dt-column-labels').split(',') : [];
+				let canEdit = table.attr('kyte-dt-editable') === 'true';
+				let canDelete = table.attr('kyte-dt-deletable') === 'true';
+				let detailPage = table.attr('kyte-dt-detail-page') ? table.attr('kyte-dt-detail-page') : null;
+				let hasDetailView = detailPage !== null;
+				// let sortable = table.attr('kyte-dt-sortable') === 'true';
+				let searchable = table.attr('kyte-dt-searchable') === 'true';
+				let columnOrder = JSON.parse(table.attr('kyte-dt-column-order') || '[]').map(item => [item.index, item.dir]);
+
+				let columnsConfig = columnNames.map((columnName, index) => {
+					// Use the column name as the label if the corresponding label is missing or empty
+					let label = columnLabels[index] ? columnLabels[index] : columnName;
+					
+					return {
+						'targets': index,
+						'data': columnName,
+						'label': label.charAt(0).toUpperCase() + label.slice(1) // Capitalizing the label
+					};
+				});
+
+				let dt = new KyteTable(this, table, model, columnsConfig, searchable, columnOrder, canEdit, canDelete, hasDetailView, detailPage);
+
+				// add table to list of tables
+				this.tables.push({tableName:dt});
+			})
+		}
 	}
 }
 
