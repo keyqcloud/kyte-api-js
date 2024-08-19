@@ -1,3 +1,16 @@
+## 1.2.8
+
+* Fix bug where externalData wasn't defined
+
+## 1.2.7
+
+* Fix bug where custom headers were not sent for deletion from KyteTable
+* Fix bug where custom headers were not sent when loading form data for updates.
+
+## 1.2.6
+
+* Add support for custom headers for KyteForm
+
 ## 1.2.5
 
 * Fixes bug where `id` value was being added as an attribute and not a value of `id`

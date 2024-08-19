@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.2.5';
+	static VERSION = '1.2.8';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -885,7 +885,7 @@ class KyteTable {
 							let row = self.table.row($(this).parents('tr'));
 							let data = row.data();
 							self.api.confirm('Delete', 'Are you sure you wish to delete?', function () {
-								self.api.delete(self.model.name, 'id', data['id'], [], function () {
+								self.api.delete(self.model.name, 'id', data['id'], self.httpHeaders, function () {
 									row.remove().draw();
 								}, function () {
 									self.alert('Unable to delete. Please try again later.');
@@ -1160,6 +1160,7 @@ class KyteForm {
 		this.elements = elements;
 		this.id;
 		this.submitButton = 'Submit';
+		this.httpHeaders = [];
 
 		// file upload
 		this.fileUploadField = null;
@@ -1333,7 +1334,7 @@ class KyteForm {
 					// if an ID is set, then update entry
 					let idx = obj.editOnlyMode ? obj.editOnlyMode : form.data('idx');
 					if (idx > 0) {
-						obj.api.put(obj.model, 'id', idx, null, form.serialize(), [],
+						obj.api.put(obj.model, 'id', idx, null, form.serialize(), obj.httpHeaders,
 							function (response) {
 								$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
 
@@ -1371,7 +1372,7 @@ class KyteForm {
 								form.append(`<input id="filename" type="hidden" name="filename" value="${f.name}" />`);
 							}
 						}
-						obj.api.post(obj.model, null, form.serialize(), [],
+						obj.api.post(obj.model, null, form.serialize(), obj.httpHeaders,
 							function (response) {
 								if (obj.KyteTable) {
 									response.data.forEach(function (item) {
@@ -1616,9 +1617,11 @@ class KyteForm {
 		var obj = this;
 
 		// Check if model has external data and set variable accordinly
-		var externalData = (obj.externalChildData ? [{'name':'x-kyte-get-externaltables', 'value':'true'}] : [])
+		if (obj.externalChildData) {
+			obj.httpHeaders.push({'name':'x-kyte-get-externaltables', 'value':'true'});
+		}
 
-		obj.api.get(obj.model, 'id', idx, externalData, function (response) {
+		obj.api.get(obj.model, 'id', idx, obj.httpHeaders, function (response) {
     
 			// populate form
 			obj.elements.forEach(function (row) {
