@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.2.19';
+	static VERSION = '1.2.20';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -1693,16 +1693,11 @@ class KyteForm {
 							let itemColName = field.option.data_model_default_field ? field.option.data_model_default_field : 'id';
 							$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).append(`<option value="${item[itemColName]}">${label}</option>`);
 						});
+						$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).trigger('change');
 					});
 				}
 			}
 		});
-
-
-		$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).each(function() {
-			let fieldVal = $(this).val();
-			$(this).val(fieldVal).trigger('change');
-		});		
 	}
 	reloadAjax = () => {
 		let obj = this;

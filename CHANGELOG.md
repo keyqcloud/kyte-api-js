@@ -1,3 +1,7 @@
+## 1.2.20
+
+* Simply select update by triggering change
+
 ## 1.2.19
 
 * Assert versions
