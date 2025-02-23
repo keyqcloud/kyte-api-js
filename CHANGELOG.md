@@ -1,3 +1,7 @@
+## 1.2.13
+
+* Fix issue with class names containing illegal characters
+
 ## 1.2.12
 
 * Fix issue with select data not populating
