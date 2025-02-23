@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.2.22';
+	static VERSION = '1.2.23';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -1512,7 +1512,7 @@ class KyteForm {
 						} else if (field.type == 'textarea') {
 							itemizedHTML += `<textarea style="width:100%" id="itemized_${obj.model}_${obj.id}_${field.name}" class="form-control" name="${field.name}"${field.required ? ' required="required"' : ''}${field.placeholder !== undefined ? ' placeholder="' + field.placeholder + '"' : ''}></textarea>`;
 						} else {
-							itemizedHTML += `<input type="${field.type}" id="itemized_${obj.model}_${obj.id}_${field.name}" class="form-control" name="${field.name}${field.required ? ' required="required"' : ''}${field.placeholder !== undefined ? ' placeholder="' + field.placeholder + '"' : ''}${field.readonly !== undefined ? ' readonly' : ''}>`;
+							itemizedHTML += `<input type="${field.type}" id="itemized_${obj.model}_${obj.id}_${field.name}" class="form-control" name="${field.name}"${field.required ? ' required="required"' : ''}${field.placeholder !== undefined ? ' placeholder="' + field.placeholder + '"' : ''}${field.readonly !== undefined ? ' readonly' : ''}>`;
 						}
 						itemizedHTML += '</div></div>';
 					});

@@ -1,3 +1,7 @@
+## 1.2.23
+
+* Fix issue with field name and missing quotation
+
 ## 1.2.22
 
 * Store select value as a data attribute
