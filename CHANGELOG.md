@@ -1,3 +1,9 @@
+## 1.2.9
+
+* Enhance table row click handler to support nested property access  
+  - Added a helper function that retrieves nested properties using dot-separated paths (e.g., "person.id")  
+  - This update ensures robust access to deeply nested values in data objects without breaking existing functionality
+
 ## 1.2.8
 
 * Fix bug where externalData wasn't defined
