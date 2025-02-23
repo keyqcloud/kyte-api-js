@@ -633,6 +633,10 @@ class Kyte {
 	syntaxErrorBanner = (filepath) => {
 		$("body").prepend('<div class="card text-white bg-danger m-3"><div class="card-header">Syntax Error</div><div class="card-body"><p class="card-text">'+filepath+'</p></div></div>');
 	}
+
+	getNestedValue = (obj, path) => {
+		return path.split('.').reduce((acc, key) => (acc ? acc[key] : undefined), obj);
+	}  
 }
 
 class KyteNav {
@@ -944,12 +948,13 @@ class KyteTable {
 						let row = self.table.row(this);
 						let data = row.data();
 						if (self.viewTarget) {
-							let obj = { 'model': self.model.name, 'idx': data[self.actionView] };
+							let idx = self.api.getNestedValue(data, self.actionView);
+							let obj = { 'model': self.model.name, 'idx': idx };
 							let encoded = encodeURIComponent(btoa(JSON.stringify(obj)));
 							if (self.targetBlank) {
 								window.open(self.viewTarget + "?request=" + encoded, '_blank').focus();
 							} else {
-								location.href = self.viewTarget + "?request=" + encoded;
+							location.href = self.viewTarget + "?request=" + encoded;
 							}
 						}
 					});
