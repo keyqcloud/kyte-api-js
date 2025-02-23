@@ -1686,7 +1686,7 @@ class KyteForm {
 									}
 								}
 							});
-							itemColName = field.option.data_model_default_field ? field.option.data_model_default_field : 'id';
+							let itemColName = field.option.data_model_default_field ? field.option.data_model_default_field : 'id';
 							$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).append(`<option value="${item[itemColName]}"${fieldVal == item[itemColName] ? ' selected' : ''}>${label}</option>`);
 						});
 					});
@@ -1723,7 +1723,7 @@ class KyteForm {
 										}
 									}
 								});
-								itemColName = column.option.data_model_default_field ? column.option.data_model_default_field : 'id';
+								let itemColName = column.option.data_model_default_field ? column.option.data_model_default_field : 'id';
 								$(`#${fieldId}`).append(`<option value="${item[itemColName]}"${item[itemColName] == column.option.data_model_default_value ? ' selected="selected"' : ''}>${label}</option>`);
 							});
 						}, function () {
