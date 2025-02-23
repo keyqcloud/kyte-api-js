@@ -1,3 +1,7 @@
+## 1.2.12
+
+* Fix issue with select data not populating
+
 ## 1.2.11
 
 * Fix bug where field name still contained `[]`.

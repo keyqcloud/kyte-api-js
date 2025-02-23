@@ -1637,7 +1637,7 @@ class KyteForm {
 				fieldVal = fieldVal === undefined ? '' : fieldVal;
 				itemizedHTML += '<div class="col"><div class="form-group">';
 				if (field.type == 'select') {
-					itemizedHTML += `<select id="itemized_${obj.model}_${obj.id}_${field.name}[${i}]" class="form-select" name="${field.name}" value="${fieldVal}"${field.required ? ' required="required"' : ''}>`;
+					itemizedHTML += `<select id="itemized_${obj.model}_${obj.id}_${field.name}[${i}]" class="form-select itemized_${obj.model}_${obj.id}_${field.name}" name="${field.name}" value="${fieldVal}"${field.required ? ' required="required"' : ''}>`;
 					// if not ajax, then populate with data - ajax will populate after appending html
 					if (!field.option.ajax) {
 						for (var key in field.option.data) {
@@ -1661,36 +1661,36 @@ class KyteForm {
 			// append fields
 			$(`#itemized_${obj.model}_${obj.id}`).append(itemizedHTML);
 
-			// run ajax for any selects
-			obj.itemized.fields.forEach(function (field) {
-				if (field.type == 'select') {
-					if (field.option.ajax) {
-						obj.api.get(field.option.data_model_name, field.option.data_model_field, field.option.data_model_value, [], function (response) {
-							response.data.forEach(function (item) {
-								let label = '';
-								field.option.data_model_attributes.forEach(function (attribute) {
-									if (item[attribute]) {
-										label += item[attribute] + ' ';
-									} else {
-										// attempt to split by dot notation
-										let c = attribute.split('.');
-										if (c.length >= 2) {
-											label += item[c[0]][c[1]] + ' ';
-										} else {
-											label += attribute + ' ';
-										}
-									}
-								});
-								$(`#${field.option.data_model_name}_${field.option.data_model_value}_${uniqueId}`).append(`<option value="${item[field.option.data_model_value]}">${label}</option>`);
-							});
-						});
-					}
-				}
-			});
-
 			// increment itemized row counter
 			i++;
-		})
+		});
+
+		// run ajax for any selects
+		obj.itemized.fields.forEach(function (field) {
+			if (field.type == 'select') {
+				if (field.option.ajax) {
+					obj.api.get(field.option.data_model_name, field.option.data_model_field, field.option.data_model_value, [], function (response) {
+						response.data.forEach(function (item) {
+							let label = '';
+							field.option.data_model_attributes.forEach(function (attribute) {
+								if (item[attribute]) {
+									label += item[attribute] + ' ';
+								} else {
+									// attempt to split by dot notation
+									let c = attribute.split('.');
+									if (c.length >= 2) {
+										label += item[c[0]][c[1]] + ' ';
+									} else {
+										label += attribute + ' ';
+									}
+								}
+							});
+							$(`.itemized_${obj.model}_${obj.id}_${field.name}`).append(`<option value="${item[field.option.data_model_value]}">${label}</option>`);
+						});
+					});
+				}
+			}
+		});
 	}
 	reloadAjax = () => {
 		let obj = this;
