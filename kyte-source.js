@@ -1637,7 +1637,7 @@ class KyteForm {
 				fieldVal = fieldVal === undefined ? '' : fieldVal;
 				itemizedHTML += '<div class="col"><div class="form-group">';
 				if (field.type == 'select') {
-					itemizedHTML += `<select id="itemized_${obj.model}_${obj.id}_${field.name}[${i}]" class="form-select itemized_${obj.model}_${obj.id}_${field.name}" name="${field.name}" value="${fieldVal}"${field.required ? ' required="required"' : ''}>`;
+					itemizedHTML += `<select id="itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}[${i}]" class="form-select itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}" name="${field.name}" value="${fieldVal}"${field.required ? ' required="required"' : ''}>`;
 					// if not ajax, then populate with data - ajax will populate after appending html
 					if (!field.option.ajax) {
 						for (var key in field.option.data) {
@@ -1649,11 +1649,11 @@ class KyteForm {
 					// close select
 					itemizedHTML += '</select>';
 				} else if (field.type == 'textarea') {
-					itemizedHTML += `<textarea style="width:100%" id="itemized_${obj.model}_${obj.id}_${field.name}[${i}]" class="form-control" name="${field.name}" value="${fieldVal}"${field.required ? ' required="required"' : ''}${field.placeholder !== undefined ? ' placeholder="' + field.placeholder + '"' : ''}></textarea>`;
+					itemizedHTML += `<textarea style="width:100%" id="itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}[${i}]" class="form-control" name="${field.name}" value="${fieldVal}"${field.required ? ' required="required"' : ''}${field.placeholder !== undefined ? ' placeholder="' + field.placeholder + '"' : ''}></textarea>`;
 				} else {
 					// Check for date and replace slashes with dashes
 					fieldVal = field.date ? fieldVal.replace(/\//g, '-') : fieldVal;
-					itemizedHTML += `<input type="${field.type}" id="itemized_${obj.model}_${obj.id}_${field.name}[${i}]" class="form-control" name="${field.name}" value="${fieldVal}"${field.required ? 'required="required"' : ''}${field.placeholder !== undefined ? ' placeholder="' + field.placeholder + '"' : ''}${field.readonly !== undefined ? ' readonly' : ''}>`;
+					itemizedHTML += `<input type="${field.type}" id="itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}[${i}]" class="form-control" name="${field.name}" value="${fieldVal}"${field.required ? 'required="required"' : ''}${field.placeholder !== undefined ? ' placeholder="' + field.placeholder + '"' : ''}${field.readonly !== undefined ? ' readonly' : ''}>`;
 				}
 				itemizedHTML += '</div></div>';
 			});
@@ -1685,7 +1685,7 @@ class KyteForm {
 									}
 								}
 							});
-							$(`.itemized_${obj.model}_${obj.id}_${field.name}`).append(`<option value="${item[field.option.data_model_value]}">${label}</option>`);
+							$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).append(`<option value="${item[field.option.data_model_value]}">${label}</option>`);
 						});
 					});
 				}
