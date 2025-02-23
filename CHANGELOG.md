@@ -1,3 +1,7 @@
+## 1.2.10
+
+* Fix bug that prevented itemized data from an external table from loading if the external table feature is disabled or not defined in the backend.
+
 ## 1.2.9
 
 * Enhance table row click handler to support nested property access  
