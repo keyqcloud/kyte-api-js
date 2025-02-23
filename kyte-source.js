@@ -1633,7 +1633,8 @@ class KyteForm {
 
 			obj.itemized.fields.forEach(function (field) {
 				var key = field.field ? field.field : field.name.replace(/\[\]$/, '');
-				var fieldVal = item[key] === undefined ? '' : item[key];
+				var fieldVal = obj.api.getNestedValue(item, key);
+				fieldVal = fieldVal === undefined ? '' : fieldVal;
 				itemizedHTML += '<div class="col"><div class="form-group">';
 				if (field.type == 'select') {
 					itemizedHTML += `<select id="itemized_${obj.model}_${obj.id}_${field.name}[${i}]" class="form-select" name="${field.name}" value="${fieldVal}"${field.required ? ' required="required"' : ''}>`;
