@@ -1,3 +1,7 @@
+## 1.2.19
+
+* Assert versions
+
 ## 1.2.18
 
 * Make sure the selected option is also visually selected

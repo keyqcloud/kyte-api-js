@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.2.8';
+	static VERSION = '1.2.19';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -50,6 +50,11 @@ class Kyte {
 		// get txToken and session tokens from cookie if they exist (i.e. user session exists)
 		this.txToken = (this.getCookie('txToken') ? this.getCookie('txToken') : 0);
 		this.sessionToken = (this.getCookie('sessionToken') ? this.getCookie('sessionToken') : 0);
+
+		console.assert(`Initialized KyteJS v${Kyte.VERSION}`);
+		this.apiVersion(function(engine_version, framework_version) {
+			console.log(`Engine: ${engine_version}; Framework: ${framework_version}`);
+		});
 	}
 	/* API Version
 	 *
