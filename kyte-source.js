@@ -1632,7 +1632,8 @@ class KyteForm {
 			let itemizedHTML = '<div class="row itemized-row my-3">'; // init html string
 
 			obj.itemized.fields.forEach(function (field) {
-				var fieldVal = item[field.name] === undefined ? '' : item[field.name]
+				var key = field.field ? field.field : field.name.replace(/\[\]$/, '');
+				var fieldVal = item[key] === undefined ? '' : item[key];
 				itemizedHTML += '<div class="col"><div class="form-group">';
 				if (field.type == 'select') {
 					itemizedHTML += `<select id="itemized_${obj.model}_${obj.id}_${field.name}[${i}]" class="form-select" name="${field.name}" value="${fieldVal}"${field.required ? ' required="required"' : ''}>`;
@@ -1650,7 +1651,7 @@ class KyteForm {
 					itemizedHTML += `<textarea style="width:100%" id="itemized_${obj.model}_${obj.id}_${field.name}[${i}]" class="form-control" name="${field.name}" value="${fieldVal}"${field.required ? ' required="required"' : ''}${field.placeholder !== undefined ? ' placeholder="' + field.placeholder + '"' : ''}></textarea>`;
 				} else {
 					// Check for date and replace slashes with dashes
-					fieldVal = field.date ? fieldVal.replace(/\//g, '-') : fieldVal
+					fieldVal = field.date ? fieldVal.replace(/\//g, '-') : fieldVal;
 					itemizedHTML += `<input type="${field.type}" id="itemized_${obj.model}_${obj.id}_${field.name}[${i}]" class="form-control" name="${field.name}" value="${fieldVal}"${field.required ? 'required="required"' : ''}${field.placeholder !== undefined ? ' placeholder="' + field.placeholder + '"' : ''}${field.readonly !== undefined ? ' readonly' : ''}>`;
 				}
 				itemizedHTML += '</div></div>';

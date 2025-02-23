@@ -1,3 +1,8 @@
+## 1.2.11
+
+* Fix bug where field name still contained `[]`.
+* Add ability to define a custom field name if the input name doens't match db column names.
+
 ## 1.2.10
 
 * Fix bug that prevented itemized data from an external table from loading if the external table feature is disabled or not defined in the backend.
