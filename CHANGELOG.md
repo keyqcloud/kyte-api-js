@@ -1,3 +1,7 @@
+## 1.2.21
+
+* Just assert library version
+
 ## 1.2.20
 
 * Simply select update by triggering change
