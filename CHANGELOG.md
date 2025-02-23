@@ -1,3 +1,7 @@
+## 1.2.15
+
+* Fix issue with undeclared variable
+
 ## 1.2.14
 
 * Fix issue where select doesn't have the correct value picked

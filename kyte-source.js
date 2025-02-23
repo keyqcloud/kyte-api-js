@@ -1670,7 +1670,7 @@ class KyteForm {
 			if (field.type == 'select') {
 				if (field.option.ajax) {
 					obj.api.get(field.option.data_model_name, field.option.data_model_field, field.option.data_model_value, [], function (response) {
-						fieldVal = $(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).val();
+						let fieldVal = $(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).val();
 						response.data.forEach(function (item) {
 							let label = '';
 							field.option.data_model_attributes.forEach(function (attribute) {
