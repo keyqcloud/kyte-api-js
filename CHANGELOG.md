@@ -1,3 +1,7 @@
+## 1.2.22
+
+* Store select value as a data attribute
+
 ## 1.2.21
 
 * Fix issue with select

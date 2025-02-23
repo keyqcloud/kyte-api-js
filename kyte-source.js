@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.2.21';
+	static VERSION = '1.2.22';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -1639,7 +1639,7 @@ class KyteForm {
 				fieldVal = fieldVal === undefined ? '' : fieldVal;
 				itemizedHTML += '<div class="col"><div class="form-group">';
 				if (field.type == 'select') {
-					itemizedHTML += `<select id="itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}[${i}]" class="form-select itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}" name="${field.name}" value="${fieldVal}"${field.required ? ' required="required"' : ''}>`;
+					itemizedHTML += `<select id="itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}[${i}]" class="form-select itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}" name="${field.name}" value="${fieldVal}" data-selected-value="${fieldVal}"${field.required ? ' required="required"' : ''}>`;
 					// if not ajax, then populate with data - ajax will populate after appending html
 					if (!field.option.ajax) {
 						for (var key in field.option.data) {
@@ -1691,11 +1691,11 @@ class KyteForm {
 							$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).append(`<option value="${item[itemColName]}">${label}</option>`);
 						});
 						$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).each(function() {
-							let fieldVal = $(this).val();
-							// Clear any previous selection and then set the option with matching value as selected
-							$(this).find('option').prop('selected', false);
-							$(this).find(`option[value="${fieldVal}"]`).prop('selected', true);
-						});						
+							// Retrieve the intended value from the data attribute
+							let desiredVal = $(this).data('selected-value');
+							// Set the select's value to desiredVal
+							$(this).val(desiredVal).trigger('change');
+						});										
 					});
 				}
 			}
