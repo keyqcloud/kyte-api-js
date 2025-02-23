@@ -1,5 +1,6 @@
 ## 1.2.21
 
+* Fix issue with select
 * Just assert library version
 
 ## 1.2.20

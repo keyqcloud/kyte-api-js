@@ -1690,7 +1690,12 @@ class KyteForm {
 							let itemColName = field.option.data_model_default_field ? field.option.data_model_default_field : 'id';
 							$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).append(`<option value="${item[itemColName]}">${label}</option>`);
 						});
-						$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).trigger('change');
+						$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).each(function() {
+							let fieldVal = $(this).val();
+							// Clear any previous selection and then set the option with matching value as selected
+							$(this).find('option').prop('selected', false);
+							$(this).find(`option[value="${fieldVal}"]`).prop('selected', true);
+						});						
 					});
 				}
 			}
