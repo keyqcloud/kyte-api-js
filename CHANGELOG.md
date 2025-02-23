@@ -1,3 +1,7 @@
+## 1.2.16
+
+* Allow for custom column names to be used as values for select options
+
 ## 1.2.15
 
 * Fix issue with undeclared variable

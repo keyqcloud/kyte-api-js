@@ -1686,7 +1686,8 @@ class KyteForm {
 									}
 								}
 							});
-							$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).append(`<option value="${item[field.option.data_model_value]}"${fieldVal == item[field.option.data_model_value] ? ' selected' : ''}>${label}</option>`);
+							itemColName = field.option.data_model_default_field ? field.option.data_model_default_field : 'id';
+							$(`.itemized_${obj.model}_${obj.id}_${field.name.replace(/\[\]$/, '')}`).append(`<option value="${item[itemColName]}"${fieldVal == item[itemColName] ? ' selected' : ''}>${label}</option>`);
 						});
 					});
 				}
@@ -1722,7 +1723,8 @@ class KyteForm {
 										}
 									}
 								});
-								$(`#${fieldId}`).append(`<option value="${item['id']}"${item[column.option.data_model_default_field] == column.option.data_model_default_value ? ' selected="selected"' : ''}>${label}</option>`);
+								itemColName = column.option.data_model_default_field ? column.option.data_model_default_field : 'id';
+								$(`#${fieldId}`).append(`<option value="${item[itemColName]}"${item[itemColName] == column.option.data_model_default_value ? ' selected="selected"' : ''}>${label}</option>`);
 							});
 						}, function () {
 							console.error(`Unable to load form dropdown data for ${column.option.data_model_name}`);
