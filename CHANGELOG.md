@@ -1,3 +1,7 @@
+## 1.2.14
+
+* Fix issue where select doesn't have the correct value picked
+
 ## 1.2.13
 
 * Fix issue with class names containing illegal characters
