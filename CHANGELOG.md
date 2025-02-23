@@ -1,3 +1,7 @@
+## 1.2.18
+
+* Make sure the selected option is also visually selected
+
 ## 1.2.17
 
 * Fix issue with undeclared variable
