@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.2.23';
+	static VERSION = '1.2.24';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -892,7 +892,7 @@ class KyteTable {
 								// iterate through each custom action
 								self.customActionButton.forEach(a => {
 									if (a.className && a.label && typeof a.callback === "function") {
-										returnString += '<a class="me-3 '+a.className+' btn btn-small btn-outline-primary" href="#">'+(a.faicon ? '<i class="'+a.faicon+'"></i> ' : '')+a.label+'</a>';
+										returnString += '<a class="me-3 '+a.className+' btn btn-sm btn-outline-primary" href="#">'+(a.faicon ? '<i class="'+a.faicon+'"></i> ' : '')+a.label+'</a>';
 									}
 								});
 							}
@@ -1164,8 +1164,8 @@ class KyteForm {
 	<div class="modal-dialog modal-lg" role="document">
 		<div class="modal-content">
 			<div class="modal-header text-center">
-				<h4 class="modal-title w-100 font-weight-bold">${this.title}</h4>
-				<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title w-100 fw-bold">${this.title}</h4>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body mx-3">`;
 			}
@@ -1254,7 +1254,7 @@ class KyteForm {
 					content += `<div class="col">${field.label}</div>`;
 				});
 
-				content += `<div class="col"></div></div><div id="itemized_${this.model}_${this.id}"></div><div class="row my-4"><div class="col text-right"><a href="#" class="itemized-add-item btn btn-small btn-outline-secondary">Add</a></div></div><hr>`;
+				content += `<div class="col"></div></div><div id="itemized_${this.model}_${this.id}"></div><div class="row my-4"><div class="col text-end"><a href="#" class="itemized-add-item btn btn-sm btn-outline-secondary">Add</a></div></div><hr>`;
 			}
 
 			content += `<div class="row my-4"><div class="col text-center"><input type="submit" name="submit" value="${obj.submitButton}" class="btn btn-primary btn-medium d-sm-inline-block"></div></div>`;
@@ -1516,7 +1516,7 @@ class KyteForm {
 						}
 						itemizedHTML += '</div></div>';
 					});
-					itemizedHTML += '<div class="col-2 text-right"><a href="#" class="itemized-delete-item btn btn-small btn-outline-danger">remove</a></div></div>';
+					itemizedHTML += '<div class="col-2 text-end"><a href="#" class="itemized-delete-item btn btn-sm btn-outline-danger">remove</a></div></div>';
 					// append fields
 					$(`#itemized_${obj.model}_${obj.id}`).append(itemizedHTML);
 
@@ -1659,7 +1659,7 @@ class KyteForm {
 				}
 				itemizedHTML += '</div></div>';
 			});
-			itemizedHTML += '<div class="col-2 text-right"><a href="#" class="itemized-delete-item btn btn-small btn-outline-danger">remove</a></div></div>';
+			itemizedHTML += '<div class="col-2 text-end"><a href="#" class="itemized-delete-item btn btn-sm btn-outline-danger">remove</a></div></div>';
 			// append fields
 			$(`#itemized_${obj.model}_${obj.id}`).append(itemizedHTML);
 

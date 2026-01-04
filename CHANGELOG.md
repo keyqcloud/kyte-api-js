@@ -1,3 +1,11 @@
+## 1.2.24
+
+* Update Bootstrap 4 classes to Bootstrap 5 for full compatibility
+  - Fix modal close button: Changed from `class="close"` with `&times;` to `class="btn-close"` (fixes white square issue)
+  - Update font weight: `font-weight-bold` → `fw-bold`
+  - Update text alignment: `text-right` → `text-end`
+  - Update button sizing: `btn-small` → `btn-sm` (corrects invalid class name)
+
 ## 1.2.23
 
 * Fix issue with field name and missing quotation
