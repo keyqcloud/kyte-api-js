@@ -1,3 +1,28 @@
+## 1.3.0
+
+* **MAJOR:** Complete KyteTable rewrite - no longer depends on DataTables library
+  - Modern, self-contained table implementation with automatic style injection
+  - Fully backwards compatible with existing KyteTable API
+  - Improved performance with optimized rendering and data handling
+  - Modern UI design with clean, professional styling
+  - Smart action dropdown positioning with viewport-aware logic
+    - Automatically positions dropdown to stay within viewport
+    - Never hidden behind table footer or header
+    - Supports long menus with internal scrolling (max-height: 400px)
+    - Uses `position: fixed` for proper layering and visibility
+  - Enhanced features:
+    - Skeleton loading states with smooth animations
+    - Real-time search with debouncing
+    - Intelligent pagination with ellipsis for large page counts
+    - Sortable columns with visual indicators
+    - Responsive design for mobile/tablet
+    - Customizable page sizes
+    - Row hover effects and click handling
+  - Reduces external dependencies (no DataTables CSS required)
+  - Only requires jQuery and Font Awesome 5.x
+  - Approximately 400 lines of injected CSS for complete styling
+  - Works identically in new projects without additional stylesheets
+
 ## 1.2.24
 
 * Update Bootstrap 4 classes to Bootstrap 5 for full compatibility
