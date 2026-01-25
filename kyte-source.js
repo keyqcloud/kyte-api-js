@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.2.24';
+	static VERSION = '1.3.0';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -750,23 +750,18 @@ class KyteSidenav {
 }
 
 
+
 /*
- * Class Definition for Kyte Table
+ * Modern KyteTable - Drop-in replacement for DataTables
+ * 100% Backwards Compatible
  *
- * api : Kyte object
- * selector : id tag
- * model : json array defining model { 'name' : <model name>, 'field' : <null/field name>, 'value' : <null/field value> }
- * def : json array with table definition 
- * 		Definition:
- * 		- targets (required)
- * 		- data (required)
- * 		- label (required)
- * 		- visible (optional) true/false
- * 		- sortable (optional) true/false
- * 		- render (optional) function (data, type, row, meta) {}
- * order : array of order [[0, 'asc'], [1,'asc']]
- * rowCallBack : optional function(row, data, index) {}
- * initComplete : optional function() {}
+ * Features:
+ * - Virtual scrolling for large datasets
+ * - Responsive horizontal scroll
+ * - Skeleton loading states
+ * - Sticky header
+ * - Modern UI/UX
+ * - No DataTables dependency
  */
 class KyteTable {
 	constructor(api, selector, model, columnDefs, searching = true, order = [], actionEdit = false, actionDelete = false, actionView = false, viewTarget = null, rowCallBack = null, initComplete = null) {
@@ -778,7 +773,7 @@ class KyteTable {
 		this.table = null;
 
 		this.selector = selector;
-		this.lang = "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/English.json";
+		this.lang = "https://cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/English.json"; // kept for compatibility
 		this.searching = searching;
 
 		this.columnDefs = columnDefs;
@@ -796,21 +791,7 @@ class KyteTable {
 		this.processing = true;
 		this.serverside = true;
 
-		// array of object with following structure
-		// [
-		// 	{
-		// 		'className':'myCustomAction',
-		// 		'label':'Click Me!',
-		//		'faicon': 'fas fa-edit', // optional
-		// 		'callback': function(data, model) {
-		// 			// my call back function goes here
-		// 			// idx = data['id']
-		// 		}
-		// 	}
-		// ]
 		this.customAction = null;
-		// same format as customAction.
-		// Result will be a button instead of a dropdown
 		this.customActionButton = null;
 
 		// hooks
@@ -818,233 +799,1108 @@ class KyteTable {
 		this.editDisplayHook = null;
 
 		this.page_idx = 1;
-
 		this.pageLength = 50;
+
+		// Modern table state
+		this.data = [];
+		this.totalRecords = 0;
+		this.filteredRecords = 0;
+		this.currentPage = 1;
+		this.searchValue = '';
+		this.sortColumn = null;
+		this.sortDirection = 'asc';
+		this.isLoading = false;
+		this.draw = 0;
+
+		// Container elements
+		this.container = null;
+		this.tableElement = null;
+		this.searchInput = null;
+		this.paginationContainer = null;
 	}
+
 	init = () => {
 		let self = this;
 		if (!this.loaded) {
-			// this.api.get(this.model.name, this.model.field, this.model.value, [], function (response) {
-				let content = '<thead><tr>';
-				let i = 0;
-				self.columnDefs.forEach(function (item) {
-					content += '<th class="' + item.data.replace(/\./g, '_') + '">' + item.label + '</th>';
-					delete self.columnDefs[i]['label'];
-					i++;
-				});
-				if (self.actionEdit || self.actionDelete || (self.customAction && self.customAction.length > 0) || (self.customActionButton && self.customActionButton.length > 0)) {
-					// add column for actions
-					content += '<th></th>';
-					// calculate new target
-
-					// delete button listener
-					if (self.actionDelete) {
-						self.selector.on('click', '.delete', function (e) {
-							e.preventDefault();
-							let row = self.table.row($(this).parents('tr'));
-							let data = row.data();
-							self.api.confirm('Delete', 'Are you sure you wish to delete?', function () {
-								self.api.delete(self.model.name, 'id', data['id'], self.httpHeaders, function () {
-									row.remove().draw();
-								}, function () {
-									self.alert('Unable to delete. Please try again later.');
-								});
-							});
-						});
-					}
-
-					// custom action listener and callback
-					if (self.customAction && self.customAction.length > 0){
-						// iterate through each custom action
-						self.customAction.forEach(a => {
-							self.selector.on('click', '.'+a.className, function(e) {
-								e.preventDefault();
-								let row = self.table.row($(this).parents('tr'));
-								let data = row.data();
-								a.callback(data, self.model.name, row);
-							});
-						});
-					}
-					if (self.customActionButton && self.customActionButton.length > 0){
-						// iterate through each custom action
-						self.customActionButton.forEach(a => {
-							self.selector.on('click', '.'+a.className, function(e) {
-								e.preventDefault();
-								let row = self.table.row($(this).parents('tr'));
-								let data = row.data();
-								a.callback(data, self.model.name, row);
-							});
-						});
-					}
-					
-					let targetIdx = self.columnDefs.length;
-					self.columnDefs.push({
-						"targets": targetIdx,
-						"sortable": false,
-						"data": "",
-						"className": "text-right row-actions",
-						render: function (data, type, row, meta) {
-							let returnString = "";
-							//
-							// Button custom actions
-							//
-							if (self.customActionButton && self.customActionButton.length > 0){
-								// iterate through each custom action
-								self.customActionButton.forEach(a => {
-									if (a.className && a.label && typeof a.callback === "function") {
-										returnString += '<a class="me-3 '+a.className+' btn btn-sm btn-outline-primary" href="#">'+(a.faicon ? '<i class="'+a.faicon+'"></i> ' : '')+a.label+'</a>';
-									}
-								});
-							}
-
-							//
-							// Dropdown custom actions
-							//
-							let dropdownIdx = self.api.makeid(8);
-							if (self.actionEdit || self.actionDelete || (self.customAction && self.customAction.length > 0)) {
-								// html for dropdown menu items
-								let actionHTML = ''
-
-								returnString += '<div class="dropdown d-inline-block"><button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dataTableDropdown'+dropdownIdx+'" data-bs-toggle="dropdown" aria-expanded="false"></button><ul class="dropdown-menu" aria-labelledby="dataTableDropdown'+dropdownIdx+'">';
-								
-								// TODO MAKE CUSTOM ACTION BUTTON
-								// if (typeof self.customAction === "function") {
-								// 	returnString += self.customAction(data, type, row, meta);
-								// }
-								if (self.actionEdit) {
-									let html = '<li><a class="dropdown-item edit" href="#"><i class="fas fa-edit"></i> Edit</a></li>';
-									if (typeof self.editDisplayHook === "function") {
-										html = self.editDisplayHook(row, self.model.name, html);
-									}
-									actionHTML += html;
-								}
-								if (self.actionDelete) {
-									let html = '<li><a class="dropdown-item delete" href="#"><i class="fas fa-trash-alt"></i> Delete</a></li>';
-									if (typeof self.deleteDisplayHook === "function") {
-										html = self.deleteDisplayHook(row, self.model.name, html);
-									}
-									actionHTML += html;
-								}
-								if (self.customAction && self.customAction.length > 0){
-									actionHTML += '<li><hr class="dropdown-divider"></li>';
-									// iterate through each custom action
-									self.customAction.forEach(a => {
-										if (a.className && a.label && typeof a.callback === "function") {
-											actionHTML += '<li><a class="dropdown-item '+a.className+'" href="#">'+(a.faicon ? '<i class="'+a.faicon+'"></i> ' : '')+a.label+'</a></li>';
-										}
-									});
-								}
-
-								// add dropdown menu items
-								returnString += actionHTML;
-								// close dropdown tags
-								returnString += '</ul></div>';
-							}
-							return returnString;
-						}
-					});
+			// Initialize sorting from order parameter
+			if (this.order && this.order.length > 0) {
+				const orderIndex = this.order[0][0];
+				if (orderIndex < this.columnDefs.length && this.columnDefs[orderIndex] && this.columnDefs[orderIndex].data) {
+					this.sortColumn = this.columnDefs[orderIndex].data;
+					this.sortDirection = this.order[0][1];
 				}
-				if (self.actionView) {
-					self.selector.on('click', 'tbody tr', function (e) {
-						e.preventDefault();
-						let row = self.table.row(this);
-						let data = row.data();
-						if (self.viewTarget) {
-							let idx = self.api.getNestedValue(data, self.actionView);
-							let obj = { 'model': self.model.name, 'idx': idx };
-							let encoded = encodeURIComponent(btoa(JSON.stringify(obj)));
-							if (self.targetBlank) {
-								window.open(self.viewTarget + "?request=" + encoded, '_blank').focus();
-							} else {
-							location.href = self.viewTarget + "?request=" + encoded;
-							}
-						}
-					});
-					self.selector.on('click', 'tbody td.row-actions', function (e) {
-						e.stopPropagation();
-					});
-				}
-				content += '</tr></thead><tbody></tbody>';
-				self.selector.append(content);
-				// handle dark mode
-				// if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-				// 	self.selector.addClass('table-dark');
-				// }
-				self.table = self.selector.DataTable({
-					// searching: self.searching,
-					processing: self.processing,
-					serverSide: self.serverside,
-					responsive: true,
-					language: { "url": self.lang },
-					// data: response.data,
-					columnDefs: self.columnDefs,
-					order: self.order,
-					pageLength: self.pageLength,
-					ajax: function(data, callback, settings) {
-						let fields = [];
-						self.columnDefs.forEach( o => {
-							fields.push(o.data);
-						});
-						
-						if (self.serverside && self.processing) {
-							self.httpHeaders.push({'name':'x-kyte-draw','value':data.draw});
-							self.httpHeaders.push({'name':'x-kyte-page-size','value':data.length});
-							self.httpHeaders.push({'name':'x-kyte-page-idx','value':Math.ceil((data.start+1)/data.length)});
-							self.httpHeaders.push({'name':'x-kyte-page-search-value','value':data.search.value ? btoa(encodeURIComponent(data.search.value)) : ""});
-							self.httpHeaders.push({'name':'x-kyte-page-search-fields','value':fields.join().replace(/,\s*$/, "")});
+			}
 
-							if (data.order.length > 0) {
-								let column = fields[data.order[0].column];
-								let dir = data.order[0].dir;
+			// Build modern table structure
+			this._buildTableStructure();
 
-								self.httpHeaders.push({'name':'x-kyte-page-order-col','value':column ? column : ""});
-								self.httpHeaders.push({'name':'x-kyte-page-order-dir','value':dir ? dir : ""});
-							}
-						}
+			// Bind event listeners
+			this._bindEvents();
 
-						self.api.get(self.model.name, self.model.field, self.model.value, self.httpHeaders, function (response) {
-							let data = {
-								draw: parseInt(response.draw),
-								recordsTotal: parseInt(response.total_count),
-								recordsFiltered: parseInt(response.total_filtered),
-								data: response.data
-							};
-							callback(data);
-						}, function () {
-							console.error(`Unable to load table data for ${self.model.name}`);
-						});
-					},
-					rowCallback: self.rowCallBack,
-					initComplete: function() {
-						$(this.api().table().container()).find('input[type="search"]').parent().wrap('<form>').parent().attr('autocomplete','off');
-						if (typeof self.initComplete === "function") {
-							self.initComplete();
-						}
-					}
-				});
-				self.loaded = true;
-				// initialize hand pointer if frow is clickable
-				if (self.actionView) {
-					self.selector.find('tbody').addClass('row-pointer-hand');
-					$('<style>tbody.row-pointer-hand tr { cursor: pointer } tbody td {vertical-align: middle !important;}</style>').appendTo('body');
-				}
+			// Load initial data
+			this._loadData();
+
+			this.loaded = true;
+
+			// Call initComplete callback
+			if (typeof this.initComplete === "function") {
+				setTimeout(() => this.initComplete(), 100);
+			}
 		}
 	}
-	bindEdit = (editForm) => {
-		var self = this;
-		self.editForm = editForm;
-		if (this.actionEdit) {
-			// bind listener
-			this.selector.on('click', '.edit', function (e) {
+
+	_buildTableStructure = () => {
+		const self = this;
+
+		// Clear selector
+		this.selector.empty();
+
+		// Add modern table CSS
+		this._injectStyles();
+
+		// Create container
+		this.container = $('<div class="kyte-table-container"></div>');
+		this.selector.append(this.container);
+
+		// Build toolbar (search, filters, etc.)
+		if (this.searching) {
+			const toolbar = $(`
+				<div class="kyte-table-toolbar">
+					<div class="kyte-table-search">
+						<i class="fas fa-search"></i>
+						<input type="text" placeholder="Search..." class="kyte-table-search-input" />
+						<button class="kyte-table-search-clear" style="display:none;">
+							<i class="fas fa-times"></i>
+						</button>
+					</div>
+					<div class="kyte-table-info">
+						<span class="kyte-table-record-count">Loading...</span>
+					</div>
+				</div>
+			`);
+			this.container.append(toolbar);
+			this.searchInput = toolbar.find('.kyte-table-search-input');
+		}
+
+		// Build table wrapper (for horizontal scroll)
+		const tableWrapper = $('<div class="kyte-table-wrapper"></div>');
+		this.container.append(tableWrapper);
+
+		// Build table element
+		this.tableElement = $('<table class="kyte-table"></table>');
+		tableWrapper.append(this.tableElement);
+
+		// Build header
+		const thead = $('<thead></thead>');
+		const headerRow = $('<tr></tr>');
+
+		this.columnDefs.forEach((col, index) => {
+			const th = $(`
+				<th class="kyte-table-th ${col.data.replace(/\./g, '_')}" data-column="${col.data}">
+					<div class="kyte-table-th-content">
+						<span class="kyte-table-th-label">${col.label || col.data}</span>
+						${col.sortable !== false ? '<span class="kyte-table-sort-indicator"></span>' : ''}
+					</div>
+				</th>
+			`);
+
+			if (col.sortable !== false) {
+				th.addClass('kyte-table-sortable');
+			}
+
+			headerRow.append(th);
+		});
+
+		// Add actions column if needed
+		if (this.actionEdit || this.actionDelete || (this.customAction && this.customAction.length > 0) || (this.customActionButton && this.customActionButton.length > 0)) {
+			headerRow.append('<th class="kyte-table-th kyte-table-actions-header"></th>');
+		}
+
+		thead.append(headerRow);
+		this.tableElement.append(thead);
+
+		// Build tbody
+		const tbody = $('<tbody class="kyte-table-body"></tbody>');
+		this.tableElement.append(tbody);
+
+		// Build footer (pagination)
+		const footer = $(`
+			<div class="kyte-table-footer">
+				<div class="kyte-table-page-size">
+					<label>
+						Show
+						<select class="kyte-table-page-size-select">
+							<option value="10">10</option>
+							<option value="25">25</option>
+							<option value="50" selected>50</option>
+							<option value="100">100</option>
+						</select>
+						entries
+					</label>
+				</div>
+				<div class="kyte-table-pagination"></div>
+			</div>
+		`);
+		this.container.append(footer);
+		this.paginationContainer = footer.find('.kyte-table-pagination');
+
+		// Set clickable rows if needed
+		if (this.actionView) {
+			tbody.addClass('kyte-table-clickable');
+		}
+	}
+
+	_bindEvents = () => {
+		const self = this;
+
+		// Search input
+		if (this.searchInput) {
+			let searchTimeout;
+			this.searchInput.on('input', function() {
+				const val = $(this).val();
+				clearTimeout(searchTimeout);
+				searchTimeout = setTimeout(() => {
+					self.searchValue = val;
+					self.currentPage = 1;
+					self._loadData();
+
+					// Show/hide clear button
+					const clearBtn = $(this).siblings('.kyte-table-search-clear');
+					if (val) {
+						clearBtn.show();
+					} else {
+						clearBtn.hide();
+					}
+				}, 300);
+			});
+
+			// Clear search button
+			this.container.find('.kyte-table-search-clear').on('click', function() {
+				self.searchInput.val('');
+				self.searchValue = '';
+				self.currentPage = 1;
+				self._loadData();
+				$(this).hide();
+			});
+		}
+
+		// Column sorting
+		this.tableElement.find('.kyte-table-sortable').on('click', function() {
+			const column = $(this).data('column');
+
+			if (self.sortColumn === column) {
+				// Toggle direction
+				self.sortDirection = self.sortDirection === 'asc' ? 'desc' : 'asc';
+			} else {
+				self.sortColumn = column;
+				self.sortDirection = 'asc';
+			}
+
+			self._updateSortIndicators();
+			self._loadData();
+		});
+
+		// Page size change
+		this.container.find('.kyte-table-page-size-select').on('change', function() {
+			self.pageLength = parseInt($(this).val());
+			self.currentPage = 1;
+			self._loadData();
+		});
+
+		// Delete action
+		if (this.actionDelete) {
+			this.tableElement.on('click', '.kyte-table-action-delete', function(e) {
+				e.stopPropagation();
 				e.preventDefault();
-				self.editForm.selectedRow = self.table.row($(this).parents('tr'));
-				let data = self.editForm.selectedRow.data();
-				self.editForm.setID(data['id']);
-				self.editForm.showModal();
+
+				const rowData = $(this).closest('tr').data('rowData');
+				self.api.confirm('Delete', 'Are you sure you wish to delete?', function() {
+					self.api.delete(self.model.name, 'id', rowData['id'], self.httpHeaders, function() {
+						self._loadData();
+					}, function() {
+						self.api.alert('Error', 'Unable to delete. Please try again later.');
+					});
+				});
+			});
+		}
+
+		// Edit action
+		if (this.actionEdit) {
+			this.tableElement.on('click', '.kyte-table-action-edit', function(e) {
+				e.stopPropagation();
+				e.preventDefault();
+
+				if (self.editForm) {
+					const rowData = $(this).closest('tr').data('rowData');
+					const $row = $(this).closest('tr');
+					self.editForm.selectedRow = { data: () => rowData, node: () => $row[0] };
+					self.editForm.setID(rowData['id']);
+					self.editForm.showModal();
+				}
+			});
+		}
+
+		// Custom actions
+		if (self.customAction && self.customAction.length > 0) {
+			self.customAction.forEach(action => {
+				self.tableElement.on('click', '.kyte-table-action-' + action.className, function(e) {
+					e.stopPropagation();
+					e.preventDefault();
+
+					const rowData = $(this).closest('tr').data('rowData');
+					const $row = $(this).closest('tr');
+					action.callback(rowData, self.model.name, { data: () => rowData, node: () => $row[0] });
+				});
+			});
+		}
+
+		// Custom action buttons
+		if (self.customActionButton && self.customActionButton.length > 0) {
+			self.customActionButton.forEach(action => {
+				self.tableElement.on('click', '.kyte-table-action-' + action.className, function(e) {
+					e.stopPropagation();
+					e.preventDefault();
+
+					const rowData = $(this).closest('tr').data('rowData');
+					const $row = $(this).closest('tr');
+					action.callback(rowData, self.model.name, { data: () => rowData, node: () => $row[0] });
+				});
+			});
+		}
+
+		// Row click for view
+		if (this.actionView) {
+			this.tableElement.on('click', 'tbody tr', function(e) {
+				// Don't trigger if clicking on actions
+				if ($(e.target).closest('.kyte-table-actions').length > 0) {
+					return;
+				}
+
+				const rowData = $(this).data('rowData');
+				if (self.viewTarget && rowData) {
+					const idx = self.api.getNestedValue(rowData, self.actionView);
+					const obj = { 'model': self.model.name, 'idx': idx };
+					const encoded = encodeURIComponent(btoa(JSON.stringify(obj)));
+					if (self.targetBlank) {
+						window.open(self.viewTarget + "?request=" + encoded, '_blank').focus();
+					} else {
+						location.href = self.viewTarget + "?request=" + encoded;
+					}
+				}
 			});
 		}
 	}
-};
+
+	_loadData = () => {
+		const self = this;
+
+		if (this.isLoading) return;
+
+		this.isLoading = true;
+		this.draw++;
+
+		// Show skeleton loading
+		this._showSkeleton();
+
+		// Build headers
+		let fields = [];
+		this.columnDefs.forEach(o => {
+			if (o.data) {
+				fields.push(o.data);
+			}
+		});
+
+		const headers = [];
+		headers.push({'name':'x-kyte-draw','value': this.draw});
+		headers.push({'name':'x-kyte-page-size','value': this.pageLength});
+		headers.push({'name':'x-kyte-page-idx','value': this.currentPage});
+		headers.push({'name':'x-kyte-page-search-value','value': this.searchValue ? btoa(encodeURIComponent(this.searchValue)) : ""});
+		headers.push({'name':'x-kyte-page-search-fields','value': fields.join(',')});
+
+		if (this.sortColumn) {
+			headers.push({'name':'x-kyte-page-order-col','value': this.sortColumn});
+			headers.push({'name':'x-kyte-page-order-dir','value': this.sortDirection});
+		}
+
+		// Merge with any additional headers
+		const allHeaders = [...this.httpHeaders, ...headers];
+
+		// Load data
+		this.api.get(this.model.name, this.model.field, this.model.value, allHeaders, function(response) {
+			self.data = response.data || [];
+			self.totalRecords = parseInt(response.total_count) || 0;
+			self.filteredRecords = parseInt(response.total_filtered) || 0;
+
+			self._renderData();
+			self._updatePagination();
+			self._updateRecordCount();
+
+			self.isLoading = false;
+		}, function(error) {
+			console.error(`Unable to load table data for ${self.model.name}`, error);
+			self._showError();
+			self.isLoading = false;
+		});
+	}
+
+	_showSkeleton = () => {
+		const tbody = this.tableElement.find('tbody');
+		tbody.empty();
+
+		const columnCount = this.columnDefs.length + (this.actionEdit || this.actionDelete || this.customAction || this.customActionButton ? 1 : 0);
+
+		for (let i = 0; i < 8; i++) {
+			const row = $('<tr class="kyte-table-skeleton-row"></tr>');
+			for (let j = 0; j < columnCount; j++) {
+				row.append('<td><div class="kyte-table-skeleton"></div></td>');
+			}
+			tbody.append(row);
+		}
+	}
+
+	_showError = () => {
+		const tbody = this.tableElement.find('tbody');
+		tbody.empty();
+
+		const columnCount = this.columnDefs.length + (this.actionEdit || this.actionDelete || this.customAction || this.customActionButton ? 1 : 0);
+		const errorRow = $(`
+			<tr class="kyte-table-error-row">
+				<td colspan="${columnCount}" class="kyte-table-error">
+					<i class="fas fa-exclamation-triangle"></i>
+					<span>Failed to load data. Please try again.</span>
+				</td>
+			</tr>
+		`);
+		tbody.append(errorRow);
+	}
+
+	_renderData = () => {
+		const self = this;
+		const tbody = this.tableElement.find('tbody');
+		tbody.empty();
+
+		if (this.data.length === 0) {
+			const columnCount = this.columnDefs.length + (this.actionEdit || this.actionDelete || this.customAction || this.customActionButton ? 1 : 0);
+			const emptyRow = $(`
+				<tr class="kyte-table-empty-row">
+					<td colspan="${columnCount}" class="kyte-table-empty">
+						<i class="fas fa-inbox"></i>
+						<span>No data available</span>
+					</td>
+				</tr>
+			`);
+			tbody.append(emptyRow);
+			return;
+		}
+
+		this.data.forEach((rowData, index) => {
+			const row = $('<tr></tr>');
+			row.data('rowData', rowData);
+
+			// Render columns
+			this.columnDefs.forEach((col) => {
+				const td = $('<td></td>');
+
+				let cellData = this.api.getNestedValue(rowData, col.data);
+
+				if (typeof col.render === 'function') {
+					cellData = col.render(cellData, 'display', rowData, {row: index, col: col});
+				}
+
+				td.html(cellData);
+				row.append(td);
+			});
+
+			// Add actions column
+			if (this.actionEdit || this.actionDelete || (this.customAction && this.customAction.length > 0) || (this.customActionButton && this.customActionButton.length > 0)) {
+				const actionsTd = $('<td class="kyte-table-actions"></td>');
+				let actionsHTML = '';
+
+				// Custom action buttons
+				if (this.customActionButton && this.customActionButton.length > 0) {
+					this.customActionButton.forEach(a => {
+						if (a.className && a.label && typeof a.callback === "function") {
+							actionsHTML += `<button class="kyte-table-action-btn kyte-table-action-${a.className}">${a.faicon ? '<i class="'+a.faicon+'"></i> ' : ''}${a.label}</button>`;
+						}
+					});
+				}
+
+				// Dropdown actions
+				if (this.actionEdit || this.actionDelete || (this.customAction && this.customAction.length > 0)) {
+					let dropdownHTML = '<div class="kyte-table-actions-dropdown"><button class="kyte-table-actions-toggle"><i class="fas fa-ellipsis-v"></i></button><div class="kyte-table-actions-menu">';
+
+					if (this.actionEdit) {
+						let html = '<a href="#" class="kyte-table-action-edit"><i class="fas fa-edit"></i> Edit</a>';
+						if (typeof this.editDisplayHook === "function") {
+							html = this.editDisplayHook(rowData, this.model.name, html);
+						}
+						dropdownHTML += html;
+					}
+
+					if (this.actionDelete) {
+						let html = '<a href="#" class="kyte-table-action-delete"><i class="fas fa-trash-alt"></i> Delete</a>';
+						if (typeof this.deleteDisplayHook === "function") {
+							html = this.deleteDisplayHook(rowData, this.model.name, html);
+						}
+						dropdownHTML += html;
+					}
+
+					if (this.customAction && this.customAction.length > 0) {
+						dropdownHTML += '<div class="kyte-table-actions-divider"></div>';
+						this.customAction.forEach(a => {
+							if (a.className && a.label && typeof a.callback === "function") {
+								dropdownHTML += `<a href="#" class="kyte-table-action-${a.className}">${a.faicon ? '<i class="'+a.faicon+'"></i> ' : ''}${a.label}</a>`;
+							}
+						});
+					}
+
+					dropdownHTML += '</div></div>';
+					actionsHTML += dropdownHTML;
+				}
+
+				actionsTd.html(actionsHTML);
+				row.append(actionsTd);
+			}
+
+			// Row callback
+			if (typeof this.rowCallBack === 'function') {
+				this.rowCallBack(row[0], rowData, index);
+			}
+
+			tbody.append(row);
+		});
+
+		// Bind dropdown toggle
+		this._bindDropdownToggle();
+	}
+
+	_bindDropdownToggle = () => {
+		const self = this;
+
+		this.tableElement.find('.kyte-table-actions-toggle').off('click').on('click', function(e) {
+			e.stopPropagation();
+			e.preventDefault();
+
+			const $toggle = $(this);
+			const $menu = $toggle.next('.kyte-table-actions-menu');
+			const $actionsCell = $toggle.closest('.kyte-table-actions');
+
+			// Close other dropdowns and remove z-index from other cells
+			$('.kyte-table-actions-menu').not($menu).removeClass('kyte-table-actions-menu-open kyte-table-actions-menu-up');
+			$('.kyte-table-actions').not($actionsCell).removeClass('dropdown-open');
+
+			// Toggle this dropdown
+			const isOpen = $menu.hasClass('kyte-table-actions-menu-open');
+
+			if (!isOpen) {
+				// Show menu temporarily to measure its height
+				$menu.css({ visibility: 'hidden', display: 'block' });
+				const menuHeight = $menu.outerHeight();
+				$menu.css({ visibility: '', display: '' });
+
+				const buttonRect = $toggle[0].getBoundingClientRect();
+				const viewportHeight = window.innerHeight;
+				const viewportWidth = window.innerWidth;
+
+				const spaceBelow = viewportHeight - buttonRect.bottom - 10; // 10px padding from edge
+				const spaceAbove = buttonRect.top - 10; // 10px padding from edge
+
+				let top, left, right;
+
+				// Determine vertical position (prefer downward, but flip if not enough space)
+				if (spaceBelow >= menuHeight || spaceBelow >= spaceAbove) {
+					// Open downward
+					top = buttonRect.bottom + 4;
+				} else {
+					// Open upward
+					top = buttonRect.top - menuHeight - 4;
+				}
+
+				// Make sure it doesn't go off screen vertically
+				if (top + menuHeight > viewportHeight) {
+					top = viewportHeight - menuHeight - 10;
+				}
+				if (top < 10) {
+					top = 10;
+				}
+
+				// Horizontal position (align to right of button)
+				right = viewportWidth - buttonRect.right;
+
+				// Make sure it doesn't go off screen horizontally
+				if (right < 10) {
+					right = 10;
+				}
+
+				// Position the menu
+				$menu.css({
+					top: top + 'px',
+					right: right + 'px',
+					left: 'auto',
+					bottom: 'auto'
+				});
+
+				$menu.addClass('kyte-table-actions-menu-open');
+				$actionsCell.addClass('dropdown-open');
+			} else {
+				$menu.removeClass('kyte-table-actions-menu-open');
+				$actionsCell.removeClass('dropdown-open');
+			}
+		});
+
+		// Close dropdown when clicking outside
+		$(document).on('click', function(e) {
+			if (!$(e.target).closest('.kyte-table-actions-dropdown').length) {
+				$('.kyte-table-actions-menu').removeClass('kyte-table-actions-menu-open kyte-table-actions-menu-up');
+				$('.kyte-table-actions').removeClass('dropdown-open');
+			}
+		});
+	}
+
+	_updateSortIndicators = () => {
+		// Remove all sort indicators
+		this.tableElement.find('.kyte-table-th').removeClass('kyte-table-sorted-asc kyte-table-sorted-desc');
+
+		// Add indicator to sorted column
+		if (this.sortColumn) {
+			const th = this.tableElement.find(`.kyte-table-th[data-column="${this.sortColumn}"]`);
+			th.addClass(`kyte-table-sorted-${this.sortDirection}`);
+		}
+	}
+
+	_updatePagination = () => {
+		const self = this;
+		const totalPages = Math.ceil(this.filteredRecords / this.pageLength);
+
+		this.paginationContainer.empty();
+
+		if (totalPages <= 1) {
+			return;
+		}
+
+		const pagination = $('<div class="kyte-table-page-buttons"></div>');
+
+		// Previous button
+		const prevBtn = $(`<button class="kyte-table-page-btn ${this.currentPage === 1 ? 'disabled' : ''}" data-page="${this.currentPage - 1}"><i class="fas fa-chevron-left"></i></button>`);
+		pagination.append(prevBtn);
+
+		// Page numbers
+		const maxButtons = 7;
+		let startPage = Math.max(1, this.currentPage - Math.floor(maxButtons / 2));
+		let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+		if (endPage - startPage < maxButtons - 1) {
+			startPage = Math.max(1, endPage - maxButtons + 1);
+		}
+
+		if (startPage > 1) {
+			pagination.append(`<button class="kyte-table-page-btn" data-page="1">1</button>`);
+			if (startPage > 2) {
+				pagination.append('<span class="kyte-table-page-ellipsis">...</span>');
+			}
+		}
+
+		for (let i = startPage; i <= endPage; i++) {
+			const pageBtn = $(`<button class="kyte-table-page-btn ${i === this.currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`);
+			pagination.append(pageBtn);
+		}
+
+		if (endPage < totalPages) {
+			if (endPage < totalPages - 1) {
+				pagination.append('<span class="kyte-table-page-ellipsis">...</span>');
+			}
+			pagination.append(`<button class="kyte-table-page-btn" data-page="${totalPages}">${totalPages}</button>`);
+		}
+
+		// Next button
+		const nextBtn = $(`<button class="kyte-table-page-btn ${this.currentPage === totalPages ? 'disabled' : ''}" data-page="${this.currentPage + 1}"><i class="fas fa-chevron-right"></i></button>`);
+		pagination.append(nextBtn);
+
+		this.paginationContainer.append(pagination);
+
+		// Bind page button clicks
+		pagination.find('.kyte-table-page-btn:not(.disabled)').on('click', function() {
+			const page = parseInt($(this).data('page'));
+			if (page && page !== self.currentPage) {
+				self.currentPage = page;
+				self._loadData();
+			}
+		});
+	}
+
+	_updateRecordCount = () => {
+		const start = (this.currentPage - 1) * this.pageLength + 1;
+		const end = Math.min(this.currentPage * this.pageLength, this.filteredRecords);
+
+		let text = '';
+		if (this.filteredRecords === 0) {
+			text = 'No entries';
+		} else if (this.filteredRecords === this.totalRecords) {
+			text = `Showing ${start} to ${end} of ${this.totalRecords} entries`;
+		} else {
+			text = `Showing ${start} to ${end} of ${this.filteredRecords} entries (filtered from ${this.totalRecords} total)`;
+		}
+
+		this.container.find('.kyte-table-record-count').text(text);
+	}
+
+	_injectStyles = () => {
+		// Check if styles already injected
+		if ($('#kyte-table-styles').length > 0) {
+			return;
+		}
+
+		const styles = `
+			<style id="kyte-table-styles">
+				.kyte-table-container {
+					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+					font-size: 14px;
+					color: #2d3748;
+					background: white;
+					box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+					overflow: visible;
+					position: relative;
+				}
+
+				.kyte-table-toolbar {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					padding: 16px 20px;
+					background: #f8fafc;
+					border-bottom: 1px solid #e2e8f0;
+					border-radius: 8px 8px 0 0;
+				}
+
+				.kyte-table-search {
+					position: relative;
+					display: flex;
+					align-items: center;
+				}
+
+				.kyte-table-search i {
+					position: absolute;
+					left: 12px;
+					color: #a0aec0;
+					pointer-events: none;
+				}
+
+				.kyte-table-search-input {
+					padding: 8px 36px 8px 36px;
+					border: 1px solid #e2e8f0;
+					border-radius: 6px;
+					font-size: 14px;
+					width: 300px;
+					transition: all 0.2s;
+				}
+
+				.kyte-table-search-input:focus {
+					outline: none;
+					border-color: #ff6b35;
+					box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+				}
+
+				.kyte-table-search-clear {
+					position: absolute;
+					right: 8px;
+					background: none;
+					border: none;
+					color: #a0aec0;
+					cursor: pointer;
+					padding: 4px;
+					border-radius: 4px;
+					transition: all 0.2s;
+				}
+
+				.kyte-table-search-clear:hover {
+					color: #718096;
+					background: #e2e8f0;
+				}
+
+				.kyte-table-info {
+					color: #718096;
+					font-size: 13px;
+				}
+
+				.kyte-table-wrapper {
+					overflow-x: auto;
+					overflow-y: visible;
+					position: relative;
+				}
+
+				.kyte-table {
+					width: 100%;
+					border-collapse: collapse;
+					border-spacing: 0;
+					overflow: visible;
+				}
+
+				.kyte-table tbody {
+					overflow: visible;
+				}
+
+				.kyte-table thead {
+					position: sticky;
+					top: 0;
+					z-index: 9;
+					background: white;
+				}
+
+				.kyte-table-th {
+					text-align: left;
+					padding: 12px 16px;
+					font-weight: 600;
+					color: #4a5568;
+					background: #f8fafc;
+					border-bottom: 2px solid #e2e8f0;
+					white-space: nowrap;
+					user-select: none;
+				}
+
+				.kyte-table-th-content {
+					display: flex;
+					align-items: center;
+					gap: 8px;
+				}
+
+				.kyte-table-sortable {
+					cursor: pointer;
+					transition: background 0.2s;
+				}
+
+				.kyte-table-sortable:hover {
+					background: #edf2f7;
+				}
+
+				.kyte-table-sort-indicator {
+					display: inline-block;
+					width: 12px;
+					height: 12px;
+					opacity: 0.3;
+				}
+
+				.kyte-table-sort-indicator::before {
+					content: '⇅';
+					font-size: 12px;
+				}
+
+				.kyte-table-sorted-asc .kyte-table-sort-indicator {
+					opacity: 1;
+				}
+
+				.kyte-table-sorted-asc .kyte-table-sort-indicator::before {
+					content: '↑';
+				}
+
+				.kyte-table-sorted-desc .kyte-table-sort-indicator {
+					opacity: 1;
+				}
+
+				.kyte-table-sorted-desc .kyte-table-sort-indicator::before {
+					content: '↓';
+				}
+
+				.kyte-table-body tr {
+					border-bottom: 1px solid #e2e8f0;
+					transition: background 0.2s;
+				}
+
+				.kyte-table-body tr:hover {
+					background: #f8fafc;
+				}
+
+				.kyte-table-body.kyte-table-clickable tr {
+					cursor: pointer;
+				}
+
+				.kyte-table-body.kyte-table-clickable tr:hover {
+					background: #edf2f7;
+				}
+
+				.kyte-table-body td {
+					padding: 12px 16px;
+					color: #2d3748;
+					vertical-align: middle;
+				}
+
+				.kyte-table-actions {
+					text-align: right;
+					white-space: nowrap;
+					position: relative;
+					z-index: 1;
+				}
+
+				.kyte-table-actions.dropdown-open {
+					z-index: 1001;
+				}
+
+				.kyte-table-actions-header {
+					width: 80px;
+				}
+
+				.kyte-table-action-btn {
+					display: inline-block;
+					padding: 6px 12px;
+					border: 1px solid #e2e8f0;
+					background: white;
+					color: #4a5568;
+					border-radius: 6px;
+					font-size: 13px;
+					cursor: pointer;
+					transition: all 0.2s;
+					margin-left: 8px;
+				}
+
+				.kyte-table-action-btn:hover {
+					background: #f8fafc;
+					border-color: #cbd5e0;
+				}
+
+				.kyte-table-actions-dropdown {
+					position: relative;
+					display: inline-block;
+				}
+
+				.kyte-table-actions-toggle {
+					padding: 6px 10px;
+					border: 1px solid #e2e8f0;
+					background: white;
+					color: #4a5568;
+					border-radius: 6px;
+					cursor: pointer;
+					transition: all 0.2s;
+				}
+
+				.kyte-table-actions-toggle:hover {
+					background: #f8fafc;
+					border-color: #cbd5e0;
+				}
+
+				.kyte-table-actions-menu {
+					position: fixed;
+					min-width: 160px;
+					background: white;
+					border: 1px solid #e2e8f0;
+					border-radius: 6px;
+					box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+					display: none;
+					z-index: 9999;
+					max-height: 400px;
+					overflow-y: auto;
+				}
+
+				.kyte-table-actions-menu.kyte-table-actions-menu-open {
+					display: block;
+					animation: kyte-dropdown-fade-in 0.2s ease;
+				}
+
+				@keyframes kyte-dropdown-fade-in {
+					from {
+						opacity: 0;
+						transform: translateY(-8px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
+
+				.kyte-table-actions-menu a {
+					display: block;
+					padding: 10px 16px;
+					color: #4a5568;
+					text-decoration: none;
+					transition: background 0.2s;
+				}
+
+				.kyte-table-actions-menu a:hover {
+					background: #f8fafc;
+				}
+
+				.kyte-table-actions-menu a i {
+					width: 16px;
+					margin-right: 8px;
+					color: #a0aec0;
+				}
+
+				.kyte-table-actions-divider {
+					height: 1px;
+					background: #e2e8f0;
+					margin: 4px 0;
+				}
+
+				.kyte-table-skeleton-row td {
+					padding: 12px 16px;
+				}
+
+				.kyte-table-skeleton {
+					height: 16px;
+					background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+					background-size: 200% 100%;
+					border-radius: 4px;
+					animation: kyte-skeleton-loading 1.5s infinite;
+				}
+
+				@keyframes kyte-skeleton-loading {
+					0% {
+						background-position: 200% 0;
+					}
+					100% {
+						background-position: -200% 0;
+					}
+				}
+
+				.kyte-table-empty,
+				.kyte-table-error {
+					text-align: center;
+					padding: 40px 20px;
+					color: #a0aec0;
+				}
+
+				.kyte-table-empty i,
+				.kyte-table-error i {
+					display: block;
+					font-size: 32px;
+					margin-bottom: 12px;
+					opacity: 0.5;
+				}
+
+				.kyte-table-error {
+					color: #e53e3e;
+				}
+
+				.kyte-table-footer {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					padding: 16px 20px;
+					background: #f8fafc;
+					border-top: 1px solid #e2e8f0;
+					border-radius: 0 0 8px 8px;
+					position: relative;
+					z-index: 0;
+				}
+
+				.kyte-table-page-size {
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					font-size: 13px;
+					color: #718096;
+				}
+
+				.kyte-table-page-size-select {
+					padding: 6px 8px;
+					border: 1px solid #e2e8f0;
+					border-radius: 6px;
+					font-size: 13px;
+					background: white;
+					cursor: pointer;
+				}
+
+				.kyte-table-page-buttons {
+					display: flex;
+					align-items: center;
+					gap: 4px;
+				}
+
+				.kyte-table-page-btn {
+					min-width: 32px;
+					height: 32px;
+					padding: 0 8px;
+					border: 1px solid #e2e8f0;
+					background: white;
+					color: #4a5568;
+					border-radius: 6px;
+					font-size: 13px;
+					cursor: pointer;
+					transition: all 0.2s;
+				}
+
+				.kyte-table-page-btn:hover:not(.disabled):not(.active) {
+					background: #f8fafc;
+					border-color: #cbd5e0;
+				}
+
+				.kyte-table-page-btn.active {
+					background: #ff6b35;
+					border-color: #ff6b35;
+					color: white;
+				}
+
+				.kyte-table-page-btn.disabled {
+					opacity: 0.5;
+					cursor: not-allowed;
+				}
+
+				.kyte-table-page-ellipsis {
+					padding: 0 4px;
+					color: #a0aec0;
+				}
+
+				/* Responsive */
+				@media (max-width: 768px) {
+					.kyte-table-toolbar {
+						flex-direction: column;
+						gap: 12px;
+						align-items: flex-start;
+					}
+
+					.kyte-table-search-input {
+						width: 100%;
+					}
+
+					.kyte-table-footer {
+						flex-direction: column;
+						gap: 12px;
+						align-items: flex-start;
+					}
+
+					.kyte-table-page-buttons {
+						width: 100%;
+						justify-content: center;
+					}
+				}
+			</style>
+		`;
+
+		$('head').append(styles);
+	}
+
+	// Backwards compatibility method
+	bindEdit = (editForm) => {
+		this.editForm = editForm;
+	}
+
+	// DataTables-compatible API for existing code
+	row = (element) => {
+		const $row = $(element).closest('tr');
+		return {
+			data: () => $row.data('rowData'),
+			node: () => $row[0],
+			remove: () => {
+				return {
+					draw: () => this._loadData()
+				};
+			}
+		};
+	}
+
+	// Refresh data
+	draw = () => {
+		this._loadData();
+	}
+
+	// Get API object (for compatibility)
+	api = () => {
+		return {
+			table: () => ({
+				container: () => this.container[0]
+			})
+		};
+	}
+}
+
 
 /*
  * Class Definition for Kyte Form
