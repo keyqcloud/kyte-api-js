@@ -1,3 +1,84 @@
+## 1.4.0
+
+* **CRITICAL FIX:** Fixed KyteTable/KyteForm integration bug
+  - After KyteTable v1.3.0 rewrite, forms that updated/created records would throw errors
+  - Update handler used old DataTables API: `obj.selectedRow.data(response.data[0]).draw()`
+  - Create handler used old DataTables API: `obj.KyteTable.table.row.add(item).draw()`
+  - Both now correctly call `obj.KyteTable.draw()` to refresh the table
+
+* **MAJOR:** KyteForm modernization with new features (100% backward compatible)
+  - All new features are opt-in with safe defaults
+  - Existing forms continue to work without any changes
+
+* **New Constructor Properties:**
+  - `showLoadingOverlay` (default: true) - Show/hide loading spinner during submit
+  - `loadingText` - Custom text for loading spinner
+  - `showSuccessToast` (default: false) - Show Bootstrap 5 toast on successful save
+  - `successMessage` - Custom success toast message
+  - `autoCloseModal` (default: true) - Auto-close modal after submit
+  - `autoCloseDelay` (default: 0) - Delay before auto-close (ms)
+  - `resetOnSuccess` (default: true) - Reset form after successful submit
+  - `validateOnBlur` (default: false) - Real-time field validation on blur
+  - `showInlineErrors` (default: false) - Show error messages below invalid fields
+  - `scrollToFirstError` (default: false) - Auto-scroll to first invalid field
+  - `trackDirtyState` (default: false) - Track unsaved changes
+  - `confirmDirtyClose` (default: false) - Warn before closing with unsaved changes
+  - `disableSubmitOnProcess` (default: true) - Disable submit button during processing
+  - `submitButtonLoadingText` - Custom text for submit button while processing
+  - `focusFirstField` (default: true) - Auto-focus first field when modal opens
+  - `debug` (default: false) - Log form events to console
+
+* **New Event Hooks:**
+  - `events.beforeInit` - Called before form initialization
+  - `events.afterInit` - Called after form initialization
+  - `events.beforeOpen` - Called before modal opens (return false to cancel)
+  - `events.afterOpen` - Called after modal opens with data
+  - `events.beforeClose` - Called before modal closes (return false to cancel)
+  - `events.afterClose` - Called after modal closes
+  - `events.beforeSubmit` - Called before form submits (return false to cancel)
+  - `events.afterSubmit` - Called after successful submit
+  - `events.beforeValidate` - Called before validation
+  - `events.afterValidate` - Called after validation with results
+  - `events.onFieldChange` - Called when field value changes
+  - `events.onError` - Called when an error occurs
+  - `events.onDirtyChange` - Called when dirty state changes
+
+* **New Public Methods:**
+  - `getData()` - Get all form data as object
+  - `getFieldValue(fieldName)` - Get single field value
+  - `setFieldValue(fieldName, value, triggerChange)` - Set single field value
+  - `setData(data)` - Set multiple field values at once
+  - `clearForm()` - Clear all form fields (alias for resetForm)
+  - `isEditMode()` - Check if form is in edit mode
+  - `isDirty()` - Check if form has unsaved changes
+  - `markClean()` - Mark form as clean
+  - `markDirty()` - Mark form as dirty
+  - `submit()` - Programmatically submit form
+  - `refreshSelects()` - Refresh AJAX select fields
+  - `loadRecord(idx)` - Load record for editing
+  - `validateForm()` - Validate form and return results
+  - `setFieldError(fieldName, message)` - Set field as invalid
+  - `clearFieldError(fieldName)` - Clear field error
+  - `clearValidation()` - Clear all validation states
+  - `resetForm()` - Reset form to initial state
+  - `getFormElement()` - Get jQuery form element
+  - `getModalElement()` - Get jQuery modal element
+  - `addHiddenField(name, value)` - Add hidden field dynamically
+  - `removeHiddenField(name)` - Remove hidden field
+  - `setDisabled(disabled)` - Enable/disable entire form
+  - `setFieldVisible(fieldName, visible)` - Show/hide specific field
+
+* **Enhanced Methods:**
+  - `showModal(idx)` - Now accepts optional idx parameter and emits events
+  - `hideModal(force)` - Now supports dirty check and force parameter
+  - `appendErrorMessage(message, dismissable)` - Now supports dismissable alerts and better error formatting
+
+* **Internal Improvements:**
+  - Added private helper methods for cleaner code
+  - Better error message formatting
+  - Consistent loading state management
+  - Improved submit button handling during processing
+
 ## 1.3.0
 
 * **MAJOR:** Complete KyteTable rewrite - no longer depends on DataTables library

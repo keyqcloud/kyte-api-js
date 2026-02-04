@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.3.0';
+	static VERSION = '1.4.0';
 	/** **************** */
 
 	constructor(url, accessKey, identifier, account_number, applicationId = null) {
@@ -810,7 +810,7 @@ class KyteTable {
 		this.sortColumn = null;
 		this.sortDirection = 'asc';
 		this.isLoading = false;
-		this.draw = 0;
+		this.drawCount = 0;
 
 		// Container elements
 		this.container = null;
@@ -1097,7 +1097,7 @@ class KyteTable {
 		if (this.isLoading) return;
 
 		this.isLoading = true;
-		this.draw++;
+		this.drawCount++;
 
 		// Show skeleton loading
 		this._showSkeleton();
@@ -1111,7 +1111,7 @@ class KyteTable {
 		});
 
 		const headers = [];
-		headers.push({'name':'x-kyte-draw','value': this.draw});
+		headers.push({'name':'x-kyte-draw','value': this.drawCount});
 		headers.push({'name':'x-kyte-page-size','value': this.pageLength});
 		headers.push({'name':'x-kyte-page-idx','value': this.currentPage});
 		headers.push({'name':'x-kyte-page-search-value','value': this.searchValue ? btoa(encodeURIComponent(this.searchValue)) : ""});
@@ -1966,6 +1966,7 @@ class KyteTable {
  */
 class KyteForm {
 	constructor(api, selector, modelName, hiddenFields, elements, title = 'Form', table = null, modal = false, modalButton = null, successCallBack = null, failureCallBack = null) {
+		// === EXISTING PROPERTIES (unchanged) ===
 		this.api = api;
 		this.model = modelName;
 		this.modal = modal;
@@ -1997,9 +1998,432 @@ class KyteForm {
 
 		this.isValid = true;
 		this.validate = null;
+
+		// === NEW PROPERTIES (with backward-compatible defaults) ===
+
+		// UI Enhancement Options
+		this.showLoadingOverlay = true;          // Default true (existing behavior)
+		this.loadingText = null;                 // If set, shows text in loader
+		this.showSuccessToast = false;           // Show toast on success (default off)
+		this.successMessage = 'Saved successfully';
+		this.autoCloseModal = true;              // Default true (existing behavior)
+		this.autoCloseDelay = 0;                 // Delay before auto-close (ms)
+		this.resetOnSuccess = true;              // Default true (existing behavior)
+
+		// Validation Options
+		this.validateOnBlur = false;             // Real-time field validation
+		this.showInlineErrors = false;           // Show error text below fields
+		this.scrollToFirstError = false;         // Scroll to first invalid field
+
+		// Form State
+		this.trackDirtyState = false;            // Track if form has unsaved changes
+		this.confirmDirtyClose = false;          // Warn before closing dirty form
+		this._isDirty = false;                   // Internal dirty state
+		this._originalData = null;               // Store original values for comparison
+
+		// Submit Button Options
+		this.disableSubmitOnProcess = true;      // Disable button during submit
+		this.submitButtonLoadingText = null;     // Text while submitting
+
+		// Accessibility
+		this.focusFirstField = true;             // Auto-focus first field on open
+		this.trapFocus = true;                   // Keep focus within modal (default)
+
+		// Debug
+		this.debug = false;                      // Log form events to console
+
+		// Event Hooks (all null by default - no impact if not set)
+		this.events = {
+			beforeInit: null,           // () => void
+			afterInit: null,            // () => void
+			beforeOpen: null,           // (idx) => boolean - return false to cancel
+			afterOpen: null,            // (idx, data) => void
+			beforeClose: null,          // () => boolean - return false to cancel
+			afterClose: null,           // () => void
+			beforeSubmit: null,         // (formData, isEdit) => boolean - return false to cancel
+			afterSubmit: null,          // (response, isEdit) => void
+			beforeValidate: null,       // (formData) => void
+			afterValidate: null,        // (isValid, invalidFields) => void
+			onFieldChange: null,        // (fieldName, newValue, oldValue) => void
+			onError: null,              // (error, context) => void
+			onDirtyChange: null         // (isDirty) => void
+		};
+	}
+
+	// === PRIVATE HELPER METHODS ===
+
+	// Get field ID from field name
+	_getFieldId = (fieldName) => {
+		// Check if custom ID was defined
+		for (const row of this.elements) {
+			for (const col of row) {
+				if (col.field === fieldName) {
+					return col.id || `form_${this.model}_${this.id}_${fieldName}`;
+				}
+			}
+		}
+		return `form_${this.model}_${this.id}_${fieldName}`;
+	}
+
+	// Emit event hook
+	_emitEvent = (eventName, ...args) => {
+		if (this.events[eventName] && typeof this.events[eventName] === 'function') {
+			const result = this.events[eventName](...args);
+			if (this.debug) {
+				console.log(`[KyteForm:${this.model}] Event: ${eventName}`, args, 'Result:', result);
+			}
+			return result;
+		}
+		return undefined;
+	}
+
+	// Log debug message
+	_log = (message, ...args) => {
+		if (this.debug) {
+			console.log(`[KyteForm:${this.model}] ${message}`, ...args);
+		}
+	}
+
+	// Check dirty state
+	_checkDirtyState = () => {
+		if (!this.trackDirtyState || !this._originalData) return;
+
+		const currentData = this.getData();
+		const wasDirty = this._isDirty;
+		this._isDirty = JSON.stringify(currentData) !== JSON.stringify(this._originalData);
+
+		if (wasDirty !== this._isDirty) {
+			this._emitEvent('onDirtyChange', this._isDirty);
+		}
+	}
+
+	// Trigger form change for dirty tracking
+	_triggerFormChange = () => {
+		if (this.trackDirtyState) {
+			this._checkDirtyState();
+		}
+	}
+
+	// Refresh table helper
+	_refreshTable = () => {
+		if (this.KyteTable) {
+			this.KyteTable.draw();
+		}
+	}
+
+	// Show loading overlay
+	_showLoading = () => {
+		if (this.showLoadingOverlay) {
+			$(`#${this.model}_${this.id}_modal-loader`).modal('show');
+		}
+		if (this.disableSubmitOnProcess) {
+			const $btn = $(`#form_${this.model}_${this.id} [type="submit"]`);
+			$btn.prop('disabled', true);
+			if (this.submitButtonLoadingText) {
+				$btn.data('original-text', $btn.val() || $btn.text()).val(this.submitButtonLoadingText);
+			}
+		}
+	}
+
+	// Hide loading overlay
+	_hideLoading = () => {
+		$(`#${this.model}_${this.id}_modal-loader`).modal('hide');
+		if (this.disableSubmitOnProcess) {
+			const $btn = $(`#form_${this.model}_${this.id} [type="submit"]`);
+			$btn.prop('disabled', false);
+			if ($btn.data('original-text')) {
+				$btn.val($btn.data('original-text'));
+			}
+		}
+	}
+
+	// Show success toast
+	_showSuccessToast = () => {
+		// Use Bootstrap 5 toast or fall back to simple notification
+		if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+			const toastHtml = `
+				<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+					<div class="toast align-items-center text-white bg-success" role="alert">
+						<div class="d-flex">
+							<div class="toast-body">${this.successMessage}</div>
+							<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+						</div>
+					</div>
+				</div>`;
+			$('body').append(toastHtml);
+			const toast = new bootstrap.Toast($('.toast').last()[0]);
+			toast.show();
+			// Clean up after hidden
+			$('.toast').last().on('hidden.bs.toast', function() {
+				$(this).closest('.toast-container').remove();
+			});
+		}
+	}
+
+	// Format error message for display
+	_formatErrorMessage = (message) => {
+		// Handle jQuery AJAX error object
+		if (message && message.responseJSON) {
+			const json = message.responseJSON;
+			if (json.error) return json.error;
+			if (json.message) return json.message;
+			if (json.errors && Array.isArray(json.errors)) {
+				return json.errors.map(e => e.message || e).join('<br>');
+			}
+		}
+
+		// Handle string
+		if (typeof message === 'string') {
+			return message;
+		}
+
+		// Handle Error object
+		if (message instanceof Error) {
+			return message.message;
+		}
+
+		// Handle plain object with error/message properties
+		if (typeof message === 'object') {
+			if (message.error) return message.error;
+			if (message.message) return message.message;
+		}
+
+		return 'An error occurred. Please try again.';
+	}
+
+	// === NEW PUBLIC METHODS ===
+
+	// Get all form data as an object
+	getData = () => {
+		const formData = {};
+		const form = $(`#form_${this.model}_${this.id}`);
+		form.serializeArray().forEach(item => {
+			// Handle array fields (e.g., items[])
+			if (item.name.endsWith('[]')) {
+				const key = item.name.slice(0, -2);
+				if (!formData[key]) formData[key] = [];
+				formData[key].push(item.value);
+			} else {
+				formData[item.name] = item.value;
+			}
+		});
+		return formData;
+	}
+
+	// Get a single field value
+	getFieldValue = (fieldName) => {
+		const fieldId = this._getFieldId(fieldName);
+		return $(`#${fieldId}`).val();
+	}
+
+	// Set a single field value
+	setFieldValue = (fieldName, value, triggerChange = true) => {
+		const fieldId = this._getFieldId(fieldName);
+		$(`#${fieldId}`).val(value);
+		if (triggerChange) {
+			$(`#${fieldId}`).trigger('change');
+		}
+	}
+
+	// Set multiple field values at once
+	setData = (data) => {
+		Object.entries(data).forEach(([key, value]) => {
+			this.setFieldValue(key, value, false);
+		});
+		// Trigger single change event after all values set
+		this._triggerFormChange();
+	}
+
+	// Clear all form fields (alias for resetForm)
+	clearForm = () => {
+		this.resetForm();
+	}
+
+	// Check if form is in edit mode
+	isEditMode = () => {
+		const idx = this.editOnlyMode || this.getID();
+		return idx && idx > 0;
+	}
+
+	// Check if form has unsaved changes
+	isDirty = () => {
+		return this._isDirty;
+	}
+
+	// Mark form as clean (after external save)
+	markClean = () => {
+		this._isDirty = false;
+		this._originalData = this.getData();
+		this._emitEvent('onDirtyChange', false);
+	}
+
+	// Mark form as dirty (for external modifications)
+	markDirty = () => {
+		this._isDirty = true;
+		this._emitEvent('onDirtyChange', true);
+	}
+
+	// Programmatically submit the form
+	submit = () => {
+		$(`#form_${this.model}_${this.id}`).submit();
+	}
+
+	// Refresh all AJAX-populated select fields
+	refreshSelects = () => {
+		this.reloadAjax();
+	}
+
+	// Load data for editing (can be called externally)
+	loadRecord = (idx, success = null, fail = null) => {
+		this.setID(idx);
+		this.loadFormData(idx, success, fail);
+	}
+
+	// Validate form and return result
+	validateForm = () => {
+		const invalidFields = [];
+		const form = $(`#form_${this.model}_${this.id}`);
+
+		this._emitEvent('beforeValidate', this.getData());
+
+		form.find('input, textarea, select').each((_, el) => {
+			const $el = $(el);
+			if ($el.prop('required') && !$el.val()) {
+				invalidFields.push({
+					field: $el.attr('name'),
+					element: el,
+					message: 'This field is required'
+				});
+				$el.addClass('is-invalid').removeClass('is-valid');
+				if (this.showInlineErrors) {
+					$el.siblings('.invalid-feedback').remove();
+					$el.after(`<div class="invalid-feedback" style="display:block;">This field is required</div>`);
+				}
+			} else {
+				$el.addClass('is-valid').removeClass('is-invalid');
+				$el.siblings('.invalid-feedback').remove();
+			}
+		});
+
+		this.isValid = invalidFields.length === 0;
+		this._emitEvent('afterValidate', this.isValid, invalidFields);
+
+		if (!this.isValid && this.scrollToFirstError && invalidFields.length > 0) {
+			invalidFields[0].element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			invalidFields[0].element.focus();
+		}
+
+		return { isValid: this.isValid, invalidFields };
+	}
+
+	// Set field as invalid with message
+	setFieldError = (fieldName, message) => {
+		const fieldId = this._getFieldId(fieldName);
+		const $field = $(`#${fieldId}`);
+		$field.addClass('is-invalid').removeClass('is-valid');
+
+		if (this.showInlineErrors) {
+			// Remove existing feedback
+			$field.siblings('.invalid-feedback').remove();
+			// Add new feedback
+			$field.after(`<div class="invalid-feedback" style="display:block;">${message}</div>`);
+		}
+	}
+
+	// Clear field error
+	clearFieldError = (fieldName) => {
+		const fieldId = this._getFieldId(fieldName);
+		const $field = $(`#${fieldId}`);
+		$field.removeClass('is-invalid is-valid');
+		$field.siblings('.invalid-feedback').remove();
+	}
+
+	// Clear all validation states
+	clearValidation = () => {
+		const form = $(`#form_${this.model}_${this.id}`);
+		form.find('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
+		form.find('.invalid-feedback').remove();
+		this.clearErrorMessage();
+	}
+
+	// Reset form to initial state
+	resetForm = () => {
+		const form = $(`#form_${this.model}_${this.id}`);
+
+		// Clear form data
+		form.data('idx', '');
+		form.data('row', '');
+
+		// Clear error messages
+		this.clearErrorMessage();
+
+		// Clear validation states
+		this.clearValidation();
+
+		// Reset all field values
+		form.find('input[type="text"], input[type="email"], input[type="password"], input[type="tel"], input[type="number"]').val('');
+		form.find('input[type="checkbox"], input[type="radio"]').prop('checked', false);
+		form.find('select').prop('selectedIndex', 0);
+		form.find('textarea').val('');
+
+		// Clear itemized rows
+		if (this.itemized) {
+			$(`#itemized_${this.model}_${this.id}`).html('');
+		}
+
+		// Reset dirty state
+		this._isDirty = false;
+		this._originalData = null;
+
+		// Trigger native reset
+		form.trigger('reset');
+
+		// Reset selected row reference
+		this.selectedRow = null;
+	}
+
+	// Get the DOM form element
+	getFormElement = () => {
+		return $(`#form_${this.model}_${this.id}`);
+	}
+
+	// Get the modal element (if modal form)
+	getModalElement = () => {
+		return this.modal ? $(`#modal_${this.model}_${this.id}`) : null;
+	}
+
+	// Add a hidden field dynamically
+	addHiddenField = (name, value) => {
+		const form = $(`#form_${this.model}_${this.id}`);
+		const existing = form.find(`input[type="hidden"][name="${name}"]`);
+		if (existing.length) {
+			existing.val(value);
+		} else {
+			form.append(`<input type="hidden" name="${name}" value="${value}">`);
+		}
+	}
+
+	// Remove a hidden field
+	removeHiddenField = (name) => {
+		$(`#form_${this.model}_${this.id} input[type="hidden"][name="${name}"]`).remove();
+	}
+
+	// Disable/enable form
+	setDisabled = (disabled) => {
+		const form = $(`#form_${this.model}_${this.id}`);
+		form.find('input, textarea, select, button').prop('disabled', disabled);
+	}
+
+	// Show/hide specific field
+	setFieldVisible = (fieldName, visible) => {
+		const fieldId = this._getFieldId(fieldName);
+		const $field = $(`#${fieldId}`).closest('.form-group');
+		visible ? $field.show() : $field.hide();
 	}
 	init = () => {
 		if (!this.loaded) {
+			this._emitEvent('beforeInit');
+
 			this.id = this.makeID(8);
 			let content = '';
 			let obj = this;
@@ -2145,34 +2569,52 @@ class KyteForm {
 
 				// if valid, prep to send data
 				if (obj.isValid) {
-					// open model
-					$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('show');
 					// if an ID is set, then update entry
 					let idx = obj.editOnlyMode ? obj.editOnlyMode : form.data('idx');
 					if (idx > 0) {
+						// Check beforeSubmit event
+						if (obj._emitEvent('beforeSubmit', obj.getData(), true) === false) {
+							return;
+						}
+
+						// Show loading
+						obj._showLoading();
+
 						obj.api.put(obj.model, 'id', idx, null, form.serialize(), obj.httpHeaders,
 							function (response) {
-								$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
+								obj._hideLoading();
+
+								// Refresh table
+								obj._refreshTable();
 
 								// run call back function if any
 								if (typeof obj.success === "function") {
 									obj.success(response);
 								}
 
-								if (obj.KyteTable && response.data.length == 1) {
-									obj.selectedRow.data(response.data[0]).draw();
+								// Emit afterSubmit event
+								obj._emitEvent('afterSubmit', response, true);
+
+								// reset form if configured
+								if (obj.resetOnSuccess) {
+									$(`#form_${obj.model}_${obj.id}`).trigger("reset");
 								}
 
-								// reset form
-								$(`#form_${obj.model}_${obj.id}`).trigger("reset");
+								// Show success toast if configured
+								if (obj.showSuccessToast) {
+									obj._showSuccessToast();
+								}
 
 								// close modal if form is a modal dialog
-								obj.hideModal();
+								if (obj.autoCloseModal) {
+									setTimeout(() => obj.hideModal(true), obj.autoCloseDelay);
+								}
 							},
 							function (response) {
-								$('#' + obj.model + '_' + obj.id + '_modal-loader').modal('hide');
+								obj._hideLoading();
 								obj.appendErrorMessage(response);
-								if (typeof obj.success === "function") {
+								obj._emitEvent('onError', response, 'update');
+								if (typeof obj.fail === "function") {
 									obj.fail(response);
 								}
 							}
@@ -2181,6 +2623,14 @@ class KyteForm {
 
 					// else, create new entry
 					else {
+						// Check beforeSubmit event
+						if (obj._emitEvent('beforeSubmit', obj.getData(), false) === false) {
+							return;
+						}
+
+						// Show loading
+						obj._showLoading();
+
 						// if file get file name and add that to form
 						if (obj.fileUploadField) {
 							let f = document.getElementById(obj.fileUploadField).files[0];
@@ -2190,12 +2640,8 @@ class KyteForm {
 						}
 						obj.api.post(obj.model, null, form.serialize(), obj.httpHeaders,
 							function (response) {
-								if (obj.KyteTable) {
-									response.data.forEach(function (item) {
-										// update data table
-										obj.KyteTable.table.row.add(item).draw();
-									});
-								}
+								// Refresh table
+								obj._refreshTable();
 
 								// if there's a file upload process it
 								if (obj.fileUploadField && response.data[0].s3endpoint) {
@@ -2235,40 +2681,69 @@ class KyteForm {
 										contentType: false,
 										processData: false,
 										success: function(data) {
+											obj._hideLoading();
+
 											// run call back function if any
 											if (typeof obj.success === "function") { obj.success(response); }
-											// close modal if form is a modal dialog
-											$(`#${obj.model}_${obj.id}_modal-loader`).modal('hide');
-											// reset form
-											$(`#form_${obj.model}_${obj.id}`).trigger("reset");
-											// dismiss modal
-											obj.hideModal();
+
+											// Emit afterSubmit event
+											obj._emitEvent('afterSubmit', response, false);
+
+											// reset form if configured
+											if (obj.resetOnSuccess) {
+												$(`#form_${obj.model}_${obj.id}`).trigger("reset");
+											}
+
+											// Show success toast if configured
+											if (obj.showSuccessToast) {
+												obj._showSuccessToast();
+											}
+
+											// dismiss modal if configured
+											if (obj.autoCloseModal) {
+												setTimeout(() => obj.hideModal(true), obj.autoCloseDelay);
+											}
 										},
 										error: function(error) {
-											$(`#${obj.model}_${obj.id}_modal-loader`).modal('hide');
+											obj._hideLoading();
 											obj.appendErrorMessage(error);
+											obj._emitEvent('onError', error, 'upload');
 											if (typeof obj.fail === "function") {
 												obj.fail(error);
 											}
-											k.delete(obj.model, 'id', fileIdx, []);
+											obj.api.delete(obj.model, 'id', fileIdx, []);
 										}
 									});
 
 								} else {
+									obj._hideLoading();
+
 									// run call back function if any
 									if (typeof obj.success === "function") { obj.success(response); }
 
-									// reset form
-									$(`#form_${obj.model}_${obj.id}`).trigger("reset");
+									// Emit afterSubmit event
+									obj._emitEvent('afterSubmit', response, false);
+
+									// reset form if configured
+									if (obj.resetOnSuccess) {
+										$(`#form_${obj.model}_${obj.id}`).trigger("reset");
+									}
+
+									// Show success toast if configured
+									if (obj.showSuccessToast) {
+										obj._showSuccessToast();
+									}
 
 									// close modal if form is a modal dialog
-									$(`#${obj.model}_${obj.id}_modal-loader`).modal('hide');
-									obj.hideModal();
+									if (obj.autoCloseModal) {
+										setTimeout(() => obj.hideModal(true), obj.autoCloseDelay);
+									}
 								}
 							},
 							function (response) {
-								$(`#${obj.model}_${obj.id}_modal-loader`).modal('hide');
+								obj._hideLoading();
 								obj.appendErrorMessage(response);
+								obj._emitEvent('onError', response, 'create');
 								if (typeof obj.fail === "function") {
 									obj.fail(response);
 								}
@@ -2332,11 +2807,29 @@ class KyteForm {
 
 							obj.loadFormData(idx, function () {
 								$(`#${obj.model}_${obj.id}_modal-loader`).modal('hide');
+								// Store original data for dirty tracking
+								if (obj.trackDirtyState) {
+									obj._originalData = obj.getData();
+								}
+								// Emit afterOpen event
+								obj._emitEvent('afterOpen', idx, obj.getData());
 							}, function () {
 								$(`#${obj.model}_${obj.id}_modal-loader`).modal('hide');
 								obj.hideModal();
 								console.error('Unable to load form. Please try again later');
 							});
+						} else {
+							// Store original data for dirty tracking (new record)
+							if (obj.trackDirtyState) {
+								obj._originalData = obj.getData();
+							}
+							// Emit afterOpen event for new record
+							obj._emitEvent('afterOpen', null, null);
+						}
+
+						// Focus first field if configured
+						if (obj.focusFirstField) {
+							form.find('input:not([type="hidden"]), textarea, select').first().focus();
 						}
 					}
 				});
@@ -2410,24 +2903,89 @@ class KyteForm {
 				});
 			}
 
+			// NEW: Dirty state tracking
+			if (this.trackDirtyState) {
+				const form = $(`#form_${this.model}_${this.id}`);
+				form.on('change', 'input, textarea, select', () => {
+					this._checkDirtyState();
+				});
+				form.on('input', 'input, textarea', () => {
+					this._checkDirtyState();
+				});
+			}
+
+			// NEW: Blur validation
+			if (this.validateOnBlur) {
+				const form = $(`#form_${this.model}_${this.id}`);
+				form.on('blur', 'input, textarea, select', (e) => {
+					const $el = $(e.target);
+					if ($el.prop('required') && !$el.val()) {
+						$el.addClass('is-invalid').removeClass('is-valid');
+						if (this.showInlineErrors) {
+							$el.siblings('.invalid-feedback').remove();
+							$el.after(`<div class="invalid-feedback" style="display:block;">This field is required</div>`);
+						}
+					} else if ($el.val()) {
+						$el.addClass('is-valid').removeClass('is-invalid');
+						$el.siblings('.invalid-feedback').remove();
+					}
+				});
+			}
+
+			this._emitEvent('afterInit');
 			this.loaded = true;
 		}
 	}
-	appendErrorMessage = (message) => {
+	appendErrorMessage = (message, dismissable = true) => {
+		const errorContent = this._formatErrorMessage(message);
+
+		const alertHtml = dismissable
+			? `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+				 ${errorContent}
+				 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+			   </div>`
+			: `<div class="alert alert-danger" role="alert">${errorContent}</div>`;
+
+		$(`#form_${this.model}_${this.id} .error-msg`).append(alertHtml);
+	}
+	// Legacy method - kept for backward compatibility
+	_appendErrorMessageLegacy = (message) => {
 		$(`#form_${this.model}_${this.id} .error-msg`).append(`<div class="alert alert-danger" role="alert">${message}</div>`);
 	}
 	clearErrorMessage = () => {
 		$(`#form_${this.model}_${this.id} .error-msg`).html('');
 	}
-	showModal = () => {
+	showModal = (idx = null) => {
 		if (this.modal) {
+			if (idx) {
+				this.setID(idx);
+			}
+
+			if (this._emitEvent('beforeOpen', idx) === false) {
+				return;
+			}
+
 			$(`#modal_${this.model}_${this.id}`).modal('show');
 		}
 	}
-	hideModal = () => {
+	hideModal = (force = false) => {
 		if (this.modal) {
-			$(`#modal_${this.model}_${this.id}`).modal('hide');
+			if (!force && this.confirmDirtyClose && this._isDirty) {
+				this.api.confirm('Unsaved Changes',
+					'You have unsaved changes. Are you sure you want to close?',
+					() => this._forceHideModal()
+				);
+				return;
+			}
+			this._forceHideModal();
 		}
+	}
+	_forceHideModal = () => {
+		if (this._emitEvent('beforeClose') === false) {
+			return;
+		}
+		$(`#modal_${this.model}_${this.id}`).modal('hide');
+		this._emitEvent('afterClose');
 	}
 	loadFormData = (idx, success = null, fail = null) => {
 		var obj = this;
