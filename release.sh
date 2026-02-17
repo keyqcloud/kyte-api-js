@@ -4,6 +4,10 @@ print_error() {
     echo "\033[1;31m$1\033[0m"
 }
 
+print_success() {
+    echo "\033[1;32m$1\033[0m"
+}
+
 if [ "$#" -eq 1 ]; then
     # Check the CHANGELOG.md
     changelog_version=$(awk '/## /{print $2;exit}' CHANGELOG.md)
@@ -13,19 +17,26 @@ if [ "$#" -eq 1 ]; then
         exit 1
     fi
 
-    # obfuscate and minify
-    javascript-obfuscator kyte-source.js --output kyte.js --compact true --string-array-encoding 'base64' --string-array-wrappers-type variable
+    echo "Building Kyte.js v$1..."
 
-    # Read the contents of kyte-source.js
-    input_file="kyte-source.js"
-    input_contents=$(cat "$input_file")
-    response=$(curl -X POST -s --data-urlencode "input=$input_contents" https://www.toptal.com/developers/javascript-minifier/api/raw)
+    # Check if terser is installed
+    if ! command -v terser &> /dev/null; then
+        print_error "terser is not installed. Install it with: npm install -g terser"
+        exit 1
+    fi
 
-    # Save the response as kyte.min.js
-    output_file="kyte.min.js"
-    echo "$response" > "$output_file"
+    # Minify the source code using terser
+    echo "Minifying source code with terser..."
 
-    echo "Minified JavaScript saved as $output_file"
+    if ! terser kyte-source.js -c -m -o kyte.min.js; then
+        print_error "Minification failed"
+        exit 1
+    fi
+    print_success "Created kyte.min.js"
+
+    # Copy to kyte.js for backwards compatibility (both are now minified)
+    cp kyte.min.js kyte.js
+    print_success "Created kyte.js (minified, for backwards compatibility)"
 
     # Get the current year
     current_year=$(date +'%Y')
