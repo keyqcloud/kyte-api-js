@@ -19,6 +19,10 @@ on:
   schedule:
     - cron: '0 3 * * 0'
 
+# Opt into Node.js 24 ahead of the 2026-06-02 force-migration.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   analyze:
     name: Analyze
@@ -48,7 +52,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
