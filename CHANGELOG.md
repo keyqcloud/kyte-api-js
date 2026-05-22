@@ -79,6 +79,20 @@
   - Consistent loading state management
   - Improved submit button handling during processing
 
+## [1.4.1](https://github.com/keyqcloud/kyte-api-js/compare/v1.4.0...v1.4.1) (2026-05-22)
+
+
+### Tests
+
+* add Vitest + jsdom unit test harness, CI workflow ([57251c8](https://github.com/keyqcloud/kyte-api-js/commit/57251c8f8e93039045ab250947acfee06a659d40))
+
+
+### Continuous Integration
+
+* fix Deploy workflow runner label (ubuntu-stable → ubuntu-latest) ([501cec1](https://github.com/keyqcloud/kyte-api-js/commit/501cec121c25ae45ea4346fdddd2e13170aafdb9))
+* **release-please:** adopt Conventional Commits + automated releases ([913120b](https://github.com/keyqcloud/kyte-api-js/commit/913120be5e9265bec87a324fce7b11b219081eed))
+* **release:** move build into CI, add source maps, auto GitHub Release ([daf350e](https://github.com/keyqcloud/kyte-api-js/commit/daf350ed4a2687e102c01294cb350da323b6011c))
+
 ## 1.3.0
 
 * **MAJOR:** Complete KyteTable rewrite - no longer depends on DataTables library
