@@ -79,7 +79,13 @@ if [ "$#" -eq 1 ]; then
     # prepare for release
     echo "Creating tag for release version $1"
 
-    git add .
+    # Scoped add — only the files release.sh is supposed to produce or
+    # update. Avoids accidentally committing stray files in the working
+    # tree (stale builds, editor scratch, untracked test artifacts).
+    git add releases/stable/kyte.js \
+            releases/stable/kyte.min.js \
+            "releases/archive/kyte-$1.js" \
+            CHANGELOG.md
     git commit -m "release $1"
     git push
 
