@@ -10,3 +10,10 @@ temp
 node_modules/
 coverage/
 .vitest-cache/
+# CI-built artifacts — CI builds these from kyte-source.js on tag push
+# and uploads to S3 directly. Local builds (manual terser runs) are
+# ignored to keep the repo source-only.
+/kyte.js
+/kyte.min.js
+/kyte.js.map
+/copyright.txt
