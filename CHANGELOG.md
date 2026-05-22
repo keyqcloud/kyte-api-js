@@ -1,3 +1,15 @@
+## 2.0.1
+
+### Bug Fix: JWT logout drops completion callback, breaking `addLogoutHandler`
+
+`_sessionDestroyJwt`'s success and no-refresh-token early-return paths both forgot to invoke the user-supplied callback. The HMAC equivalent (`sessionDestroy` proper) does invoke it on both success and error. `addLogoutHandler` puts `location.href = '/'` in that callback, so in JWT mode the redirect never fired — clicking logout cleared tokens locally and revoked them server-side, but the user stayed on the post-logout page, looking like they were still logged in.
+
+Fix: invoke the completion callback on **all three** exit paths of `_sessionDestroyJwt` — success, error, and the `!refreshToken` early return. Matches the HMAC `sessionDestroy` contract.
+
+Regression coverage in `tests/kyte.test.js`: three new tests cover each path, mocking `$.ajax` and asserting the callback fires + tokens are cleared.
+
+Customer-visible impact: Shipyard 2.0.0 users on JWT mode (default) couldn't actually log out from the UI prior to 2.0.1.
+
 ## 2.0.0
 
 ### Major: dual-auth support (HMAC + JWT)
