@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '2.0.0';
+	static VERSION = '2.0.1';
 	/** **************** */
 
 	/**
@@ -763,6 +763,11 @@ class Kyte {
 	 * Clearing local first would leak the still-active refresh token
 	 * server-side if the request never goes out; doing it after means
 	 * a transient failure still cleans up locally on the next refresh.
+	 *
+	 * The `error` parameter is misnamed for historical reasons — it's
+	 * really a "completion" callback invoked on both success and
+	 * failure, matching HMAC sessionDestroy's contract. addLogoutHandler
+	 * relies on this to redirect to the login page after logout.
 	 */
 	_sessionDestroyJwt = (error = null) => {
 		var obj = this;
@@ -778,7 +783,13 @@ class Kyte {
 		};
 
 		if (!refreshToken) {
+			// No server-side token to revoke — just clear local state
+			// and notify the caller so they can redirect, matching the
+			// HMAC sessionDestroy contract.
 			obj._jwtClearTokens();
+			if (typeof error === 'function') {
+				error(null);
+			}
 			return;
 		}
 
@@ -789,7 +800,12 @@ class Kyte {
 			url: obj.url + '/jwt/logout',
 			contentType: 'application/json',
 			data: JSON.stringify({ refresh_token: refreshToken }),
-			success: function () { obj._jwtClearTokens(); },
+			success: function (response) {
+				obj._jwtClearTokens();
+				if (typeof error === 'function') {
+					error(response);
+				}
+			},
 			error: finish
 		});
 	}

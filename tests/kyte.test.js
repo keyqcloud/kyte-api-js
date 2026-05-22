@@ -103,3 +103,73 @@ describe('Kyte — utilities', () => {
     expect(k.getNestedValue(obj, 'foo.missing.baz')).toBeUndefined();
   });
 });
+
+// JWT logout — regression coverage for the addLogoutHandler contract.
+// _sessionDestroyJwt accepts a completion callback (misnamed `error` for
+// historical compatibility with HMAC sessionDestroy) and MUST invoke it on
+// every exit path: success, error, and the no-refresh-token early return.
+// Without all three, the addLogoutHandler() flow (`location.href = '/'` in
+// the callback) silently no-ops on successful logout and users get stuck on
+// the post-logout page with cleared tokens.
+describe('Kyte — JWT sessionDestroy', () => {
+  it('invokes the completion callback when no refresh token is held', () => {
+    const k = new Kyte('https://api.test', null, null, null, null, { authMode: 'jwt' });
+    // No login happened → no refresh token in state.
+    expect(k.jwtRefreshToken).toBeFalsy();
+
+    const onComplete = vi.fn();
+    k.sessionDestroy(onComplete);
+
+    expect(onComplete).toHaveBeenCalledOnce();
+  });
+
+  it('invokes the completion callback after successful POST /jwt/logout', () => {
+    const k = new Kyte('https://api.test', null, null, null, null, { authMode: 'jwt' });
+    k.jwtRefreshToken = 'kref_v1_fake_test_token';
+    k.jwtAccessToken = 'header.payload.sig';
+    k.jwtAccessExpiresAt = Date.now() + 900_000;
+
+    // $.ajax is a jQuery function — replace it with our own and restore after.
+    // (vi.spyOn doesn't work on it because the descriptor isn't configurable.)
+    const realAjax = globalThis.$.ajax;
+    let captured;
+    globalThis.$.ajax = (opts) => {
+      captured = opts;
+      opts.success({ ok: true });
+    };
+
+    try {
+      const onComplete = vi.fn();
+      k.sessionDestroy(onComplete);
+
+      expect(captured.url).toBe('https://api.test/jwt/logout');
+      expect(JSON.parse(captured.data)).toEqual({ refresh_token: 'kref_v1_fake_test_token' });
+
+      expect(onComplete).toHaveBeenCalledOnce();
+      expect(k.jwtRefreshToken).toBeNull();
+      expect(k.jwtAccessToken).toBeNull();
+    } finally {
+      globalThis.$.ajax = realAjax;
+    }
+  });
+
+  it('invokes the completion callback when POST /jwt/logout fails', () => {
+    const k = new Kyte('https://api.test', null, null, null, null, { authMode: 'jwt' });
+    k.jwtRefreshToken = 'kref_v1_fake_test_token';
+
+    const realAjax = globalThis.$.ajax;
+    globalThis.$.ajax = (opts) => {
+      opts.error({ status: 500, statusText: 'Internal Server Error' });
+    };
+
+    try {
+      const onComplete = vi.fn();
+      k.sessionDestroy(onComplete);
+
+      expect(onComplete).toHaveBeenCalledOnce();
+      expect(k.jwtRefreshToken).toBeNull();
+    } finally {
+      globalThis.$.ajax = realAjax;
+    }
+  });
+});
