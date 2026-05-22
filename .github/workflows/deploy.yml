@@ -1,17 +1,82 @@
-name: Deploy to CDN
+name: Release
 
-on:  
+# Tag-triggered. Builds minified bundles + source maps from kyte-source.js,
+# uploads to S3, invalidates CloudFront, and creates a GitHub Release with
+# notes extracted from CHANGELOG.md.
+#
+# The version comes from the tag (refs/tags/v2.0.0 → 2.0.0). CHANGELOG.md
+# must have a `## <version>` section as the first H2 — the script extracts
+# everything between that and the next `## ` as release notes.
+
+on:
   push:
     tags:
-      - '*'
+      - 'v*'
+
+permissions:
+  contents: write   # needed for softprops/action-gh-release
 
 jobs:
-  deploy:
-    runs-on: ubuntu-stable
+  release:
+    name: Build, deploy, and release
+    runs-on: ubuntu-latest
 
     steps:
     - name: Check out source code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v5
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install terser
+      run: npm install -g terser
+
+    - name: Extract version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+    - name: Verify CHANGELOG.md matches tag
+      run: |
+        VERSION="${{ steps.version.outputs.VERSION }}"
+        CHANGELOG_VERSION=$(awk '/^## /{print $2; exit}' CHANGELOG.md)
+        if [ "$CHANGELOG_VERSION" != "$VERSION" ]; then
+          echo "::error::Tag v$VERSION does not match top of CHANGELOG.md (## $CHANGELOG_VERSION)."
+          exit 1
+        fi
+
+    - name: Build minified bundles with source maps
+      run: |
+        VERSION="${{ steps.version.outputs.VERSION }}"
+        YEAR=$(date +'%Y')
+
+        # Two builds:
+        #   kyte.js      — minified, with `//# sourceMappingURL=kyte.js.map`
+        #                  appended by terser; pairs with kyte.js.map for
+        #                  customer debugging.
+        #   kyte.min.js  — minified, no source-map reference; for callers
+        #                  that don't want the .map fetch (size-sensitive).
+        terser kyte-source.js \
+            -c -m \
+            --source-map "url='kyte.js.map'" \
+            -o kyte.js
+
+        terser kyte-source.js \
+            -c -m \
+            -o kyte.min.js
+
+        # Prepend copyright notice to both. Source map stays untouched —
+        # browsers tolerate a leading comment in the .js but not in JSON.
+        cat > copyright.txt <<EOF
+        /**
+         * Copyright 2020-${YEAR} KeyQ, Inc.
+         * MIT License — https://opensource.org/licenses/MIT
+         * KyteJS v${VERSION}
+         **/
+        EOF
+        cat copyright.txt kyte.js > tmp && mv tmp kyte.js
+        cat copyright.txt kyte.min.js > tmp && mv tmp kyte.min.js
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -20,14 +85,47 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Extract tag name
-      run: echo "TAG_NAME=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+    - name: Upload stable bundles to S3
+      run: |
+        aws s3 cp kyte.js     s3://${{ secrets.S3_BUCKET }}/kyte/js/stable/kyte.js     --content-type application/javascript
+        aws s3 cp kyte.min.js s3://${{ secrets.S3_BUCKET }}/kyte/js/stable/kyte.min.js --content-type application/javascript
+        aws s3 cp kyte.js.map s3://${{ secrets.S3_BUCKET }}/kyte/js/stable/kyte.js.map --content-type application/json
 
-    - name: Copy stable files to S3
-      run: aws s3 cp ./releases/stable/kyte.js s3://${{ secrets.S3_BUCKET }}/kyte/js/stable/kyte.js
-    - name: Sync archive files to S3
-      run: aws s3 cp ./releases/archive/kyte-${{ env.TAG_NAME }}.js s3://${{ secrets.S3_BUCKET }}/kyte/js/archive/kyte-${{ env.TAG_NAME }}.js
+    - name: Upload version-pinned archive bundle to S3
+      run: |
+        VERSION="${{ steps.version.outputs.VERSION }}"
+        aws s3 cp kyte.js     "s3://${{ secrets.S3_BUCKET }}/kyte/js/archive/kyte-${VERSION}.js"     --content-type application/javascript
+        aws s3 cp kyte.js.map "s3://${{ secrets.S3_BUCKET }}/kyte/js/archive/kyte-${VERSION}.js.map" --content-type application/json
 
-    - name: Invalidate CloudFront cache for latest files
+    - name: Invalidate CloudFront cache
       run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CF_DISTRIBUTION_ID }} --paths '/*'
 
+    - name: Extract release notes from CHANGELOG.md
+      id: notes
+      run: |
+        VERSION="${{ steps.version.outputs.VERSION }}"
+        # Capture everything between `## $VERSION` and the next `## ` line.
+        awk -v v="^## ${VERSION}$" '
+          $0 ~ v { capture=1; next }
+          /^## / && capture { exit }
+          capture { print }
+        ' CHANGELOG.md > release-notes.md
+
+        # Sanity check: if release-notes.md is empty the GitHub Release
+        # would be blank. Fail loud rather than ship empty notes.
+        if [ ! -s release-notes.md ]; then
+          echo "::error::Could not extract release notes for v$VERSION from CHANGELOG.md"
+          exit 1
+        fi
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: KyteJS v${{ steps.version.outputs.VERSION }}
+        body_path: release-notes.md
+        files: |
+          kyte.js
+          kyte.min.js
+          kyte.js.map
+        draft: false
+        prerelease: false
