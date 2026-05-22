@@ -1,3 +1,84 @@
+## 2.0.0
+
+### Major: dual-auth support (HMAC + JWT)
+
+KyteJS now supports both the existing HMAC sign/rotate auth and the
+new JWT-bearer auth introduced by kyte-php Phase 3. The two coexist
+on the same install — clients pick per-instance via the new
+`authMode` constructor option.
+
+* **`authMode: 'hmac'` (default, backward compatible)** — preserves
+  v1.x behavior exactly. Every request goes through `sign()` and
+  carries the legacy `x-kyte-signature` / `x-kyte-identity` headers.
+  No changes required for existing apps.
+
+* **`authMode: 'jwt'` (new)** — `sessionCreate()` posts to
+  `/jwt/login`, stores an access JWT plus a rotating refresh token.
+  All subsequent `get` / `post` / `put` / `delete` calls send
+  `Authorization: Bearer <jwt>` instead of HMAC headers. The
+  access token is auto-refreshed via `/jwt/refresh` whenever it's
+  within `jwtRefreshSkewSeconds` (default 30s) of expiring, so
+  callers never see a 401 due to expiry under normal conditions.
+
+### New constructor option (6th positional arg)
+
+```js
+// HMAC (unchanged):
+const k = new Kyte(url, accessKey, identifier, accountNum, appId);
+
+// JWT (new):
+const k = new Kyte(url, null, null, null, appId, { authMode: 'jwt' });
+k.init();
+k.sessionCreate({ email, password }, onSuccess, onError);
+// from here all CRUD calls are JWT-authenticated transparently
+```
+
+The HMAC positional args are accepted as `null` in JWT mode — they
+have no effect, but the signature stays compatible with v1.x
+callers that already pass them.
+
+### New options
+
+* `options.authMode` — `'hmac'` (default) or `'jwt'`.
+* `options.jwtRefreshSkewSeconds` — refresh access token this many
+  seconds before its `exp`. Default 30. Tighter values reduce wasted
+  refresh round-trips at the cost of more 401s under clock drift.
+
+### Implementation notes
+
+* The HMAC code path is completely untouched. JWT mode is implemented
+  as parallel `_sendDataJwt`, `_sessionCreateJwt`, `_sessionDestroyJwt`,
+  `_jwtEnsureFreshAccessToken`, `_jwtStoreTokens`, `_jwtClearTokens`
+  methods invoked only when `authMode === 'jwt'`. Existing apps
+  get bit-identical v1.x behavior.
+
+* Concurrent requests after access-token expiry share a single
+  in-flight refresh (`_jwtRefreshInFlight` promise). Without this, a
+  burst of three parallel requests on an expired token would burn
+  three refresh tokens — the second and third would race-fail with
+  reuse-detection on the server (which would then revoke the
+  legitimate session).
+
+* `checkSession()` in JWT mode reports active while a refresh token
+  is held — access-token expiry is transparent and handled inline.
+
+* `sessionDestroy()` in JWT mode posts to `/jwt/logout` to revoke
+  server-side, then clears local cookies. Local state is cleared
+  even on transient logout failure.
+
+* JWT state lives in three cookies: `kyte_jwt_access` (sized to
+  access TTL), `kyte_jwt_refresh` (sized to 30 days; server is
+  source of truth), `kyte_jwt_expires` (unix epoch of access exp).
+
+### Migration
+
+* No action required for existing v1.x apps — `authMode` defaults to
+  `'hmac'`.
+* New apps that want to use JWT pass `{ authMode: 'jwt' }` and call
+  `sessionCreate({ email, password }, ...)` exactly like before.
+* Shipyard's page generator will set this flag for new apps in a
+  follow-up release.
+
 ## 1.4.0
 
 * **CRITICAL FIX:** Fixed KyteTable/KyteForm integration bug
