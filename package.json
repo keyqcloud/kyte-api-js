@@ -1,0 +1,28 @@
+{
+  "name": "@keyqcloud/kyte-api-js",
+  "version": "1.4.0",
+  "description": "Browser-side JavaScript SDK for the Kyte low-code platform",
+  "private": true,
+  "main": "kyte-source.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keyqcloud/kyte-api-js.git"
+  },
+  "keywords": [
+    "kyte",
+    "low-code",
+    "sdk"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.0",
+    "jquery": "^3.7.1",
+    "jsdom": "^25.0.0",
+    "vitest": "^2.1.0"
+  }
+}

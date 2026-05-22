@@ -6,3 +6,7 @@ Thumbs.db
 temp
 # Snyk Security Extension - AI Rules (auto-generated)
 .github/instructions/snyk_rules.instructions.md
+# Node test infrastructure
+node_modules/
+coverage/
+.vitest-cache/
