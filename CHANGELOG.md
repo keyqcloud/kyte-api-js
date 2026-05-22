@@ -79,6 +79,13 @@ callers that already pass them.
 * Shipyard's page generator will set this flag for new apps in a
   follow-up release.
 
+## [2.1.0](https://github.com/keyqcloud/kyte-api-js/compare/v2.0.0...v2.1.0) (2026-05-22)
+
+
+### Features
+
+* v2.0 dual-auth SDK (HMAC + JWT) ([25d3f46](https://github.com/keyqcloud/kyte-api-js/commit/25d3f464961694a006343f53f5c4e91b633a1c89))
+
 ## 1.4.0
 
 * **CRITICAL FIX:** Fixed KyteTable/KyteForm integration bug

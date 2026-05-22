@@ -1,6 +1,6 @@
 {
   "name": "@keyqcloud/kyte-api-js",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Browser-side JavaScript SDK for the Kyte low-code platform",
   "private": true,
   "main": "kyte-source.js",
