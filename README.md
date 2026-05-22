@@ -84,6 +84,16 @@ No obfuscation — KyteJS is MIT-licensed open source and source-readable on Git
 - jQuery 3.5+ (peer dependency — `kyte-source.js` assumes `$` is loaded first)
 - Bootstrap 5 + DataTables 1.10 (only for the `KyteTable` / `KyteForm` widgets)
 
+## Contributing
+
+Commits must follow [Conventional Commits](https://www.conventionalcommits.org/) so that releases can be automated. See [CONTRIBUTING.md](CONTRIBUTING.md) for the convention and the release flow.
+
+Quick reference:
+- `feat: <description>` → minor bump
+- `fix: <description>` → patch bump
+- `feat!: <description>` or `BREAKING CHANGE:` footer → major bump
+- `docs:`, `test:`, `ci:`, `chore:`, `refactor:` → no version bump
+
 ## License
 
 [MIT](LICENSE) © KeyQ, Inc.
