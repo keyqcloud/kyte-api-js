@@ -17,10 +17,31 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '1.4.0';
+	static VERSION = '2.0.0';
 	/** **************** */
 
-	constructor(url, accessKey, identifier, account_number, applicationId = null) {
+	/**
+	 * @param {string} url           Kyte API base URL.
+	 * @param {?string} accessKey    HMAC public key. Pass null when authMode === 'jwt'.
+	 * @param {?string} identifier   HMAC API key identifier. Pass null when authMode === 'jwt'.
+	 * @param {?string} account_number  HMAC account number. Pass null when authMode === 'jwt'.
+	 * @param {?string} applicationId   Application identifier (sent as X-Kyte-AppId for HMAC,
+	 *                                  used as the JWT `app` claim for JWT login).
+	 * @param {Object}  [options]     Optional config bag.
+	 * @param {('hmac'|'jwt')} [options.authMode='hmac']
+	 *                                'hmac' (default) preserves v1.x behavior — every request
+	 *                                goes through sign() and the legacy x-kyte-signature/-identity
+	 *                                headers. 'jwt' switches to Phase 3 auth: /jwt/login issues
+	 *                                an access JWT + refresh token, sendData sends
+	 *                                Authorization: Bearer <jwt>, refresh tokens rotate
+	 *                                automatically before each request when the access token is
+	 *                                near expiry.
+	 * @param {number}  [options.jwtRefreshSkewSeconds=30]
+	 *                                Refresh the access token this many seconds before its exp.
+	 *                                Tighter values reduce wasted refresh round-trips at the
+	 *                                cost of more 401s when clocks drift.
+	 */
+	constructor(url, accessKey, identifier, account_number, applicationId = null, options = {}) {
 		this.url = url;
 		this.access_key = accessKey;
 		this.identifier = identifier;
@@ -41,17 +62,33 @@ class Kyte {
 		this.redirectToLoginInitiated = false;
 
 		this.sessionController = 'Session';
+
+		// v2.0 — auth mode plumbing. Default 'hmac' preserves v1.x behavior.
+		this.authMode = options.authMode === 'jwt' ? 'jwt' : 'hmac';
+		this.jwtAccessToken = null;
+		this.jwtRefreshToken = null;
+		this.jwtAccessExpiresAt = 0;            // unix epoch seconds; 0 means unknown / expired
+		this.jwtRefreshSkewSeconds = typeof options.jwtRefreshSkewSeconds === 'number'
+			? options.jwtRefreshSkewSeconds
+			: 30;
+		this._jwtRefreshInFlight = null;        // Promise dedupe while a refresh is mid-flight
 	}
 	init = () => {
-		this.access_key = (this.getCookie('kyte_pub') ? this.getCookie('kyte_pub') : this.access_key);
-		this.identifier = (this.getCookie('kyte_iden') ? this.getCookie('kyte_iden') : this.identifier);
-		this.account_number = (this.getCookie('kyte_num') ? this.getCookie('kyte_num') : this.account_number);
+		if (this.authMode === 'jwt') {
+			this.jwtAccessToken = this.getCookie('kyte_jwt_access') || null;
+			this.jwtRefreshToken = this.getCookie('kyte_jwt_refresh') || null;
+			this.jwtAccessExpiresAt = parseInt(this.getCookie('kyte_jwt_expires') || '0', 10);
+		} else {
+			this.access_key = (this.getCookie('kyte_pub') ? this.getCookie('kyte_pub') : this.access_key);
+			this.identifier = (this.getCookie('kyte_iden') ? this.getCookie('kyte_iden') : this.identifier);
+			this.account_number = (this.getCookie('kyte_num') ? this.getCookie('kyte_num') : this.account_number);
 
-		// get txToken and session tokens from cookie if they exist (i.e. user session exists)
-		this.txToken = (this.getCookie('txToken') ? this.getCookie('txToken') : 0);
-		this.sessionToken = (this.getCookie('sessionToken') ? this.getCookie('sessionToken') : 0);
+			// get txToken and session tokens from cookie if they exist (i.e. user session exists)
+			this.txToken = (this.getCookie('txToken') ? this.getCookie('txToken') : 0);
+			this.sessionToken = (this.getCookie('sessionToken') ? this.getCookie('sessionToken') : 0);
+		}
 
-		console.info(`Initialized KyteJS v${Kyte.VERSION}`);
+		console.info(`Initialized KyteJS v${Kyte.VERSION} (auth mode: ${this.authMode})`);
 	}
 	/* API Version
 	 *
@@ -122,6 +159,11 @@ class Kyte {
 	 *
 	 */
 	sendData = (method, model, field = null, value = null, data = null, formdata = null, headers = [], callback, error = null) => {
+		if (this.authMode === 'jwt') {
+			this._sendDataJwt(method, model, field, value, data, formdata, headers, callback, error);
+			return;
+		}
+
 		var obj = this;
 
 		this.sign(
@@ -417,6 +459,11 @@ class Kyte {
 	 *
 	 */
 	sessionCreate = (identity, callback, error = null, sessionController = null) => {
+		if (this.authMode === 'jwt') {
+			this._sessionCreateJwt(identity, callback, error);
+			return;
+		}
+
 		var obj = this;
 		if (sessionController !== null) {
 			obj.sessionController = sessionController;
@@ -461,13 +508,26 @@ class Kyte {
         });
 	}
 	checkSession = () => {
+		if (this.authMode === 'jwt') {
+			// JWT session is "active" while we hold a refresh token. The
+			// access token expiring is normal — refresh-on-next-request
+			// handles it transparently. Only when the refresh token is
+			// gone (logged out, explicitly revoked, or never present) do
+			// we declare the session dead.
+			if (!this.jwtRefreshToken) {
+				this.sessionDestroy();
+				return false;
+			}
+			return true;
+		}
+
 		// Check if sessionToken or txToken are falsy values (including '0', 0, undefined, null, etc.)
 		if (!this.sessionToken || this.sessionToken === '0' || !this.txToken || this.txToken === '0') {
 			this.sessionDestroy();
 		}
 		// Return true if 'sessionToken' cookie exists and is truthy, otherwise false
 		return !!this.getCookie('sessionToken');
-	}	
+	}
 	redirectToLogin = () => {
 		if (!this.redirectToLoginInitiated) {
 			this.redirectToLoginInitiated = true;
@@ -514,6 +574,11 @@ class Kyte {
 	 *
 	 */
 	sessionDestroy = (error = null) => {
+		if (this.authMode === 'jwt') {
+			this._sessionDestroyJwt(error);
+			return;
+		}
+
 		var obj = this;
 		this.delete('Session', null, null, [],
 			function (response) {
@@ -638,7 +703,282 @@ class Kyte {
 
 	getNestedValue = (obj, path) => {
 		return path.split('.').reduce((acc, key) => (acc ? acc[key] : undefined), obj);
-	}  
+	}
+
+	// ====================================================================
+	// JWT auth (v2.0) — parallel implementation. Only invoked when
+	// authMode === 'jwt'. HMAC path above is untouched.
+	// ====================================================================
+
+	/**
+	 * Equivalent of sessionCreate for JWT mode.
+	 *
+	 * `identity` is the same object the HMAC sessionCreate accepts
+	 * ({email, password} plus any extra fields the app-side login
+	 * expects). We POST it to /jwt/login on the same Kyte base URL.
+	 * On success we store the access JWT, the refresh token, and the
+	 * absolute expiry timestamp; the cookie-set is parallel to the
+	 * HMAC kyte_pub / kyte_iden / kyte_num set so a refresh of the
+	 * page keeps the session alive without re-logging-in.
+	 */
+	_sessionCreateJwt = (identity, callback, error = null) => {
+		var obj = this;
+		var payload = Object.assign({}, identity || {});
+		if (!('app_identifier' in payload) && obj.applicationId) {
+			payload.app_identifier = obj.applicationId;
+		}
+
+		$.ajax({
+			method: 'POST',
+			crossDomain: true,
+			dataType: 'json',
+			url: obj.url + '/jwt/login',
+			contentType: 'application/json',
+			data: JSON.stringify(payload),
+			success: function (response) {
+				obj._jwtStoreTokens(response);
+				if (typeof callback === 'function') {
+					callback(response);
+				} else {
+					console.log(response);
+				}
+			},
+			error: function (xhr) {
+				obj._jwtClearTokens();
+				var body = xhr && xhr.responseJSON ? xhr.responseJSON : xhr;
+				if (typeof error === 'function') {
+					error(body);
+				} else {
+					console.error(body);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Equivalent of sessionDestroy for JWT mode.
+	 *
+	 * Best-effort: POST /jwt/logout with the refresh token to revoke
+	 * server-side, then clear local tokens regardless of response.
+	 * Clearing local first would leak the still-active refresh token
+	 * server-side if the request never goes out; doing it after means
+	 * a transient failure still cleans up locally on the next refresh.
+	 */
+	_sessionDestroyJwt = (error = null) => {
+		var obj = this;
+		var refreshToken = obj.jwtRefreshToken;
+
+		var finish = function (response) {
+			obj._jwtClearTokens();
+			if (typeof error === 'function') {
+				error(response);
+			} else if (response && response.statusText) {
+				console.error(response);
+			}
+		};
+
+		if (!refreshToken) {
+			obj._jwtClearTokens();
+			return;
+		}
+
+		$.ajax({
+			method: 'POST',
+			crossDomain: true,
+			dataType: 'json',
+			url: obj.url + '/jwt/logout',
+			contentType: 'application/json',
+			data: JSON.stringify({ refresh_token: refreshToken }),
+			success: function () { obj._jwtClearTokens(); },
+			error: finish
+		});
+	}
+
+	/**
+	 * sendData() equivalent for JWT mode.
+	 *
+	 * Pre-flight: if the access token is missing or expired within
+	 * the configured skew window, refresh first. Then issue the
+	 * actual request with Authorization: Bearer <access>. On 401
+	 * we clear tokens and trigger the same redirect-to-login flow
+	 * as the HMAC path — refresh-then-retry would mask a deeper
+	 * problem and risk loops.
+	 */
+	_sendDataJwt = (method, model, field, value, data, formdata, headers, callback, error) => {
+		var obj = this;
+		var apiURL = obj.url + '/' + model;
+		if (field) {
+			apiURL += '/' + encodeURIComponent(field);
+		}
+		if (value) {
+			apiURL += '/' + encodeURIComponent(value);
+		}
+
+		var encdata = '';
+		if (data) {
+			encdata += $.param(data);
+		}
+		if (formdata) {
+			if (encdata) encdata += '&';
+			encdata += formdata;
+		}
+
+		var issueRequest = function () {
+			$.ajax({
+				method: method,
+				crossDomain: true,
+				dataType: 'json',
+				url: apiURL,
+				beforeSend: function (xhr) {
+					if (obj.jwtAccessToken) {
+						xhr.setRequestHeader('Authorization', 'Bearer ' + obj.jwtAccessToken);
+					}
+					if (obj.applicationId) {
+						xhr.setRequestHeader('x-kyte-appid', obj.applicationId);
+					}
+					xhr.setRequestHeader('x-kyte-device', window.navigator.userAgent);
+					if (headers && headers.length > 0) {
+						for (var i = 0; i < headers.length; i++) {
+							xhr.setRequestHeader(headers[i].name, headers[i].value);
+						}
+					}
+				},
+				data: encdata,
+				success: function (response) {
+					if (response && response.syntax_error) {
+						obj.syntaxErrorBanner(response.syntax_error);
+					}
+					if (typeof callback === 'function') {
+						callback(response);
+					} else {
+						console.log(response);
+					}
+				},
+				error: function (xhr) {
+					if (xhr && xhr.responseJSON && xhr.responseJSON.syntax_error) {
+						obj.syntaxErrorBanner(xhr.responseJSON.syntax_error);
+					}
+					if (xhr && xhr.status == 403) {
+						obj.sessionDestroy();
+						if (obj.sessionTimer) {
+							clearInterval(obj.sessionTimer);
+						}
+						if (model !== obj.sessionController) {
+							obj.redirectToLogin();
+						}
+					}
+					var body = xhr && xhr.responseJSON ? xhr.responseJSON : xhr;
+					if (typeof error === 'function') {
+						error(body && body.error ? body.error : body);
+					} else {
+						console.error(body);
+					}
+				}
+			});
+		};
+
+		// Refresh if needed, then issue. The refresh helper invokes its
+		// success/fail callbacks synchronously when no refresh is needed,
+		// so non-expired tokens incur no extra cost.
+		obj._jwtEnsureFreshAccessToken(issueRequest, function (refreshErr) {
+			// Refresh failed — token rotation lost. Treat like a 403:
+			// destroy local state and bounce to login.
+			obj.sessionDestroy();
+			if (typeof error === 'function') {
+				error(refreshErr);
+			} else {
+				console.error(refreshErr);
+			}
+		});
+	}
+
+	/**
+	 * If the access token is healthy (present, not within the refresh
+	 * skew window), invoke onReady() synchronously. Otherwise call
+	 * /jwt/refresh, store the new pair, then invoke onReady(). Failure
+	 * calls onFail(reason).
+	 *
+	 * Concurrent calls during a refresh share one in-flight request via
+	 * `_jwtRefreshInFlight` — without this, a page that fires three
+	 * requests in parallel after expiry would burn three refresh
+	 * tokens (and the second/third would race-fail with reuse detection
+	 * on the server).
+	 */
+	_jwtEnsureFreshAccessToken = (onReady, onFail) => {
+		var obj = this;
+		var now = Math.floor(Date.now() / 1000);
+
+		if (obj.jwtAccessToken && obj.jwtAccessExpiresAt > now + obj.jwtRefreshSkewSeconds) {
+			onReady();
+			return;
+		}
+
+		if (!obj.jwtRefreshToken) {
+			onFail({ error: 'no_refresh_token', message: 'JWT session has no refresh token.' });
+			return;
+		}
+
+		// Dedupe — if a refresh is mid-flight, queue this request behind it.
+		if (obj._jwtRefreshInFlight) {
+			obj._jwtRefreshInFlight.then(onReady, onFail);
+			return;
+		}
+
+		obj._jwtRefreshInFlight = new Promise(function (resolve, reject) {
+			$.ajax({
+				method: 'POST',
+				crossDomain: true,
+				dataType: 'json',
+				url: obj.url + '/jwt/refresh',
+				contentType: 'application/json',
+				data: JSON.stringify({ refresh_token: obj.jwtRefreshToken }),
+				success: function (response) {
+					obj._jwtStoreTokens(response);
+					obj._jwtRefreshInFlight = null;
+					resolve();
+				},
+				error: function (xhr) {
+					obj._jwtRefreshInFlight = null;
+					var body = xhr && xhr.responseJSON ? xhr.responseJSON : xhr;
+					reject(body && body.error ? body : { error: 'refresh_failed', detail: body });
+				}
+			});
+		});
+		obj._jwtRefreshInFlight.then(onReady, onFail);
+	}
+
+	/**
+	 * Persist a /jwt/login or /jwt/refresh response. Response shape
+	 * matches src/Core/Auth/JwtEndpoint.php on the server side:
+	 *   { access_token, refresh_token, expires_in, refresh_expires_at, ... }
+	 */
+	_jwtStoreTokens = (response) => {
+		if (!response) return;
+		this.jwtAccessToken = response.access_token || null;
+		this.jwtRefreshToken = response.refresh_token || this.jwtRefreshToken;
+		var expiresIn = typeof response.expires_in === 'number' ? response.expires_in : 0;
+		this.jwtAccessExpiresAt = expiresIn > 0
+			? Math.floor(Date.now() / 1000) + expiresIn
+			: 0;
+
+		// Cookie TTLs: access cookie matches the JWT exp (browser will drop
+		// it on its own around the same time the JWT expires). Refresh
+		// cookie is sized larger — server-side TTL is the source of truth.
+		var accessMinutes = expiresIn > 0 ? Math.ceil(expiresIn / 60) : null;
+		this.setCookie('kyte_jwt_access', this.jwtAccessToken || '', accessMinutes, this.sessionCrossDomain);
+		this.setCookie('kyte_jwt_refresh', this.jwtRefreshToken || '', 60 * 24 * 30, this.sessionCrossDomain);
+		this.setCookie('kyte_jwt_expires', String(this.jwtAccessExpiresAt), accessMinutes, this.sessionCrossDomain);
+	}
+
+	/** Drop all JWT state in memory and in cookies. */
+	_jwtClearTokens = () => {
+		this.jwtAccessToken = null;
+		this.jwtRefreshToken = null;
+		this.jwtAccessExpiresAt = 0;
+		this.setCookie('kyte_jwt_access', '', -1);
+		this.setCookie('kyte_jwt_refresh', '', -1);
+		this.setCookie('kyte_jwt_expires', '', -1);
+	}
 }
 
 class KyteNav {
