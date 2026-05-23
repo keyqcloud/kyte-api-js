@@ -17,7 +17,7 @@
  **/
 class Kyte {
 	/** KyteJS Version # */
-	static VERSION = '2.0.1';
+	static VERSION = '2.0.2';
 	/** **************** */
 
 	/**
@@ -979,10 +979,21 @@ class Kyte {
 
 		// Cookie TTLs: access cookie matches the JWT exp (browser will drop
 		// it on its own around the same time the JWT expires). Refresh
-		// cookie is sized larger — server-side TTL is the source of truth.
+		// cookie is derived from `refresh_expires_at` (unix seconds) so the
+		// cookie expires precisely when the server's refresh token expires —
+		// no zombie cookie lingering past the server's TTL. If the server
+		// omits it (older deployments / belt-and-suspenders), fall through
+		// to a session cookie (null = browser-session lifetime) rather than
+		// the old 30-day hardcode that long-outlived server-side validity.
 		var accessMinutes = expiresIn > 0 ? Math.ceil(expiresIn / 60) : null;
+		var refreshExpiresAt = typeof response.refresh_expires_at === 'number' ? response.refresh_expires_at : 0;
+		var refreshMinutes = null;
+		if (refreshExpiresAt > 0) {
+			var secondsRemaining = refreshExpiresAt - Math.floor(Date.now() / 1000);
+			refreshMinutes = secondsRemaining > 0 ? Math.ceil(secondsRemaining / 60) : -1;
+		}
 		this.setCookie('kyte_jwt_access', this.jwtAccessToken || '', accessMinutes, this.sessionCrossDomain);
-		this.setCookie('kyte_jwt_refresh', this.jwtRefreshToken || '', 60 * 24 * 30, this.sessionCrossDomain);
+		this.setCookie('kyte_jwt_refresh', this.jwtRefreshToken || '', refreshMinutes, this.sessionCrossDomain);
 		this.setCookie('kyte_jwt_expires', String(this.jwtAccessExpiresAt), accessMinutes, this.sessionCrossDomain);
 	}
 
