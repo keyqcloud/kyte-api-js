@@ -60,21 +60,15 @@ k.delete('Model', 'id', 42, [], onSuccess, onError);
 
 ## Building from source
 
-Releases are built from `kyte-source.js` (the single source file) into minified bundles via [terser](https://github.com/terser/terser):
+The single source file is `kyte-source.js`. Tagging a release is all that's needed locally:
 
 ```bash
-npm install -g terser
-./release.sh 2.0.0
+./release.sh 2.0.2
 ```
 
-The script:
-1. Verifies the version in `CHANGELOG.md` matches the argument
-2. Minifies `kyte-source.js` into `kyte.js` and `kyte.min.js`
-3. Prepends the copyright notice
-4. Writes them to `releases/stable/` (canonical) and `releases/archive/kyte-<version>.js` (pinned)
-5. Commits, tags `v<version>`, pushes
+The script verifies the version in `CHANGELOG.md` matches the argument, ensures the working tree is clean and on `master` in sync with origin, then tags `v<version>` and pushes.
 
-The tag push triggers `.github/workflows/deploy.yml`, which copies the bundles to S3 and invalidates the CloudFront distribution.
+The tag push triggers `.github/workflows/deploy.yml`, which installs [terser](https://github.com/terser/terser), minifies `kyte-source.js` into `kyte.js` (+ source map) and `kyte.min.js`, prepends the copyright notice, uploads to S3, invalidates the CloudFront distribution, and creates the GitHub Release with notes extracted from `CHANGELOG.md`. The build artifacts live only in S3/CloudFront — they are not committed back to the repo.
 
 No obfuscation — KyteJS is MIT-licensed open source and source-readable on GitHub; obfuscation would only inflate bundles and break customer stack traces without any security benefit. Per-app API keys *are* obfuscated separately by Shipyard when it embeds them in customer pages — that's a different concern.
 
