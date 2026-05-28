@@ -173,3 +173,78 @@ describe('Kyte — JWT sessionDestroy', () => {
     }
   });
 });
+
+// _jwtStoreTokens cookie-TTL derivation. Prior to v2.0.2 the refresh
+// cookie was hardcoded to a 30-day TTL regardless of what the server's
+// refresh token actually allowed — so the cookie outlived server-side
+// validity by weeks. v2.0.2 derives the TTL from response.refresh_expires_at
+// and falls back to a browser-session cookie when the server omits it.
+describe('Kyte — JWT cookie TTL derivation', () => {
+  // Capture every setCookie call so we can inspect TTLs without parsing
+  // jsdom's document.cookie (which drops expires anyway).
+  function captureSetCookie(k) {
+    const calls = [];
+    k.setCookie = function (cname, cvalue, minutes = null) {
+      calls.push({ cname, cvalue, minutes });
+    };
+    return calls;
+  }
+
+  it('derives kyte_jwt_refresh TTL from response.refresh_expires_at', () => {
+    const k = new Kyte('https://api.test', null, null, null, null, { authMode: 'jwt' });
+    const calls = captureSetCookie(k);
+
+    // Server says refresh token expires 4 hours from now.
+    const refreshExpiresAt = Math.floor(Date.now() / 1000) + 14400;
+    k._jwtStoreTokens({
+      access_token: 'a.b.c',
+      refresh_token: 'kref_v1_xyz',
+      expires_in: 900,
+      refresh_expires_at: refreshExpiresAt,
+    });
+
+    const refreshCall = calls.find((c) => c.cname === 'kyte_jwt_refresh');
+    expect(refreshCall).toBeDefined();
+    // 4h = 240 minutes (±1 for the rounding window).
+    expect(refreshCall.minutes).toBeGreaterThanOrEqual(239);
+    expect(refreshCall.minutes).toBeLessThanOrEqual(241);
+  });
+
+  it('falls back to a session cookie when refresh_expires_at is omitted', () => {
+    const k = new Kyte('https://api.test', null, null, null, null, { authMode: 'jwt' });
+    const calls = captureSetCookie(k);
+
+    k._jwtStoreTokens({
+      access_token: 'a.b.c',
+      refresh_token: 'kref_v1_xyz',
+      expires_in: 900,
+      // refresh_expires_at intentionally absent
+    });
+
+    const refreshCall = calls.find((c) => c.cname === 'kyte_jwt_refresh');
+    expect(refreshCall).toBeDefined();
+    // null minutes → no `expires` header → browser-session cookie
+    // (closes when browser closes). Safer than the old 30-day hardcode.
+    expect(refreshCall.minutes).toBeNull();
+  });
+
+  it('does not write a 30-day TTL anymore', () => {
+    // Regression guard: the v2.0.1 bug used `60 * 24 * 30 = 43200` minutes.
+    // If anyone re-introduces a literal large number here, the test catches it.
+    const k = new Kyte('https://api.test', null, null, null, null, { authMode: 'jwt' });
+    const calls = captureSetCookie(k);
+
+    k._jwtStoreTokens({
+      access_token: 'a.b.c',
+      refresh_token: 'kref_v1_xyz',
+      expires_in: 900,
+      refresh_expires_at: Math.floor(Date.now() / 1000) + 14400,
+    });
+
+    const refreshCall = calls.find((c) => c.cname === 'kyte_jwt_refresh');
+    // 43200 minutes = 30 days — must not appear.
+    expect(refreshCall.minutes).not.toBe(43200);
+    // Sanity bound: any sane refresh TTL is under a week (10080 min).
+    expect(refreshCall.minutes).toBeLessThan(10080);
+  });
+});

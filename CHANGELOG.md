@@ -1,3 +1,18 @@
+## 2.0.2
+
+### Bug Fix: JWT refresh cookie outlives server-side validity
+
+`_jwtStoreTokens` hardcoded the `kyte_jwt_refresh` cookie TTL to **30 days** (`60 * 24 * 30` minutes), regardless of what the server's refresh-token TTL actually allowed. Server defaulted to 7 days in 4.4.x; even there, the cookie outlived the server by 23 days. With kyte-php 4.5.0 dropping the server-side default to 4 hours, the mismatch became a real problem — closing the browser left a "zombie" refresh cookie that the server had long since stopped honoring.
+
+Fix: derive the cookie TTL from `response.refresh_expires_at` (unix seconds, set by the server in `/jwt/login` and `/jwt/refresh` responses). Cookie now expires precisely when the server's refresh token expires. If the server omits `refresh_expires_at` (older deployments / unexpected response shape), fall through to a **session cookie** (browser-session lifetime) rather than the old 30-day hardcode — safer-by-default, the user gets logged out when they close the browser.
+
+Regression coverage in `tests/kyte.test.js`:
+1. Cookie TTL matches `refresh_expires_at`
+2. Missing `refresh_expires_at` → session cookie
+3. Asserts the 30-day literal (`43200` minutes) never reappears + sanity bound < 1 week
+
+No API surface change for the consuming app. Recommended pairing with kyte-php 4.5.0 (`KYTE_JWT_FAMILY_MAX_LIFETIME` introduces a 12-hour absolute session cap; the cookie-TTL fix here ensures the client-side cookie expires in lockstep).
+
 ## 2.0.1
 
 ### Bug Fix: JWT logout drops completion callback, breaking `addLogoutHandler`
