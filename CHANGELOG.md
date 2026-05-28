@@ -13,6 +13,16 @@ Regression coverage in `tests/kyte.test.js`:
 
 No API surface change for the consuming app. Recommended pairing with kyte-php 4.5.0 (`KYTE_JWT_FAMILY_MAX_LIFETIME` introduces a 12-hour absolute session cap; the cookie-TTL fix here ensures the client-side cookie expires in lockstep).
 
+## [2.0.1](https://github.com/keyqcloud/kyte-api-js/compare/v2.0.0...v2.0.1) (2026-05-28)
+
+
+### Bug Fixes
+
+* **jwt:** _sessionDestroyJwt must invoke completion callback on all paths ([e9213a6](https://github.com/keyqcloud/kyte-api-js/commit/e9213a634aaa590480a04c76e9369ffb6e393fea))
+* **jwt:** _sessionDestroyJwt must invoke completion callback on all paths ([ebb5225](https://github.com/keyqcloud/kyte-api-js/commit/ebb5225b5e550459951ea7bf556f9bc38e0cc7b2))
+* **jwt:** derive refresh cookie TTL from server's refresh_expires_at ([aeb0f78](https://github.com/keyqcloud/kyte-api-js/commit/aeb0f783cbdc954ff1c149b48fbec99c0e67c42c))
+* **jwt:** derive refresh cookie TTL from server's refresh_expires_at ([0b9363f](https://github.com/keyqcloud/kyte-api-js/commit/0b9363f026dbfba3a0aae981717f466d5a01186b))
+
 ## 2.0.1
 
 ### Bug Fix: JWT logout drops completion callback, breaking `addLogoutHandler`
