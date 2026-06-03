@@ -930,7 +930,22 @@ class Kyte {
 		}
 
 		if (!obj.jwtRefreshToken) {
-			onFail({ error: 'no_refresh_token', message: 'JWT session has no refresh token.' });
+			// No refresh token. Two distinct cases:
+			//  1. No access token either → an ANONYMOUS visitor who never
+			//     logged in. Issue the request anyway: issueRequest sets the
+			//     Authorization header only when a token exists and always
+			//     sends x-kyte-appid, so this fires an app-only request that
+			//     the server's AppContextStrategy serves for requireAuth=false
+			//     (public) controllers. This is what enables JWT-mode public
+			//     browsing before login.
+			//  2. Had an access token but no/lost refresh token → a broken or
+			//     expired session. Fail so the caller destroys state + bounces
+			//     to login (unchanged behavior).
+			if (!obj.jwtAccessToken) {
+				onReady();
+			} else {
+				onFail({ error: 'no_refresh_token', message: 'JWT session has no refresh token.' });
+			}
 			return;
 		}
 
