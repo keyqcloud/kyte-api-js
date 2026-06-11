@@ -1,3 +1,13 @@
+## 2.1.0
+
+### Feature: anonymous fall-through for JWT-mode public access (KYTE-#229)
+
+JWT mode previously failed closed for visitors with no session: `_jwtEnsureFreshAccessToken` called `onFail('no_refresh_token')` whenever there was no access token AND no refresh token, so an anonymous visitor's request never left the browser — public/catalog pages could not run on JWT mode at all (the gap that kept storefronts pinned to HMAC).
+
+Now a **true anonymous** visitor (no access token, no refresh token) proceeds via `onReady()`: the request fires with `x-kyte-appid` only — no `Authorization` header. The server decides whether to serve it (kyte-php v4.11.0's `AppContextStrategy` + the per-app `Application.allow_public` opt-in; `requireAuth=true` controllers still 403). A present-but-unrefreshable session still fails closed and destroys the session exactly as before.
+
+**Fail-safe against older servers:** on kyte-php ≤ 4.10.x (no anonymous path) the appid-only request is rejected server-side — the same net failure as the old client-side block — so this client can ship ahead of server rollouts. Logged-in JWT flows and HMAC mode are entirely unchanged.
+
 ## 2.0.2
 
 ### Bug Fix: JWT refresh cookie outlives server-side validity
