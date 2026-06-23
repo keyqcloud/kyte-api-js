@@ -16,8 +16,11 @@
  * ©2020-2023 KeyQ, Inc.
  **/
 class Kyte {
-	/** KyteJS Version # */
-	static VERSION = '2.0.2';
+	/** KyteJS Version # — kept in sync with the release by release-please
+	 *  (x-release-please-version annotation; see release-please-config.json
+	 *  extra-files). The deploy workflow also force-stamps this from the git
+	 *  tag at build time as a belt-and-suspenders. */
+	static VERSION = '2.1.0'; // x-release-please-version
 	/** **************** */
 
 	/**

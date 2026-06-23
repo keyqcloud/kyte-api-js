@@ -58,6 +58,20 @@ jobs:
         VERSION="${{ steps.version.outputs.VERSION }}"
         YEAR=$(date +'%Y')
 
+        # Force the runtime VERSION literal to the tag. Single source of
+        # truth is the git tag (same as the copyright header below).
+        # release-please's x-release-please-version annotation keeps the
+        # committed source in sync; this is the belt-and-suspenders so the
+        # SHIPPED bundle can never drift from the tag even if that slips
+        # (which is exactly how v2.1.0 went out logging "2.0.2").
+        sed -i -E "s/(static VERSION *= *['\"])[0-9]+\.[0-9]+\.[0-9]+(['\"])/\1${VERSION}\2/" kyte-source.js
+        STAMPED=$(grep -oE "static VERSION *= *['\"][0-9.]+['\"]" kyte-source.js)
+        echo "Stamped: ${STAMPED}"
+        if ! echo "${STAMPED}" | grep -q "'${VERSION}'"; then
+          echo "::error::Failed to stamp VERSION literal to ${VERSION} (got: ${STAMPED})."
+          exit 1
+        fi
+
         # Two builds:
         #   kyte.js      — minified, with `//# sourceMappingURL=kyte.js.map`
         #                  appended by terser; pairs with kyte.js.map for

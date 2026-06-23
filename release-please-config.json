@@ -7,6 +7,9 @@
       "package-name": "kyte-api-js",
       "include-component-in-tag": false,
       "include-v-in-tag": true,
+      "extra-files": [
+        { "type": "generic", "path": "kyte-source.js" }
+      ],
       "changelog-sections": [
         { "type": "feat",     "section": "Features" },
         { "type": "fix",      "section": "Bug Fixes" },
