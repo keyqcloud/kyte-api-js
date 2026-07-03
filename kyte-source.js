@@ -1501,6 +1501,13 @@ class KyteTable {
 		headers.push({'name':'x-kyte-page-idx','value': this.currentPage});
 		headers.push({'name':'x-kyte-page-search-value','value': this.searchValue ? btoa(encodeURIComponent(this.searchValue)) : ""});
 		headers.push({'name':'x-kyte-page-search-fields','value': fields.join(',')});
+		// Column projection (KYTE-#190): tell the server to return only the
+		// fields this table actually displays (dotted FK paths like
+		// `client.name` included — the server maps them to their base column).
+		// Same value as search-fields but a distinct header: search = which
+		// columns to match; projection = which columns to return. The server
+		// always adds id + FK ids back, so row actions and FK labels still work.
+		headers.push({'name':'x-kyte-fields','value': fields.join(',')});
 
 		if (this.sortColumn) {
 			headers.push({'name':'x-kyte-page-order-col','value': this.sortColumn});

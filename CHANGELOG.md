@@ -1,3 +1,9 @@
+## 2.2.0
+
+### Feature: KyteTable column projection (KYTE-#190)
+
+`KyteTable` now sends an `x-kyte-fields` header listing the columns it displays, so a list read returns only those columns instead of every column (large `TEXT`/`BLOB` columns stay out of list payloads). The value is the same field list the table already builds from its `columnDefs` (dotted FK paths like `client.name` included) — a distinct header from `x-kyte-page-search-fields` because search ("which columns to match") and projection ("which columns to return") are different concerns. Requires kyte-php ≥ 4.16 (the server maps dotted FK paths to their base column and always adds `id` + FK ids back, so row actions and FK labels keep working). Fully backward compatible: an older server ignores the header.
+
 ## 2.1.0
 
 ### Feature: anonymous fall-through for JWT-mode public access (KYTE-#229)
