@@ -332,6 +332,15 @@ class Kyte {
 			}
         );
 	}
+	/* ⚠️ KEEP IN SYNC WITH THE MCP AUTHORING GUIDE.
+	 * The signatures + response/error contract of get/post/put/delete and
+	 * sessionCreate/sessionDestroy below are documented for AI code generation in
+	 * kyte-php's get_kytejs_guide MCP tool (Mcp/Tools/AccountTools::getKytejsGuide).
+	 * Any material change here (param order, response.data shape, error callback
+	 * behaviour, session signatures) MUST update that guide in the same change, or
+	 * AI-generated page JS will drift out of spec.
+	 */
+
 	/* Post
 	 *
 	 * Use sign() to obtain authorization to transact and
