@@ -20,9 +20,9 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "@vitest/coverage-v8": "^2.1.0",
+    "@vitest/coverage-v8": "^5.0.5",
     "jquery": "^3.7.1",
     "jsdom": "^25.0.0",
-    "vitest": "^2.1.0"
+    "vitest": "^5.0.5"
   }
 }
