@@ -248,3 +248,175 @@ describe('Kyte — JWT cookie TTL derivation', () => {
     expect(refreshCall.minutes).toBeLessThan(10080);
   });
 });
+
+// Multi-tab refresh. Every tab shares the kyte_jwt_* cookies but keeps its
+// own in-memory tokens. Refresh tokens rotate, so after tab A refreshes,
+// tab B's in-memory refresh token is stale; sending it trips the server's
+// reuse detection, which revokes the whole family and signs out every tab.
+// These tests pin the fix: adopt the cookie tokens first, and refresh
+// under a cross-tab lock with a re-read inside it.
+describe('Kyte — JWT multi-tab refresh', () => {
+  const nowSec = () => Math.floor(Date.now() / 1000);
+
+  // Simulate another tab having written a token pair to the shared cookies.
+  function writeOtherTabCookies(refresh, access, expiresAt) {
+    document.cookie = `kyte_jwt_refresh=${refresh};path=/`;
+    document.cookie = `kyte_jwt_access=${access};path=/`;
+    document.cookie = `kyte_jwt_expires=${expiresAt};path=/`;
+  }
+
+  function jwtKyte() {
+    const k = new Kyte('https://api.test', null, null, null, null, { authMode: 'jwt' });
+    k.jwtRefreshToken = 'kref_old';
+    k.jwtAccessToken = 'old.access.sig';
+    k.jwtAccessExpiresAt = nowSec() - 10; // expired
+    return k;
+  }
+
+  let realAjax;
+  let ajaxCalls;
+  let realLocks;
+  beforeEach(() => {
+    realAjax = globalThis.$.ajax;
+    ajaxCalls = [];
+    globalThis.$.ajax = (opts) => {
+      ajaxCalls.push(opts);
+      if (opts.url.endsWith('/jwt/refresh')) {
+        opts.success({ access_token: 'fresh.access.sig', refresh_token: 'kref_fresh', expires_in: 900 });
+      }
+    };
+    realLocks = Object.getOwnPropertyDescriptor(window.navigator, 'locks');
+  });
+  afterEach(() => {
+    globalThis.$.ajax = realAjax;
+    if (realLocks) {
+      Object.defineProperty(window.navigator, 'locks', realLocks);
+    } else {
+      delete window.navigator.locks;
+    }
+  });
+
+  function installLocks(beforeRun) {
+    const requested = [];
+    Object.defineProperty(window.navigator, 'locks', {
+      configurable: true,
+      value: {
+        request: (name, cb) => {
+          requested.push(name);
+          if (beforeRun) beforeRun();
+          return Promise.resolve().then(cb);
+        },
+      },
+    });
+    return requested;
+  }
+
+  const refreshCalls = () => ajaxCalls.filter((c) => c.url.endsWith('/jwt/refresh'));
+
+  it('adopts a fresh pair another tab already wrote, without calling /jwt/refresh', async () => {
+    const k = jwtKyte();
+    writeOtherTabCookies('kref_tabA', 'tabA.access.sig', nowSec() + 600);
+
+    const onReady = vi.fn();
+    const onFail = vi.fn();
+    k._jwtEnsureFreshAccessToken(onReady, onFail);
+
+    expect(onReady).toHaveBeenCalledOnce(); // synchronous fast path
+    expect(onFail).not.toHaveBeenCalled();
+    expect(refreshCalls()).toHaveLength(0);
+    expect(k.jwtRefreshToken).toBe('kref_tabA');
+    expect(k.jwtAccessToken).toBe('tabA.access.sig');
+  });
+
+  it('refreshes with the rotated cookie token, not the stale in-memory one', async () => {
+    const k = jwtKyte();
+    // Tab A rotated, but its access token is also near expiry now.
+    writeOtherTabCookies('kref_tabA', 'tabA.access.sig', nowSec() + 5);
+    installLocks();
+
+    await new Promise((resolve, reject) => k._jwtEnsureFreshAccessToken(resolve, reject));
+
+    expect(refreshCalls()).toHaveLength(1);
+    expect(JSON.parse(refreshCalls()[0].data)).toEqual({ refresh_token: 'kref_tabA' });
+    expect(k.jwtRefreshToken).toBe('kref_fresh');
+  });
+
+  it('takes the kyte-jwt-refresh lock and skips the refresh if another tab finished while we waited', async () => {
+    const k = jwtKyte();
+    // The other tab finishes its refresh while this tab waits for the lock.
+    const requested = installLocks(() =>
+      writeOtherTabCookies('kref_tabA', 'tabA.access.sig', nowSec() + 600)
+    );
+
+    await new Promise((resolve, reject) => k._jwtEnsureFreshAccessToken(resolve, reject));
+
+    expect(requested).toEqual(['kyte-jwt-refresh']);
+    expect(refreshCalls()).toHaveLength(0);
+    expect(k.jwtRefreshToken).toBe('kref_tabA');
+    expect(k.jwtAccessToken).toBe('tabA.access.sig');
+  });
+
+  it('still refreshes when the Web Locks API is unavailable', async () => {
+    const k = jwtKyte();
+    Object.defineProperty(window.navigator, 'locks', { configurable: true, value: undefined });
+
+    await new Promise((resolve, reject) => k._jwtEnsureFreshAccessToken(resolve, reject));
+
+    expect(refreshCalls()).toHaveLength(1);
+    expect(JSON.parse(refreshCalls()[0].data)).toEqual({ refresh_token: 'kref_old' });
+    expect(k.jwtRefreshToken).toBe('kref_fresh');
+  });
+
+  it('dedupes concurrent requests in one tab into a single refresh', async () => {
+    const k = jwtKyte();
+    installLocks();
+
+    await Promise.all([1, 2, 3].map(() =>
+      new Promise((resolve, reject) => k._jwtEnsureFreshAccessToken(resolve, reject))
+    ));
+
+    expect(refreshCalls()).toHaveLength(1);
+    expect(k._jwtRefreshInFlight).toBeNull();
+  });
+
+  it('reports a failed refresh and clears the in-flight marker', async () => {
+    const k = jwtKyte();
+    installLocks();
+    globalThis.$.ajax = (opts) => {
+      ajaxCalls.push(opts);
+      opts.error({ status: 401, responseJSON: { error: 'invalid_grant' } });
+    };
+
+    const err = await new Promise((resolve) => k._jwtEnsureFreshAccessToken(() => resolve(null), resolve));
+
+    expect(err).toEqual({ error: 'invalid_grant' });
+    expect(k._jwtRefreshInFlight).toBeNull();
+  });
+
+  it('logout revokes the current cookie token, not a stale one', () => {
+    const k = jwtKyte();
+    writeOtherTabCookies('kref_tabA', 'tabA.access.sig', nowSec() + 600);
+
+    k.sessionDestroy(() => {});
+
+    const logout = ajaxCalls.find((c) => c.url.endsWith('/jwt/logout'));
+    expect(logout).toBeDefined();
+    expect(JSON.parse(logout.data)).toEqual({ refresh_token: 'kref_tabA' });
+  });
+
+  it('checkSession sees a login made in another tab', () => {
+    const k = new Kyte('https://api.test', null, null, null, null, { authMode: 'jwt' });
+    expect(k.jwtRefreshToken).toBeFalsy();
+    writeOtherTabCookies('kref_tabA', 'tabA.access.sig', nowSec() + 600);
+
+    expect(k.checkSession()).toBe(true);
+    expect(k.jwtRefreshToken).toBe('kref_tabA');
+  });
+
+  it('does not adopt cookies in HMAC mode', () => {
+    const k = new Kyte('https://api.test', 'pub', 'iden', '123');
+    writeOtherTabCookies('kref_tabA', 'tabA.access.sig', nowSec() + 600);
+    expect(k._jwtAdoptCookieTokens()).toBe(false);
+    expect(k.jwtRefreshToken).toBeNull();
+  });
+});
