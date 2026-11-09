@@ -525,7 +525,9 @@ class Kyte {
 			// access token expiring is normal — refresh-on-next-request
 			// handles it transparently. Only when the refresh token is
 			// gone (logged out, explicitly revoked, or never present) do
-			// we declare the session dead.
+			// we declare the session dead. Pick up a login or rotation
+			// done in another tab first.
+			this._jwtAdoptCookieTokens();
 			if (!this.jwtRefreshToken) {
 				this.sessionDestroy();
 				return false;
@@ -783,6 +785,9 @@ class Kyte {
 	 */
 	_sessionDestroyJwt = (error = null) => {
 		var obj = this;
+		// Revoke the current token, not a stale one another tab already
+		// rotated (a stale one would trip reuse detection instead).
+		obj._jwtAdoptCookieTokens();
 		var refreshToken = obj.jwtRefreshToken;
 
 		var finish = function (response) {
@@ -931,12 +936,24 @@ class Kyte {
 	 * requests in parallel after expiry would burn three refresh
 	 * tokens (and the second/third would race-fail with reuse detection
 	 * on the server).
+	 *
+	 * Multi-tab: every tab of the app shares the kyte_jwt_* cookies but
+	 * holds its own in-memory copy. Refresh tokens rotate, so once one
+	 * tab refreshes, every other tab's in-memory refresh token is stale,
+	 * and sending it trips the server's reuse detection, which revokes
+	 * the whole token family and signs out every tab. To prevent that:
+	 *  - adopt the cookie tokens before deciding anything, so a tab picks
+	 *    up a rotation another tab already did;
+	 *  - take a cross-tab lock (navigator.locks) around the refresh and
+	 *    re-read the cookies inside it, so two tabs that expire together
+	 *    refresh once, not twice.
 	 */
 	_jwtEnsureFreshAccessToken = (onReady, onFail) => {
 		var obj = this;
-		var now = Math.floor(Date.now() / 1000);
 
-		if (obj.jwtAccessToken && obj.jwtAccessExpiresAt > now + obj.jwtRefreshSkewSeconds) {
+		obj._jwtAdoptCookieTokens();
+
+		if (obj._jwtAccessTokenIsFresh()) {
 			onReady();
 			return;
 		}
@@ -967,27 +984,94 @@ class Kyte {
 			return;
 		}
 
-		obj._jwtRefreshInFlight = new Promise(function (resolve, reject) {
+		obj._jwtRefreshInFlight = obj._jwtWithRefreshLock(function () {
+			// Another tab may have refreshed while we waited for the lock.
+			// It wrote the new pair to the cookies before releasing it.
+			obj._jwtAdoptCookieTokens();
+			if (obj._jwtAccessTokenIsFresh()) {
+				return;
+			}
+			return obj._jwtPostRefresh();
+		}).then(function () {
+			obj._jwtRefreshInFlight = null;
+		}, function (err) {
+			obj._jwtRefreshInFlight = null;
+			throw err;
+		});
+		obj._jwtRefreshInFlight.then(onReady, onFail);
+	}
+
+	/** True when the in-memory access token exists and is outside the refresh skew window. */
+	_jwtAccessTokenIsFresh = () => {
+		var now = Math.floor(Date.now() / 1000);
+		return !!this.jwtAccessToken && this.jwtAccessExpiresAt > now + this.jwtRefreshSkewSeconds;
+	}
+
+	/**
+	 * Adopt the token pair in the kyte_jwt_* cookies when their refresh
+	 * token differs from ours, i.e. another tab of the same app rotated
+	 * it (or logged in). Returns true when the in-memory tokens changed.
+	 *
+	 * A missing refresh cookie is left alone: it means the cookie expired
+	 * (same moment as the server-side token) or another tab logged out,
+	 * and in both cases our own refresh will fail and bounce to login.
+	 */
+	_jwtAdoptCookieTokens = () => {
+		if (this.authMode !== 'jwt') return false;
+		var cookieRefresh = this.getCookie('kyte_jwt_refresh') || null;
+		if (!cookieRefresh || cookieRefresh === this.jwtRefreshToken) return false;
+		this.jwtRefreshToken = cookieRefresh;
+		this.jwtAccessToken = this.getCookie('kyte_jwt_access') || null;
+		this.jwtAccessExpiresAt = parseInt(this.getCookie('kyte_jwt_expires') || '0', 10) || 0;
+		return true;
+	}
+
+	/**
+	 * Run fn() while holding the 'kyte-jwt-refresh' Web Lock, which is
+	 * exclusive across every tab and worker of this origin. Returns a
+	 * Promise of fn()'s result. Browsers without the Web Locks API (or
+	 * insecure origins, where navigator.locks is undefined) run fn()
+	 * unlocked; the cookie re-read still covers the common case where
+	 * another tab refreshed earlier.
+	 *
+	 * Note: locks are per origin while the cookies can span subdomains
+	 * (sessionCrossDomain), so tabs on different subdomains are not
+	 * serialized against each other.
+	 */
+	_jwtWithRefreshLock = (fn) => {
+		var locks = (typeof navigator !== 'undefined' && navigator) ? navigator.locks : null;
+		if (locks && typeof locks.request === 'function') {
+			return locks.request('kyte-jwt-refresh', function () { return fn(); });
+		}
+		return Promise.resolve().then(fn);
+	}
+
+	/**
+	 * POST /jwt/refresh with the current refresh token and store the new
+	 * pair (memory + cookies). The timeout keeps a hung request from
+	 * holding the cross-tab lock and stalling the other tabs.
+	 */
+	_jwtPostRefresh = () => {
+		var obj = this;
+		return new Promise(function (resolve, reject) {
 			$.ajax({
 				method: 'POST',
 				crossDomain: true,
 				dataType: 'json',
+				timeout: 30000,
 				url: obj.url + '/jwt/refresh',
 				contentType: 'application/json',
 				data: JSON.stringify({ refresh_token: obj.jwtRefreshToken }),
 				success: function (response) {
 					obj._jwtStoreTokens(response);
-					obj._jwtRefreshInFlight = null;
 					resolve();
 				},
 				error: function (xhr) {
-					obj._jwtRefreshInFlight = null;
 					var body = xhr && xhr.responseJSON ? xhr.responseJSON : xhr;
 					reject(body && body.error ? body : { error: 'refresh_failed', detail: body });
 				}
 			});
 		});
-		obj._jwtRefreshInFlight.then(onReady, onFail);
 	}
 
 	/**
