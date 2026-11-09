@@ -1,5 +1,8 @@
 # Kyte JS Framework
 
+> [!IMPORTANT]
+> **Maintenance mode.** Kyte is in maintenance mode. Security fixes will continue through November 2027; no new features are planned. Existing installations remain supported during this period.
+
 [![Deploy to CDN](https://github.com/keyqcloud/kyte-api-js/actions/workflows/deploy.yml/badge.svg)](https://github.com/keyqcloud/kyte-api-js/actions/workflows/deploy.yml)
 [![CodeQL](https://github.com/keyqcloud/kyte-api-js/actions/workflows/codeql.yml/badge.svg)](https://github.com/keyqcloud/kyte-api-js/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
